@@ -182,13 +182,13 @@
     <Image Include="small.ico" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Frameworks.h" />
-    <ClInclude Include="MainWindow.h" />
+    <ClInclude Include="frameworks.h" />
+    <ClInclude Include="main_window.h" />
     <ClInclude Include="Resource.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="MainWindow.cpp" />
-    <ClCompile Include="Nao.cpp" />
+    <ClCompile Include="main_window.cpp" />
+    <ClCompile Include="nao.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

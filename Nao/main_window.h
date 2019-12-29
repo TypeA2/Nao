@@ -1,10 +1,10 @@
 #pragma once
 
-#include "Frameworks.h"
+#include "frameworks.h"
 
-class MainWindow {
+class main_window {
 	public:
-	MainWindow(HINSTANCE inst, int show_cmd);
+	main_window(HINSTANCE inst, int show_cmd);
 
 	// Program loop
 	int run() const;

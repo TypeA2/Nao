@@ -1,4 +1,4 @@
-#include "MainWindow.h"
+#include "main_window.h"
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
@@ -8,6 +8,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	(void) lpCmdLine;
 
 	// Forward to MainWindow class
-	return MainWindow(hInstance, nShowCmd).run();
+	return main_window(hInstance, nShowCmd).run();
 
 }

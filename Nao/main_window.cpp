@@ -1,17 +1,17 @@
-#include "MainWindow.h"
+#include "main_window.h"
 
 #include "Resource.h"
 
 #include <cstdlib>
 
-MainWindow::MainWindow(HINSTANCE inst, int show_cmd)
+main_window::main_window(HINSTANCE inst, int show_cmd)
 	: _m_success(true)
 	, _m_inst(inst) {
 	// Whether the setup was a success
 	_m_success = _init(show_cmd);
 }
 
-int MainWindow::run() const {
+int main_window::run() const {
 	// Exit on failure
 	if (!_m_success) {
 		return EXIT_FAILURE;
@@ -29,7 +29,7 @@ int MainWindow::run() const {
 	return int(msg.wParam);
 }
 
-bool MainWindow::_init(int show_cmd) {
+bool main_window::_init(int show_cmd) {
 	// Load string resources
 	LoadStringW(_m_inst, IDS_APP_TITLE, _m_title, STRING_SIZE);
 	LoadStringW(_m_inst, IDC_NAO, _m_window_class, STRING_SIZE);
@@ -45,7 +45,7 @@ bool MainWindow::_init(int show_cmd) {
 	return _m_accel != nullptr;
 }
 
-bool MainWindow::_register_class() const {
+bool main_window::_register_class() const {
 	// Our window class instance
 	WNDCLASSEXW wcex {
 		sizeof(WNDCLASSEXW),
@@ -55,17 +55,17 @@ bool MainWindow::_register_class() const {
 		0,
 		_m_inst,
 		LoadIconW(_m_inst, MAKEINTRESOURCEW(IDI_NAO)),
-		LoadCursor(nullptr, IDC_ARROW),
+		LoadCursorW(nullptr, IDC_ARROW),
 		HBRUSH(COLOR_WINDOW + 1),
 		MAKEINTRESOURCEW(IDC_NAO),
 		_m_window_class,
-		LoadIcon(_m_inst, MAKEINTRESOURCEW(IDI_NAO))
+		LoadIconW(_m_inst, MAKEINTRESOURCEW(IDI_NAO))
 	};
 
 	return RegisterClassExW(&wcex) != 0;
 }
 
-bool MainWindow::_init_instance(int show_cmd) {
+bool main_window::_init_instance(int show_cmd) {
 	// Create the main window
 	HWND hwnd = CreateWindowW(_m_window_class, _m_title, WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, _m_inst, nullptr);
@@ -83,7 +83,7 @@ bool MainWindow::_init_instance(int show_cmd) {
 	return true;
 }
 
-LRESULT MainWindow::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) const {
+LRESULT main_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) const {
 	// Message processing
 	switch (msg) {
 		case WM_COMMAND: {
@@ -118,7 +118,7 @@ LRESULT MainWindow::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	return EXIT_SUCCESS;
 }
 
-INT_PTR MainWindow::_about(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
+INT_PTR main_window::_about(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 	(void) lparam;
 
 	// Simpler
@@ -137,9 +137,9 @@ INT_PTR MainWindow::_about(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 	}
 }
 
-LRESULT MainWindow::_wnd_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
+LRESULT main_window::_wnd_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 	// Retrieve the instance pointer
-	MainWindow* _this = reinterpret_cast<MainWindow*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
+	main_window* _this = reinterpret_cast<main_window*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
 
 	if (_this) {
 		// Forward processing to the instance
