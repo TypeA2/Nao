@@ -37,6 +37,9 @@
     <ClInclude Include="main_window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main_window.cpp">
@@ -45,5 +48,11 @@
     <ClCompile Include="nao.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="Nao.exe.manifest" />
   </ItemGroup>
 </Project>
