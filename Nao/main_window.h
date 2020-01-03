@@ -22,7 +22,7 @@ class main_window {
 
 	// Forwarded class WndProc function
 	LRESULT _wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
-	LRESULT _wnd_proc_left(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) const;
+	LRESULT _wnd_proc_left(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
 	// Message processing
 	void _mouse_move(WPARAM wparam, LPARAM lparam);
@@ -54,6 +54,9 @@ class main_window {
 	HWND _m_hwnd;
 	HWND _m_left;
 	HWND _m_right;
+	HWND _m_left_up;
+	HWND _m_left_refresh;
+	HWND _m_left_browse;
 	HWND _m_left_path;
 	HWND _m_left_list;
 
@@ -71,5 +74,8 @@ class main_window {
 
 	// Constants
 	static constexpr int gutter_size = 2;
-	static constexpr int path_height = 22;
+	static constexpr int control_height = 22;
+	static constexpr int control_button_width = 26;
+	static constexpr int browse_button_width = 73;
+	static constexpr int path_x_offset = control_button_width * 2 + gutter_size * 3;
 };

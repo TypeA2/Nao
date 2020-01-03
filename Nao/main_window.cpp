@@ -132,6 +132,23 @@ bool main_window::_init_instance(int show_cmd) {
 bool main_window::_create_subwindows() {
 	RECT rect;
 	GetClientRect(_m_hwnd, &rect);
+	
+	HFONT font = HFONT(GetStockObject(DEFAULT_GUI_FONT));
+
+	HMODULE shell32 = LoadLibraryW(L"shell32.dll");
+	if (!shell32) {
+		return false;
+	}
+
+	HICON up_icon;
+	LoadIconWithScaleDown(shell32, MAKEINTRESOURCEW(16817), 16, 16, &up_icon);
+
+	HICON refresh_icon;
+	LoadIconWithScaleDown(shell32, MAKEINTRESOURCEW(16739), 16, 16, &refresh_icon);
+
+	HICON folder_icon;
+	LoadIconWithScaleDown(shell32, MAKEINTRESOURCEW(4), 16, 16, &folder_icon);
+
 
 	int window_width = (rect.right - gutter_size) / 2;
 
@@ -159,32 +176,64 @@ bool main_window::_create_subwindows() {
 
 
 
+	// Folder up
+	_m_left_up = CreateWindowExW(0, WC_BUTTONW, L"",
+		WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_ICON,
+		gutter_size, gutter_size, control_button_width, control_height + 2,
+		_m_left, nullptr, _m_inst, nullptr);
+
+	if (!_m_left_up) {
+		return false;
+	}
+
+	// Reload view
+	_m_left_refresh = CreateWindowExW(0, WC_BUTTONW, L"",
+		WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_ICON,
+		// control_height + 2 because the border is within the window
+		control_button_width + 2 * gutter_size, gutter_size, control_button_width, control_height + 2,
+		_m_left, nullptr, _m_inst, nullptr);
+
+	if (!_m_left_refresh) {
+		return false;
+	}
+
+	// Browse button
+	_m_left_browse = CreateWindowExW(0, WC_BUTTONW, L"Browse...",
+		WS_CHILD | WS_VISIBLE | WS_TABSTOP,
+		window_width - browse_button_width - gutter_size, gutter_size, browse_button_width, control_height + 2,
+		_m_left, nullptr, _m_inst, nullptr);
+
+	if (!_m_left_browse) {
+		return false;
+	}
+
+	SendMessageW(_m_left_browse, WM_SETFONT, WPARAM(font), true);
+	
+	// Button icons
+	SendMessageW(_m_left_up, BM_SETIMAGE, IMAGE_ICON, LPARAM(up_icon));
+	SendMessageW(_m_left_refresh, BM_SETIMAGE, IMAGE_ICON, LPARAM(refresh_icon));
+	SendMessageW(_m_left_browse, BM_SETIMAGE, IMAGE_ICON, LPARAM(folder_icon));
+
 	// Current path edit control
 	_m_left_path = CreateWindowExW(WS_EX_CLIENTEDGE, WC_EDITW, L"",
 		WS_CHILD | WS_VISIBLE |
 		ES_LEFT,
-		gutter_size, gutter_size, window_width - (gutter_size * 2), path_height,
+		// gutter_size + 1 to accomodate the border
+		path_x_offset, gutter_size + 1, window_width - path_x_offset - browse_button_width - gutter_size * 2, control_height,
 		_m_left, nullptr, _m_inst, nullptr);
 
 	if (!_m_left_path) {
 		return false;
 	}
 
-	HFONT font = CreateFontW(14, 0, 0, 0, FW_DONTCARE, false, false,
-		false, DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-		CLEARTYPE_QUALITY, DEFAULT_PITCH, L"MS Shell Dlg 2");
-
-	SendMessageW(_m_left_path, WM_SETFONT,
-		WPARAM(font), true);
-
-	DeleteObject(font);
+	SendMessageW(_m_left_path, WM_SETFONT, WPARAM(font), true);
 
 	// Filesystem list view
 	_m_left_list = CreateWindowExW(0,
 		WC_LISTVIEWW, L"",
 		WS_CHILD | WS_VISIBLE |
 		LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS,
-		0, path_height + 2 * gutter_size, window_width, rect.bottom,
+		0, control_height + 2 * gutter_size, window_width, rect.bottom,
 		_m_left, nullptr, _m_inst, nullptr);
 
 	if (!_m_left_list) {
@@ -192,7 +241,6 @@ bool main_window::_create_subwindows() {
 	}
 
 	SetWindowTheme(_m_left_list, L"Explorer", nullptr);
-
 	ListView_SetExtendedListViewStyle(_m_left_list, LVS_EX_FULLROWSELECT);
 
 	// And it's columns
@@ -219,6 +267,12 @@ bool main_window::_create_subwindows() {
 		}
 	}
 
+	DeleteObject(up_icon);
+	DeleteObject(refresh_icon);
+	DeleteObject(folder_icon);
+
+	FreeLibrary(shell32);
+	
 	return true;
 }
 
@@ -276,7 +330,7 @@ LRESULT main_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 	return EXIT_SUCCESS;
 }
 
-LRESULT main_window::_wnd_proc_left(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) const {
+LRESULT main_window::_wnd_proc_left(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 	switch (msg) {
 		case WM_SIZE:
 			_left_size(lparam);
@@ -290,6 +344,12 @@ LRESULT main_window::_wnd_proc_left(HWND hwnd, UINT msg, WPARAM wparam, LPARAM l
 			}
 			break;
 		}
+
+		case WM_COMMAND:
+			if (HWND(lparam) == _m_left_browse) {
+				_open_folder();
+			}
+			break;
 			
 		default:
 			return DefWindowProcW(hwnd, msg, wparam, lparam);
@@ -325,10 +385,10 @@ void main_window::_left_size(LPARAM lparam) const {
 
 	HDWP dwp = BeginDeferWindowPos(2);
 	dwp = DeferWindowPos(dwp, _m_left_path, nullptr,
-		gutter_size, gutter_size, new_width - (gutter_size * 2), path_height, 0);
+		path_x_offset, gutter_size + 1, new_width - path_x_offset - gutter_size, control_height, 0);
 	dwp = DeferWindowPos(dwp, _m_left_list, nullptr,
-		0, path_height + (gutter_size * 2), 
-		new_width, new_height - (gutter_size * 2) - path_height, 0);
+		0, control_height + (gutter_size * 2),
+		new_width, new_height - (gutter_size * 2) - control_height, 0);
 
 	EndDeferWindowPos(dwp);
 }
@@ -398,23 +458,27 @@ void main_window::_update_view() {
 	SendMessageW(_m_left_path, WM_SETTEXT, 0, reinterpret_cast<LPARAM>(_m_path));
 
 	//SendMessageW(_m_left_list, LVM_SETCALLBACKMASK)
-	
-	LVITEMW item { };
-	item.pszText = LPSTR_TEXTCALLBACKW;
-	item.mask = LVIF_TEXT;
-	
-	if (FAILED(ListView_InsertItem(_m_left_list, &item))) {
-		utils::coutln("failed insert");
-	}
+	static bool what = false;
 
-	item.iItem = 1;
-	if (FAILED(ListView_InsertItem(_m_left_list, &item))) {
-		utils::coutln("failed insert");
-	}
+	if (!what) {
+		LVITEMW item { };
+		item.pszText = LPSTR_TEXTCALLBACKW;
+		item.mask = LVIF_TEXT;
 
-	item.iItem = 2;
-	if (FAILED(ListView_InsertItem(_m_left_list, &item))) {
-		utils::coutln("failed insert");
+		if (FAILED(ListView_InsertItem(_m_left_list, &item))) {
+			utils::coutln("failed insert");
+		}
+
+		item.iItem = 1;
+		if (FAILED(ListView_InsertItem(_m_left_list, &item))) {
+			utils::coutln("failed insert");
+		}
+
+		item.iItem = 2;
+		if (FAILED(ListView_InsertItem(_m_left_list, &item))) {
+			utils::coutln("failed insert");
+		}
+		what = true;
 	}
 
 	

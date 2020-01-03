@@ -185,11 +185,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="frameworks.h" />
+    <ClInclude Include="item_provider.h" />
     <ClInclude Include="main_window.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="item_provider.cpp" />
     <ClCompile Include="main_window.cpp" />
     <ClCompile Include="nao.cpp" />
     <ClCompile Include="utils.cpp" />
