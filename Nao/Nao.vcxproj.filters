@@ -43,6 +43,9 @@
     <ClInclude Include="item_provider.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="item_provider_factory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main_window.cpp">
@@ -55,6 +58,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="item_provider.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="item_provider_factory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

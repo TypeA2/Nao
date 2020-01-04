@@ -1,5 +1,7 @@
 #include "utils.h"
 
+#include <iomanip>
+
 namespace utils {
 	void cout(LPCSTR str) {
 		OutputDebugStringA(str);
@@ -11,11 +13,55 @@ namespace utils {
 
 	void coutln(LPCSTR str) {
 		cout(str);
-		OutputDebugString(TEXT("\n"));
+		OutputDebugStringW(L"\n");
 	}
 
 	void coutln(LPCWSTR wstr) {
 		cout(wstr);
-		OutputDebugString(TEXT("\n"));
+		OutputDebugStringW(L"\n");
+	}
+
+	std::string bytes(int64_t n) {
+        std::stringstream ss;
+        ss << std::setprecision(3);
+        if (n > 0x1000000000000000) {
+            ss << ((n >> 50) / 1024.L) << " EiB";;
+        } else if (n > 0x4000000000000) {
+            ss << ((n >> 40) / 1024.L) << " PiB";;
+        } else if (n > 0x10000000000) {
+            ss << ((n >> 30) / 1024.L) << " TiB";;
+        } else if (n > 0x40000000) {
+            ss << ((n >> 20) / 1024.L) << " GiB";;
+        } else if (n > 0x100000) {
+            ss << ((n >> 10) / 1024.L) << " MiB";
+        } else if (n > 0x400) {
+            ss << (n / 1024.L) << " KiB";;
+        } else {
+            ss << n << " bytes";
+	    }
+
+		return ss.str();
+	}
+
+	std::wstring wbytes(int64_t n) {
+		std::wstringstream ss;
+        ss << std::setprecision(3);
+        if (n > 0x1000000000000000) {
+            ss << ((n >> 50) / 1024.L) << L" EiB";;
+        } else if (n > 0x4000000000000) {
+            ss << ((n >> 40) / 1024.L) << L" PiB";;
+        } else if (n > 0x10000000000) {
+            ss << ((n >> 30) / 1024.L) << L" TiB";;
+        } else if (n > 0x40000000) {
+            ss << ((n >> 20) / 1024.L) << L" GiB";;
+        } else if (n > 0x100000) {
+            ss << ((n >> 10) / 1024.L) << L" MiB";
+        } else if (n > 0x400) {
+            ss << (n / 1024.L) << L" KiB";;
+        } else {
+            ss << n << L" bytes";
+        }
+
+        return ss.str();
 	}
 }

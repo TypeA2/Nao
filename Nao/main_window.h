@@ -2,6 +2,10 @@
 
 #include "frameworks.h"
 
+#include <vector>
+#include <string>
+#include <map>
+
 class main_window {
 	public:
 	main_window(HINSTANCE inst, int show_cmd);
@@ -36,6 +40,9 @@ class main_window {
 	// Update the left window's contents
 	void _update_view();
 
+	// Fill view from the filesystem
+	void _fill_from_fs(const std::wstring& dir);
+
 	// Forwards the message processing to the member function
 	static LRESULT CALLBACK _wnd_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 	static LRESULT CALLBACK _left_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
@@ -59,6 +66,7 @@ class main_window {
 	HWND _m_left_browse;
 	HWND _m_left_path;
 	HWND _m_left_list;
+	HIMAGELIST _m_left_image_list;
 
 	// Strings
 	WCHAR _m_title[STRING_SIZE];
@@ -70,7 +78,26 @@ class main_window {
 	HACCEL _m_accel;
 
 	// Current path
-	LPWSTR _m_path;
+	std::wstring _m_path;
+
+	// Current path exists on the filesystem
+	bool _m_on_filesystem;
+
+	// Current filesystem files and folders
+	struct fs_entry {
+		bool is_dir;
+		std::wstring name;
+		std::wstring type;
+		int64_t size;
+		std::wstring size_str;
+		int icon_index;
+	};
+	std::vector<fs_entry> _m_dirs;
+	std::vector<fs_entry> _m_files;
+
+	// Per-type icons, source + index
+	using icon_index = std::pair<std::wstring, int>;
+	std::map<icon_index, int> _m_icons;
 
 	// Constants
 	static constexpr int gutter_size = 2;
@@ -78,4 +105,6 @@ class main_window {
 	static constexpr int control_button_width = 26;
 	static constexpr int browse_button_width = 73;
 	static constexpr int path_x_offset = control_button_width * 2 + gutter_size * 3;
+
+	static constexpr int max_list_elements = 1024;
 };

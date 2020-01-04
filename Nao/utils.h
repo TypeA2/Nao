@@ -36,4 +36,7 @@ namespace utils {
 		cout(args...);
 		cout("\n");
 	}
+
+	std::string bytes(int64_t n);
+	std::wstring wbytes(int64_t n);
 }

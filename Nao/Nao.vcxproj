@@ -114,6 +114,7 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalIncludeDirectories>
       </AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>6388;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -161,6 +162,8 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <AdditionalIncludeDirectories>
       </AdditionalIncludeDirectories>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <DisableSpecificWarnings>6388;6387;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -186,12 +189,14 @@
   <ItemGroup>
     <ClInclude Include="frameworks.h" />
     <ClInclude Include="item_provider.h" />
+    <ClInclude Include="item_provider_factory.h" />
     <ClInclude Include="main_window.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="item_provider.cpp" />
+    <ClCompile Include="item_provider_factory.cpp" />
     <ClCompile Include="main_window.cpp" />
     <ClCompile Include="nao.cpp" />
     <ClCompile Include="utils.cpp" />
