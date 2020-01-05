@@ -9,3 +9,5 @@
 #include <shellapi.h>
 #include <commoncontrols.h>
 
+#undef max
+

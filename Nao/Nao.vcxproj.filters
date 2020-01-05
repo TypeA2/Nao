@@ -13,6 +13,12 @@
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
+    <Filter Include="Header Files\providers">
+      <UniqueIdentifier>{95b82214-85e9-4b06-8a41-c20073b67c70}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\providers">
+      <UniqueIdentifier>{4376c9b5-a2e0-4813-81c6-719d0637ad89}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Nao.rc">
@@ -46,6 +52,9 @@
     <ClInclude Include="item_provider_factory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="providers\filesystem_provider.h">
+      <Filter>Header Files\providers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main_window.cpp">
@@ -63,8 +72,14 @@
     <ClCompile Include="item_provider_factory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="providers\filesystem_provider.cpp">
+      <Filter>Source Files\providers</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="Nao.exe.manifest" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\MSVC.ruleset" />
   </ItemGroup>
 </Project>

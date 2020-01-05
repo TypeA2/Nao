@@ -23,7 +23,7 @@ namespace utils {
 
 	std::string bytes(int64_t n) {
         std::stringstream ss;
-        ss << std::setprecision(3);
+        ss << std::setprecision(3) << std::fixed;
         if (n > 0x1000000000000000) {
             ss << ((n >> 50) / 1024.L) << " EiB";;
         } else if (n > 0x4000000000000) {
@@ -45,7 +45,7 @@ namespace utils {
 
 	std::wstring wbytes(int64_t n) {
 		std::wstringstream ss;
-        ss << std::setprecision(3);
+        ss << std::setprecision(3) << std::fixed;
         if (n > 0x1000000000000000) {
             ss << ((n >> 50) / 1024.L) << L" EiB";;
         } else if (n > 0x4000000000000) {
@@ -63,5 +63,13 @@ namespace utils {
         }
 
         return ss.str();
+	}
+
+	std::string perc(double p) {
+        return std::to_string(int64_t(round(p * 100.))) + '%';
+	}
+
+	std::wstring wperc(double p) {
+        return std::to_wstring(int64_t(round(p * 100.))) + L'%';
 	}
 }

@@ -2,9 +2,11 @@
 
 #include "frameworks.h"
 
-#include <vector>
 #include <string>
 #include <map>
+#include <stack>
+
+class item_provider;
 
 class main_window {
 	public:
@@ -13,6 +15,12 @@ class main_window {
 
 	// Program loop
 	int run() const;
+
+	// Getters
+	HWND hwnd() const;
+
+	// Some public types
+	using icon_index = std::pair<std::wstring, int>;
 
 	private:
 	// String size
@@ -32,16 +40,26 @@ class main_window {
 	void _mouse_move(WPARAM wparam, LPARAM lparam);
 	void _size(LPARAM lparam) const;
 	void _left_size(LPARAM lparam) const;
-	LRESULT _left_list_notify(NMHDR* nm) const;
+	void _list_sort(NMLISTVIEW* view);
 
 	// Open a folder
 	void _open_folder();
 
+	// Move to a specific (non-relative) path
+	void _move_to(std::wstring path);
+
 	// Update the left window's contents
 	void _update_view();
+	void _get_provider();
+	void _fill_view();
 
-	// Fill view from the filesystem
-	void _fill_from_fs(const std::wstring& dir);
+	// Set left list sort arrow
+	enum sort_arrow {
+		NO_ARROW,
+		UP_ARROW,
+		DOWN_ARROW
+	};
+	void _set_left_sort_arrow(int col, sort_arrow type) const;
 
 	// Forwards the message processing to the member function
 	static LRESULT CALLBACK _wnd_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
@@ -66,7 +84,7 @@ class main_window {
 	HWND _m_left_browse;
 	HWND _m_left_path;
 	HWND _m_left_list;
-	HIMAGELIST _m_left_image_list;
+	IImageList* _m_left_image_list;
 
 	// Strings
 	WCHAR _m_title[STRING_SIZE];
@@ -79,25 +97,24 @@ class main_window {
 
 	// Current path
 	std::wstring _m_path;
+	
+	std::stack<item_provider*> _m_providers;
 
-	// Current path exists on the filesystem
-	bool _m_on_filesystem;
+	enum sort_order : bool {
+		NORMAL = false,
+		REVERSE = true
+	};
+	sort_order _m_sort_order[4];
 
-	// Current filesystem files and folders
-	struct fs_entry {
-		bool is_dir;
+	// LPARAM for list items
+	struct list_item_data {
 		std::wstring name;
 		std::wstring type;
-		int64_t size;
-		std::wstring size_str;
-		int icon_index;
+		int64_t size {};
+		double compression {};
+		int icon {};
+		bool dir {};
 	};
-	std::vector<fs_entry> _m_dirs;
-	std::vector<fs_entry> _m_files;
-
-	// Per-type icons, source + index
-	using icon_index = std::pair<std::wstring, int>;
-	std::map<icon_index, int> _m_icons;
 
 	// Constants
 	static constexpr int gutter_size = 2;
@@ -105,6 +122,4 @@ class main_window {
 	static constexpr int control_button_width = 26;
 	static constexpr int browse_button_width = 73;
 	static constexpr int path_x_offset = control_button_width * 2 + gutter_size * 3;
-
-	static constexpr int max_list_elements = 1024;
 };

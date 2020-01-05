@@ -3,34 +3,26 @@
 #include "resource.h"
 
 #include "utils.h"
+#include "item_provider.h"
+#include "item_provider_factory.h"
 
-#include <cstdlib>
+#include <process.h>
 
-#include <filesystem>
-
-namespace fs = std::filesystem;
+#include <clocale>
 
 main_window::main_window(HINSTANCE inst, int show_cmd)
 	: _m_success(false)
 	, _m_inst(inst)
 
-	, _m_hwnd{}
-	, _m_left{}
-	, _m_right{}
-	, _m_left_up{}
-	, _m_left_refresh{}
-	, _m_left_browse{}
-	, _m_left_path{}
-	, _m_left_list{}
-	, _m_left_image_list{}
+	, _m_hwnd {}	 , _m_left {}		, _m_right {}
+	, _m_left_up {}	 , _m_left_refresh{}, _m_left_browse{}
+	, _m_left_path{} , _m_left_list{}	, _m_left_image_list{}
 
-	, _m_title { 0 }
-	, _m_window_class { 0 }
-	, _m_left_window { 0 }
-	, _m_right_window { 0 }
+	, _m_title { 0 }	  , _m_window_class { 0 }
+	, _m_left_window { 0 }, _m_right_window { 0 }
 	
 	, _m_accel{}
-	, _m_on_filesystem(false) {
+	, _m_sort_order{} {
 	_m_inst = inst;
 	if (!_m_inst) {
 		return;
@@ -40,13 +32,19 @@ main_window::main_window(HINSTANCE inst, int show_cmd)
 	_m_success = _init(show_cmd);
 
 #ifdef _DEBUG
-	_m_path = L"D:\\Steam\\steamapps\\common\\NieRAutomata";
-	_update_view();
+	_move_to(L"D:\\Steam\\steamapps\\common\\NieRAutomata");
 #endif
 }
 
 main_window::~main_window() {
-	
+	_m_left_image_list->Release();
+
+	while (!_m_providers.empty()) {
+		item_provider* p = _m_providers.top();
+		_m_providers.pop();
+
+		delete p;
+	}
 }
 
 int main_window::run() const {
@@ -67,7 +65,16 @@ int main_window::run() const {
 	return int(msg.wParam);
 }
 
+HWND main_window::hwnd() const {
+	return _m_hwnd;
+}
+
+
+
 bool main_window::_init(int show_cmd) {
+	// CRT locale
+	std::setlocale(LC_ALL, "en_US.utf8");
+	
 	// Load string resources
 	LoadStringW(_m_inst, IDS_APP_TITLE, _m_title, STRING_SIZE);
 	LoadStringW(_m_inst, IDC_NAO, _m_window_class, STRING_SIZE);
@@ -123,6 +130,7 @@ bool main_window::_register_class() const {
 }
 
 bool main_window::_init_instance(int show_cmd) {
+	(void) show_cmd;
 	int nx_size = GetSystemMetrics(SM_CXSCREEN);
 	int ny_size = GetSystemMetrics(SM_CYSCREEN);
 
@@ -288,9 +296,16 @@ bool main_window::_create_subwindows() {
 	}
 
 	// And the image list
-	_m_left_image_list = ImageList_Create(GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON),
-		ILC_COLOR32 | ILC_HIGHQUALITYSCALE, 1, max_list_elements);
+	if (FAILED(SHGetImageList(SHIL_SMALL, IID_PPV_ARGS(&_m_left_image_list)))) {
+		return false;
+	}
+	
 	ListView_SetImageList(_m_left_list, _m_left_image_list, LVSIL_SMALL);
+
+	for (size_t i = 0; i < std::size(_m_sort_order); ++i) {
+		_m_sort_order[i] = NORMAL;
+		_set_left_sort_arrow(int(i), UP_ARROW);
+	}
 	
 	DeleteObject(up_icon);
 	DeleteObject(refresh_icon);
@@ -332,6 +347,7 @@ LRESULT main_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 		case WM_PAINT: {
 			PAINTSTRUCT ps;
 			HDC hdc = BeginPaint(hwnd, &ps);
+			(void) hdc;
 			EndPaint(hwnd, &ps);
 			break;
 		}
@@ -365,7 +381,14 @@ LRESULT main_window::_wnd_proc_left(HWND hwnd, UINT msg, WPARAM wparam, LPARAM l
 			NMHDR* nm = reinterpret_cast<NMHDR*>(lparam);
 
 			if (nm->hwndFrom == _m_left_list) {
-				return _left_list_notify(nm);
+				switch (nm->code) {
+					case LVN_COLUMNCLICK:
+						_list_sort(reinterpret_cast<NMLISTVIEW*>(nm));
+					break;
+					
+					default:
+						break;
+				}
 			}
 			break;
 		}
@@ -420,14 +443,30 @@ void main_window::_left_size(LPARAM lparam) const {
 	EndDeferWindowPos(dwp);
 }
 
-LRESULT main_window::_left_list_notify(NMHDR* nm) const {
-	switch (nm->code) {
-		case LVN_GETDISPINFOW: {
-			return true;
-		}
-	}
+void main_window::_list_sort(NMLISTVIEW* view) {
 
-	return false;
+	int item = view->iSubItem;
+
+	_set_left_sort_arrow(item,
+		(_m_sort_order[item] == REVERSE) ? DOWN_ARROW : UP_ARROW);
+
+	_m_sort_order[item] = (_m_sort_order[item] == REVERSE) ? NORMAL : REVERSE;
+	
+	switch (item) {
+		case 0: // Name, alphabetically
+			break;
+
+		case 1: // Type, alphabetically
+			break;
+
+		case 2: // File size
+			break;
+
+		case 3: // Compression ratio
+			break;
+
+		default: break;
+	}
 }
 
 void main_window::_open_folder() {
@@ -455,8 +494,7 @@ void main_window::_open_folder() {
 				if (FAILED(hr)) {
 					utils::coutln("Failed to get path");
 				} else {
-					_m_path = path;
-					_update_view();
+					_move_to(path);
 				}
 
 				item->Release();
@@ -467,139 +505,139 @@ void main_window::_open_folder() {
 	dialog->Release();
 }
 
+void main_window::_move_to(std::wstring path) {
+	// Only move to an existing path
+	
+	if (path.find(L'\\') != std::wstring::npos) {
+		bool success = true;
+
+		std::wstring next_path;
+
+		while (!(GetFileAttributesW(path.data()) & FILE_ATTRIBUTE_DIRECTORY)) {
+			next_path = path.substr(0, path.find_last_of(L'\\'));
+			if (path == next_path) {
+				success = false;
+				break;
+			}
+
+			path = next_path;
+		}
+
+		if (success) {
+			_m_path = path;
+			_update_view();
+		} else {
+			MessageBoxW(_m_hwnd, L"Failed to find existing folder in path", L"Error",
+				MB_OK | MB_ICONEXCLAMATION);
+		}
+	}
+}
+
 void main_window::_update_view() {
 	SendMessageW(_m_left_path, WM_SETTEXT, 0, reinterpret_cast<LPARAM>(_m_path.data()));
 
-	if (GetFileAttributesW(_m_path.data()) & FILE_ATTRIBUTE_DIRECTORY) {
-		_fill_from_fs(_m_path);
-	}
+	void(__cdecl * fwd)(void*) = [](void* args) {
+		(void) CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+		
+		main_window* _this = reinterpret_cast<main_window*>(args);
+		_this->_get_provider();
+		_this->_fill_view();
+
+		CoUninitialize();
+	};
+
+	size_t low;
+	size_t high;
+	GetCurrentThreadStackLimits(&low, &high);
+
+	_beginthread(fwd, unsigned(high - low), this);
+
 }
 
-void main_window::_fill_from_fs(const std::wstring& dir) {
-	_m_on_filesystem = true;
-	
-	WIN32_FIND_DATAW data;
-	HANDLE f = FindFirstFileW((dir + L"\\*").data(), &data);
+void main_window::_get_provider() {
+	item_provider* p = nullptr;
+	if (GetFileAttributesW(_m_path.data()) & FILE_ATTRIBUTE_DIRECTORY) {
+		size_t required;
+		wcstombs_s(&required, nullptr, 0, _m_path.data(), 0);
 
-	if (f == INVALID_HANDLE_VALUE) {
-		MessageBoxW(_m_hwnd, L"Failed to get directory contents", L"Error", 
-			MB_OK | MB_ICONWARNING);
+		std::string path(required - 1, '\0');
+		wcstombs_s(&required, path.data(), required, _m_path.data(), _TRUNCATE);
+		std::stringstream ss;
+		ss << path;
+
+		p = item_provider_factory::create(ss, this);
+
+		utils::coutln(p, p->count());
+	}
+
+	if (!p) {
+		MessageBoxW(_m_hwnd, (L"Could not open " + _m_path).c_str(), L"Error", MB_OK | MB_ICONEXCLAMATION);
 		return;
 	}
 
-	_m_dirs.clear();
-	_m_files.clear();
+	_m_providers.push(p);
+}
+
+void main_window::_fill_view() {
+	item_provider* p = _m_providers.top();
 
 	LVITEMW item { };
 	item.mask = LVIF_TEXT | LVIF_IMAGE;
-	item.iItem = 0;
-	item.iSubItem = 0;
 
-	std::wstring file_path;
-
-	int image_index = 0;
-
-	do {
-		if (item.iItem >= max_list_elements) {
-			MessageBoxW(_m_hwnd, L"Maximum number of elements reached", L"Error",
-				MB_OK | MB_ICONEXCLAMATION);
-			break;
-		}
-		if (data.dwFileAttributes == INVALID_FILE_ATTRIBUTES ||
-			data.dwFileAttributes & FILE_ATTRIBUTE_SYSTEM ||
-			data.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) {
-			continue;
-		}
-
-		// Skip these
-		if (wcscmp(data.cFileName, L".") == 0 || wcscmp(data.cFileName, L"..") == 0) {
-			continue;
-		}
-
-		file_path = dir + L'\\' + data.cFileName;
-
-		SHFILEINFOW finfo { };
-		DWORD_PTR hr = SHGetFileInfoW(file_path.data(), 0, &finfo,
-			sizeof(finfo), SHGFI_TYPENAME | SHGFI_ICON | SHGFI_ICONLOCATION);
-
-		if (hr == 0) {
-			std::wstringstream ss;
-			ss << L"Failed to get icon, error code " << GetLastError();
-			MessageBoxW(_m_hwnd, ss.str().c_str(), L"Error", MB_OK | MB_ICONEXCLAMATION);
-			continue;
-		}
-
-		int64_t size = (int64_t(data.nFileSizeHigh) << 32) | data.nFileSizeLow;
-
-		icon_index icon = { finfo.szDisplayName, finfo.iIcon };
-		if (_m_icons.find(icon) == _m_icons.end()) {
-			_m_icons[icon] = image_index++;
-
-			IImageList* list;
-			if (FAILED(SHGetImageList(SHIL_SMALL, IID_PPV_ARGS(&list)))) {
-				MessageBoxW(_m_hwnd, L"Error getting image list", L"Error", MB_OK | MB_ICONEXCLAMATION);
-				continue;
-			}
-
-			HICON icon_handle;
-			list->GetIcon(finfo.iIcon, ILD_TRANSPARENT, &icon_handle);
-			list->Release();
-			utils::coutln(data.cFileName, finfo.szDisplayName, finfo.iIcon);
-			ImageList_AddIcon(_m_left_image_list, icon_handle);
-		}
+	static std::wstring empty;
+	std::wstring tmp;
+	
+	for (size_t i = 0; i < p->count(); ++i) {
+		list_item_data* data = new list_item_data;
+		data->name = p->name(i);
+		data->type = p->type(i);
+		data->size = p->size(i);
+		data->compression = p->compression(i);
+		data->icon = p->icon(i);
+		data->dir = p->dir(i);
 		
-		fs_entry entry {
-			false,
-			data.cFileName,
-			finfo.szTypeName,
-			size,
-			utils::wbytes(size),
-			_m_icons[icon]
-		};
+		item.lParam = LPARAM(data);
+
+		item.iItem = int(i);
+		item.pszText = data->name.data();
+		item.iImage = data->icon;
+
+		int64_t size = data->size;
+		tmp = utils::wbytes(size);
 		
-		if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-			entry.is_dir = true;
-			_m_dirs.push_back(entry);
-		} else if (fs::is_regular_file(file_path)) {
-			_m_files.push_back(entry);
-		}
-
-		
-	} while (FindNextFileW(f, &data) != 0);
-
-	if (GetLastError() != ERROR_NO_MORE_FILES) {
-		MessageBoxW(_m_hwnd, L"Unexpected error", L"Error",
-			MB_OK | MB_ICONWARNING);
-		utils::coutln("Error:", GetLastError());
-	}
-
-	for (fs_entry& e : _m_dirs) {
-		item.pszText = e.name.data();
-		item.iImage = e.icon_index;
-
 		ListView_InsertItem(_m_left_list, &item);
-		ListView_SetItemText(_m_left_list, item.iItem, 1, e.type.data());
-		// No size
-		// Leave last column empty
+		ListView_SetItemText(_m_left_list, item.iItem, 1, data->type.data());
+		ListView_SetItemText(_m_left_list, item.iItem, 2, (size == 0) ? empty.data() : tmp.data());
 
-		++item.iItem;
+		double compression = data->compression;
+		tmp = std::to_wstring(int64_t(compression / 100.)) + L'%';
+
+		ListView_SetItemText(_m_left_list, item.iItem, 3, (compression == 0) ? empty.data() : tmp.data());
 	}
-
-	for (fs_entry& e : _m_files) {
-		item.pszText = e.name.data();
-		item.iImage = e.icon_index;
-
-		ListView_InsertItem(_m_left_list, &item);
-		ListView_SetItemText(_m_left_list, item.iItem, 1, e.type.data());
-		ListView_SetItemText(_m_left_list, item.iItem, 2, e.size_str.data());
-		// Leave last column empty
-
-		++item.iItem;
-	}
-
-	FindClose(f);
 }
 
+void main_window::_set_left_sort_arrow(int col, sort_arrow type) const {
+	HWND header = ListView_GetHeader(_m_left_list);
+
+	if (header) {
+		HDITEMW hdr;
+		Header_GetItem(header, col, &hdr);
+
+		switch (type) {
+			case NO_ARROW:
+				hdr.fmt = (hdr.fmt & ~(HDF_SORTDOWN | HDF_SORTUP));
+				break;
+			case UP_ARROW:
+				hdr.fmt = (hdr.fmt & ~HDF_SORTDOWN) | HDF_SORTUP;
+				break;
+			case DOWN_ARROW:
+				hdr.fmt = (hdr.fmt & ~HDF_SORTUP) | HDF_SORTDOWN;
+				break;
+		}
+
+		Header_SetItem(header, col, &hdr);
+	}
+}
 
 INT_PTR main_window::_about(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 	(void) lparam;

@@ -19,6 +19,13 @@ namespace utils {
 	}
 
 	template <typename T>
+	void cout(const std::basic_string<T>& str) {
+		std::basic_stringstream<T> ss;
+		ss << str;
+		cout(ss.str().c_str());
+	}
+
+	template <typename T>
 	void coutln(const T& v) {
 		cout(v);
 		cout("\n");
@@ -39,4 +46,7 @@ namespace utils {
 
 	std::string bytes(int64_t n);
 	std::wstring wbytes(int64_t n);
+
+	std::string perc(double p);
+	std::wstring wperc(double p);
 }
