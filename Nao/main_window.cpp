@@ -213,7 +213,7 @@ bool main_window::_create_subwindows() {
 
 	// Folder up
 	_m_left_up = CreateWindowExW(0, WC_BUTTONW, L"",
-		WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_ICON,
+		WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_ICON | WS_DISABLED,
 		gutter_size, gutter_size, control_button_width, control_height + 2,
 		_m_left, nullptr, _m_inst, nullptr);
 
@@ -224,7 +224,7 @@ bool main_window::_create_subwindows() {
 
 	// Reload view
 	_m_left_refresh = CreateWindowExW(0, WC_BUTTONW, L"",
-		WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_ICON,
+		WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_ICON | WS_DISABLED,
 		// control_height + 2 because the border is within the window
 		control_button_width + 2 * gutter_size, gutter_size, control_button_width, control_height + 2,
 		_m_left, nullptr, _m_inst, nullptr);
@@ -328,9 +328,6 @@ bool main_window::_left_list_setup(int window_width,int window_height) {
 	}
 
 	ListView_SetImageList(_m_left_list, _m_left_image_list, LVSIL_SMALL);
-
-	_m_sort_order[0] = NORMAL;
-	_set_left_sort_arrow(0, UP_ARROW);
 
 	return true;
 }
@@ -475,12 +472,10 @@ void main_window::_left_size(LPARAM lparam) const {
 
 void main_window::_list_sort(int item) {
 
-	utils::coutln(_m_sort_order[item]);
-	
 	for (int i = 0; i < int(std::size(_m_sort_order)); ++i) {
 		if (i == item) {
 			_set_left_sort_arrow(i,
-				(_m_sort_order[item] == REVERSE) ? DOWN_ARROW : UP_ARROW);
+				(_m_sort_order[i] == REVERSE) ? DOWN_ARROW : UP_ARROW);
 		} else {
 			_set_left_sort_arrow(i, NO_ARROW);
 		}
@@ -580,6 +575,11 @@ void main_window::_update_view() {
 		_this->_fill_view();
 		_this->_list_sort(_this->_m_selected_col);
 
+		//SetWindowLongPtrW(_this->_m_left_browse, GWL_STYLE,
+		//	GetWindowLongPtrW(_this->_m_left_browse, GWL_STYLE) & ~WS_DISABLED);
+
+		//ShowWindow(_this->_m_left_browse, SW_SHOW);
+
 		CoUninitialize();
 	};
 
@@ -587,6 +587,11 @@ void main_window::_update_view() {
 	size_t high;
 	GetCurrentThreadStackLimits(&low, &high);
 
+	//SetWindowLongPtrW(_m_left_browse, GWL_STYLE, 
+	//	GetWindowLongPtrW(_m_left_browse, GWL_STYLE) | WS_DISABLED);
+
+	//ShowWindow(_m_left_browse, SW_SHOW);
+	
 	_beginthread(fwd, unsigned(high - low), this);
 
 }
@@ -657,19 +662,25 @@ void main_window::_set_left_sort_arrow(int col, sort_arrow type) const {
 	HWND header = ListView_GetHeader(_m_left_list);
 
 	if (header) {
-		HDITEMW hdr {};
+		HDITEMW hdr;
+		hdr.mask = HDI_FORMAT;
+		
 		Header_GetItem(header, col, &hdr);
 
 		switch (type) {
 			case NO_ARROW:
+				utils::coutln(" none");
 				hdr.fmt = (hdr.fmt & ~(HDF_SORTDOWN | HDF_SORTUP));
 				break;
 			case UP_ARROW:
+				utils::coutln(" up");
 				hdr.fmt = (hdr.fmt & ~HDF_SORTDOWN) | HDF_SORTUP;
 				break;
 			case DOWN_ARROW:
+				utils::coutln(" down");
 				hdr.fmt = (hdr.fmt & ~HDF_SORTUP) | HDF_SORTDOWN;
 				break;
+			default: utils::coutln(" what");
 		}
 
 		Header_SetItem(header, col, &hdr);
