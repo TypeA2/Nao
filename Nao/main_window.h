@@ -31,6 +31,7 @@ class main_window {
 	bool _register_class() const;
 	bool _init_instance(int show_cmd);
 	bool _create_subwindows();
+	bool _left_list_setup(int window_width, int window_height);
 
 	// Forwarded class WndProc function
 	LRESULT _wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
@@ -40,7 +41,7 @@ class main_window {
 	void _mouse_move(WPARAM wparam, LPARAM lparam);
 	void _size(LPARAM lparam) const;
 	void _left_size(LPARAM lparam) const;
-	void _list_sort(NMLISTVIEW* view);
+	void _list_sort(int item);
 
 	// Open a folder
 	void _open_folder();
@@ -100,11 +101,14 @@ class main_window {
 	
 	std::stack<item_provider*> _m_providers;
 
-	enum sort_order : bool {
-		NORMAL = false,
-		REVERSE = true
+	// Column sort
+	enum sort_order : int8_t {
+		NONE,
+		NORMAL,
+		REVERSE
 	};
 	sort_order _m_sort_order[4];
+	int _m_selected_col;
 
 	// LPARAM for list items
 	struct list_item_data {
@@ -122,4 +126,8 @@ class main_window {
 	static constexpr int control_button_width = 26;
 	static constexpr int browse_button_width = 73;
 	static constexpr int path_x_offset = control_button_width * 2 + gutter_size * 3;
+
+	// Default order when unselected columns get selected
+	static constexpr sort_order default_order[4]
+		= { NORMAL, NORMAL, REVERSE, REVERSE };
 };

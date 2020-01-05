@@ -14,15 +14,15 @@ main_window::main_window(HINSTANCE inst, int show_cmd)
 	: _m_success(false)
 	, _m_inst(inst)
 
-	, _m_hwnd {}	 , _m_left {}		, _m_right {}
-	, _m_left_up {}	 , _m_left_refresh{}, _m_left_browse{}
-	, _m_left_path{} , _m_left_list{}	, _m_left_image_list{}
+	, _m_hwnd {}	  , _m_left {}		  , _m_right {}
+	, _m_left_up {}	  , _m_left_refresh {}, _m_left_browse {}
+	, _m_left_path {} , _m_left_list {}	  , _m_left_image_list {}
 
 	, _m_title { 0 }	  , _m_window_class { 0 }
 	, _m_left_window { 0 }, _m_right_window { 0 }
 	
-	, _m_accel{}
-	, _m_sort_order{} {
+	, _m_accel {}
+	, _m_sort_order {}, _m_selected_col {} {
 	_m_inst = inst;
 	if (!_m_inst) {
 		return;
@@ -37,7 +37,9 @@ main_window::main_window(HINSTANCE inst, int show_cmd)
 }
 
 main_window::~main_window() {
-	_m_left_image_list->Release();
+	if (_m_left_image_list) {
+		_m_left_image_list->Release();
+	}
 
 	while (!_m_providers.empty()) {
 		item_provider* p = _m_providers.top();
@@ -83,6 +85,7 @@ bool main_window::_init(int show_cmd) {
 
 	// Additional setup
 	if (!_register_class() || !_init_instance(show_cmd)) {
+		utils::coutln("_register_class or _init_instance failed");
 		return false;
 	}
 
@@ -143,6 +146,7 @@ bool main_window::_init_instance(int show_cmd) {
 		nx_pos, ny_pos, 1280, 800, nullptr, nullptr, _m_inst, nullptr);
 
 	if (!_m_hwnd) {
+		utils::coutln("main window creation failed");
 		return false;
 	}
 
@@ -165,6 +169,7 @@ bool main_window::_create_subwindows() {
 
 	HMODULE shell32 = LoadLibraryW(L"shell32.dll");
 	if (!shell32) {
+		utils::coutln("loading shell32.dll failed");
 		return false;
 	}
 
@@ -187,6 +192,7 @@ bool main_window::_create_subwindows() {
 		_m_hwnd, nullptr, _m_inst, nullptr);
 
 	if (!_m_left) {
+		utils::coutln("creating left window failed");
 		return false;
 	}
 
@@ -199,6 +205,7 @@ bool main_window::_create_subwindows() {
 		_m_hwnd, nullptr, _m_inst, nullptr);
 
 	if (!_m_right) {
+		utils::coutln("creating right window failed");
 		return false;
 	}
 
@@ -211,6 +218,7 @@ bool main_window::_create_subwindows() {
 		_m_left, nullptr, _m_inst, nullptr);
 
 	if (!_m_left_up) {
+		utils::coutln("creating left up button failed");
 		return false;
 	}
 
@@ -222,6 +230,7 @@ bool main_window::_create_subwindows() {
 		_m_left, nullptr, _m_inst, nullptr);
 
 	if (!_m_left_refresh) {
+		utils::coutln("creating left refresh button failed");
 		return false;
 	}
 
@@ -232,6 +241,7 @@ bool main_window::_create_subwindows() {
 		_m_left, nullptr, _m_inst, nullptr);
 
 	if (!_m_left_browse) {
+		utils::coutln("creating left browse button failed");
 		return false;
 	}
 
@@ -251,23 +261,39 @@ bool main_window::_create_subwindows() {
 		_m_left, nullptr, _m_inst, nullptr);
 
 	if (!_m_left_path) {
+		utils::coutln("creating left path edit failed");
 		return false;
 	}
 
 	SendMessageW(_m_left_path, WM_SETFONT, WPARAM(font), true);
 
+	if (!_left_list_setup(window_width, rect.bottom)) {
+		return false;
+	}
+	
+	DeleteObject(up_icon);
+	DeleteObject(refresh_icon);
+	DeleteObject(folder_icon);
+
+	FreeLibrary(shell32);
+
+	return true;
+}
+
+bool main_window::_left_list_setup(int window_width,int window_height) {
 	// Filesystem list view
 	_m_left_list = CreateWindowExW(0,
 		WC_LISTVIEWW, L"",
 		WS_CHILD | WS_VISIBLE |
 		LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS,
-		0, control_height + 2 * gutter_size, window_width, rect.bottom,
+		0, control_height + 2 * gutter_size, window_width, window_height,
 		_m_left, nullptr, _m_inst, nullptr);
 
 	if (!_m_left_list) {
+		utils::coutln("creating left list failed");
 		return false;
 	}
-
+	
 	SetWindowTheme(_m_left_list, L"Explorer", nullptr);
 	ListView_SetExtendedListViewStyle(_m_left_list, LVS_EX_FULLROWSELECT);
 
@@ -297,22 +323,15 @@ bool main_window::_create_subwindows() {
 
 	// And the image list
 	if (FAILED(SHGetImageList(SHIL_SMALL, IID_PPV_ARGS(&_m_left_image_list)))) {
+		utils::coutln("failed to retrieve shell image list");
 		return false;
 	}
-	
+
 	ListView_SetImageList(_m_left_list, _m_left_image_list, LVSIL_SMALL);
 
-	for (size_t i = 0; i < std::size(_m_sort_order); ++i) {
-		_m_sort_order[i] = NORMAL;
-		_set_left_sort_arrow(int(i), UP_ARROW);
-	}
-	
-	DeleteObject(up_icon);
-	DeleteObject(refresh_icon);
-	DeleteObject(folder_icon);
+	_m_sort_order[0] = NORMAL;
+	_set_left_sort_arrow(0, UP_ARROW);
 
-	FreeLibrary(shell32);
-	
 	return true;
 }
 
@@ -382,9 +401,20 @@ LRESULT main_window::_wnd_proc_left(HWND hwnd, UINT msg, WPARAM wparam, LPARAM l
 
 			if (nm->hwndFrom == _m_left_list) {
 				switch (nm->code) {
-					case LVN_COLUMNCLICK:
-						_list_sort(reinterpret_cast<NMLISTVIEW*>(nm));
-					break;
+					case LVN_COLUMNCLICK: {
+						NMLISTVIEW* view = reinterpret_cast<NMLISTVIEW*>(nm);
+						if (_m_selected_col != view->iSubItem) {
+							// Set default order
+							_m_sort_order[view->iSubItem] = default_order[view->iSubItem];
+						} else {
+							_m_sort_order[_m_selected_col]
+								= (_m_sort_order[_m_selected_col] == REVERSE) ? NORMAL : REVERSE;
+						}
+						
+						_m_selected_col = view->iSubItem;
+						_list_sort(_m_selected_col);
+						break;
+					}
 					
 					default:
 						break;
@@ -443,15 +473,21 @@ void main_window::_left_size(LPARAM lparam) const {
 	EndDeferWindowPos(dwp);
 }
 
-void main_window::_list_sort(NMLISTVIEW* view) {
+void main_window::_list_sort(int item) {
 
-	int item = view->iSubItem;
-
-	_set_left_sort_arrow(item,
-		(_m_sort_order[item] == REVERSE) ? DOWN_ARROW : UP_ARROW);
-
-	_m_sort_order[item] = (_m_sort_order[item] == REVERSE) ? NORMAL : REVERSE;
+	utils::coutln(_m_sort_order[item]);
 	
+	for (int i = 0; i < int(std::size(_m_sort_order)); ++i) {
+		if (i == item) {
+			_set_left_sort_arrow(i,
+				(_m_sort_order[item] == REVERSE) ? DOWN_ARROW : UP_ARROW);
+		} else {
+			_set_left_sort_arrow(i, NO_ARROW);
+		}
+	}
+	
+	utils::coutln((_m_sort_order[item] == REVERSE) ? "reverse" : "normal");
+
 	switch (item) {
 		case 0: // Name, alphabetically
 			break;
@@ -542,6 +578,7 @@ void main_window::_update_view() {
 		main_window* _this = reinterpret_cast<main_window*>(args);
 		_this->_get_provider();
 		_this->_fill_view();
+		_this->_list_sort(_this->_m_selected_col);
 
 		CoUninitialize();
 	};
@@ -620,7 +657,7 @@ void main_window::_set_left_sort_arrow(int col, sort_arrow type) const {
 	HWND header = ListView_GetHeader(_m_left_list);
 
 	if (header) {
-		HDITEMW hdr;
+		HDITEMW hdr {};
 		Header_GetItem(header, col, &hdr);
 
 		switch (type) {
