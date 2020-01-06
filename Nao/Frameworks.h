@@ -9,5 +9,6 @@
 #include <shellapi.h>
 #include <commoncontrols.h>
 
+#undef min
 #undef max
 

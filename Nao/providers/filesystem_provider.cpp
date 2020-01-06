@@ -49,14 +49,6 @@ void filesystem_provider::_populate() {
 		return;
 	}
 
-	//_m_dirs.clear();
-	//_m_files.clear();
-
-	//LVITEMW item { };
-	//item.mask = LVIF_TEXT | LVIF_IMAGE;
-	//item.iItem = 0;
-	//item.iSubItem = 0;
-
 	std::wstring file_path;
 
 	do {
@@ -104,39 +96,6 @@ void filesystem_provider::_populate() {
 			MB_OK | MB_ICONWARNING);
 		utils::coutln("Error:", GetLastError());
 	}
-
-	//for (fs_entry& e : _m_dirs) {
-
-		
-		
-		//item.pszText = e.name.data();
-		//item.iImage = e.icon_index;
-
-		//ListView_InsertItem(_m_left_list, &item);
-		//ListView_SetItemText(_m_left_list, item.iItem, 1, e.type.data());
-		// No size
-		// Leave last column empty
-
-		//++item.iItem;
-	//}
-
-	//for (fs_entry& e : _m_contents) {
-		/*_m_window->insert_item(
-			e.name,
-			e.is_dir ? L"" : e.size_str,
-			e.type,
-			L"",
-			e.icon_index, e.is_dir);*/
-		//item.pszText = e.name.data();
-		//item.iImage = e.icon_index;
-
-		//ListView_InsertItem(_m_left_list, &item);
-		//ListView_SetItemText(_m_left_list, item.iItem, 1, e.type.data());
-		//ListView_SetItemText(_m_left_list, item.iItem, 2, e.size_str.data());
-		// Leave last column empty
-
-		//++item.iItem;
-	//}
 
 	FindClose(f);
 }

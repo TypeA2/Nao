@@ -9,6 +9,7 @@
 #include <process.h>
 
 #include <clocale>
+#include <algorithm>
 
 main_window::main_window(HINSTANCE inst, int show_cmd)
 	: _m_success(false)
@@ -354,7 +355,7 @@ LRESULT main_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 					_open_folder();
 					break;
 				default:
-					utils::coutln(LOWORD(wparam));
+					utils::coutln("WM_COMMAND", LOWORD(wparam));
 					return DefWindowProcW(hwnd, msg, wparam, lparam);
 			}
 			break;
@@ -470,34 +471,95 @@ void main_window::_left_size(LPARAM lparam) const {
 	EndDeferWindowPos(dwp);
 }
 
-void main_window::_list_sort(int item) {
-
+void main_window::_list_sort(int col) {
 	for (int i = 0; i < int(std::size(_m_sort_order)); ++i) {
-		if (i == item) {
+		if (i == col) {
 			_set_left_sort_arrow(i,
 				(_m_sort_order[i] == REVERSE) ? DOWN_ARROW : UP_ARROW);
 		} else {
 			_set_left_sort_arrow(i, NO_ARROW);
 		}
 	}
+
+	int (CALLBACK * comp)(LPARAM, LPARAM, LPARAM) =
+		[](LPARAM lparam1, LPARAM lparam2, LPARAM info) -> int {
+		
+		list_item_data* item1 = reinterpret_cast<list_item_data*>(lparam1);
+		list_item_data* item2 = reinterpret_cast<list_item_data*>(lparam2);
+
+		if (!item1 || !item2) {
+			return 0;
+		}
+
+		sort_order order = static_cast<sort_order>(HIWORD(info) & 0xFF);
+
+		int first1 = 0;
+		int first2 = 0;
+
+		switch (order) {
+			case NORMAL:
+				first1 = -1;
+				first2 = 1;
+				break;
+
+			case REVERSE:
+				first1 = 1;
+				first2 = -1;
+				break;
+
+			default:
+				break;
+		}
+
+		// Directories on top
+		if (!item1->dir != !item2->dir) {
+			return item1->dir ? -1 : 1;
+		}
+
+		const auto& f = std::use_facet<std::ctype<std::wstring::value_type>>(std::locale());
+
+		auto cmp = [&](const std::wstring& left, const std::wstring& right) -> int {
+			return std::lexicographical_compare(
+				left.begin(), left.end(), right.begin(), right.end(),
+				[&f](std::wstring::value_type a, std::wstring::value_type b) {
+					return f.tolower(a) < f.tolower(b);
+				}) ? first1 : first2;
+		};
+
+		switch (LOWORD(info)) {
+			case 0: // Name, alphabetically
+				if (item1->name == item2->name) { return 0; }
+			
+				return cmp(item1->name, item2->name);
+			case 1: { // Type, alphabetically
+				if (item1->type == item2->type) {
+					// Fallback on name
+					return cmp(item1->name, item2->name);
+				}
+
+				return cmp(item1->type, item2->type); }
+
+			case 2: // File size
+				if (item1->size == item2->size) {
+					// Fallback on name
+					return cmp(item1->name, item2->name);
+				}
+
+				return (item1->size < item2->size) ? first1 : first2;
+
+			case 3: // Compression ratio
+				if (item1->compression == item2->compression) {
+					// Fallback on name
+					return cmp(item1->name, item2->name);
+				}
+				
+				return (item1->compression < item2->compression) ? first1 : first2;
+
+			default: return 0;
+		}
+	};
 	
-	utils::coutln((_m_sort_order[item] == REVERSE) ? "reverse" : "normal");
-
-	switch (item) {
-		case 0: // Name, alphabetically
-			break;
-
-		case 1: // Type, alphabetically
-			break;
-
-		case 2: // File size
-			break;
-
-		case 3: // Compression ratio
-			break;
-
-		default: break;
-	}
+	ListView_SortItems(_m_left_list, comp, MAKELPARAM(col, _m_sort_order[col]));
 }
 
 void main_window::_open_folder() {
@@ -575,11 +637,6 @@ void main_window::_update_view() {
 		_this->_fill_view();
 		_this->_list_sort(_this->_m_selected_col);
 
-		//SetWindowLongPtrW(_this->_m_left_browse, GWL_STYLE,
-		//	GetWindowLongPtrW(_this->_m_left_browse, GWL_STYLE) & ~WS_DISABLED);
-
-		//ShowWindow(_this->_m_left_browse, SW_SHOW);
-
 		CoUninitialize();
 	};
 
@@ -587,11 +644,6 @@ void main_window::_update_view() {
 	size_t high;
 	GetCurrentThreadStackLimits(&low, &high);
 
-	//SetWindowLongPtrW(_m_left_browse, GWL_STYLE, 
-	//	GetWindowLongPtrW(_m_left_browse, GWL_STYLE) | WS_DISABLED);
-
-	//ShowWindow(_m_left_browse, SW_SHOW);
-	
 	_beginthread(fwd, unsigned(high - low), this);
 
 }
@@ -608,8 +660,6 @@ void main_window::_get_provider() {
 		ss << path;
 
 		p = item_provider_factory::create(ss, this);
-
-		utils::coutln(p, p->count());
 	}
 
 	if (!p) {
@@ -624,7 +674,7 @@ void main_window::_fill_view() {
 	item_provider* p = _m_providers.top();
 
 	LVITEMW item { };
-	item.mask = LVIF_TEXT | LVIF_IMAGE;
+	item.mask = LVIF_TEXT | LVIF_IMAGE | LVIF_PARAM;
 
 	static std::wstring empty;
 	std::wstring tmp;
@@ -669,18 +719,14 @@ void main_window::_set_left_sort_arrow(int col, sort_arrow type) const {
 
 		switch (type) {
 			case NO_ARROW:
-				utils::coutln(" none");
 				hdr.fmt = (hdr.fmt & ~(HDF_SORTDOWN | HDF_SORTUP));
 				break;
 			case UP_ARROW:
-				utils::coutln(" up");
 				hdr.fmt = (hdr.fmt & ~HDF_SORTDOWN) | HDF_SORTUP;
 				break;
 			case DOWN_ARROW:
-				utils::coutln(" down");
 				hdr.fmt = (hdr.fmt & ~HDF_SORTUP) | HDF_SORTDOWN;
 				break;
-			default: utils::coutln(" what");
 		}
 
 		Header_SetItem(header, col, &hdr);

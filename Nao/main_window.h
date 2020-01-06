@@ -41,7 +41,7 @@ class main_window {
 	void _mouse_move(WPARAM wparam, LPARAM lparam);
 	void _size(LPARAM lparam) const;
 	void _left_size(LPARAM lparam) const;
-	void _list_sort(int item);
+	void _list_sort(int col);
 
 	// Open a folder
 	void _open_folder();
