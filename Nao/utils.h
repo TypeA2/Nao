@@ -49,4 +49,7 @@ namespace utils {
 
 	std::string perc(double p);
 	std::wstring wperc(double p);
+
+	std::string utf8(const std::wstring& str);
+	std::wstring utf16(const std::string& str);
 }

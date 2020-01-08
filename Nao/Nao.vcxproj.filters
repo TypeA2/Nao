@@ -19,6 +19,12 @@
     <Filter Include="Source Files\providers">
       <UniqueIdentifier>{4376c9b5-a2e0-4813-81c6-719d0637ad89}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\ui_elements">
+      <UniqueIdentifier>{6db671ff-731c-47aa-b4ab-45f6e107a01d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ui_elements">
+      <UniqueIdentifier>{89003a4a-5248-4616-9afa-fb65b4280843}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Nao.rc">
@@ -40,9 +46,6 @@
     <ClInclude Include="frameworks.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="main_window.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -55,11 +58,20 @@
     <ClInclude Include="providers\filesystem_provider.h">
       <Filter>Header Files\providers</Filter>
     </ClInclude>
+    <ClInclude Include="ui_element.h">
+      <Filter>Header Files\ui_elements</Filter>
+    </ClInclude>
+    <ClInclude Include="list_view.h">
+      <Filter>Header Files\ui_elements</Filter>
+    </ClInclude>
+    <ClInclude Include="main_window.h">
+      <Filter>Header Files\ui_elements</Filter>
+    </ClInclude>
+    <ClInclude Include="child_window.h">
+      <Filter>Header Files\ui_elements</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main_window.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="nao.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -74,6 +86,18 @@
     </ClCompile>
     <ClCompile Include="providers\filesystem_provider.cpp">
       <Filter>Source Files\providers</Filter>
+    </ClCompile>
+    <ClCompile Include="list_view.cpp">
+      <Filter>Source Files\ui_elements</Filter>
+    </ClCompile>
+    <ClCompile Include="ui_element.cpp">
+      <Filter>Source Files\ui_elements</Filter>
+    </ClCompile>
+    <ClCompile Include="child_window.cpp">
+      <Filter>Source Files\ui_elements</Filter>
+    </ClCompile>
+    <ClCompile Include="main_window.cpp">
+      <Filter>Source Files\ui_elements</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

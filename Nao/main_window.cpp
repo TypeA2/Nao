@@ -12,12 +12,13 @@
 #include <algorithm>
 
 main_window::main_window(HINSTANCE inst, int show_cmd)
-	: _m_success(false)
+	: ui_element(nullptr)
+	, _m_success(false)
 	, _m_inst(inst)
 
 	, _m_hwnd {}	  , _m_left {}		  , _m_right {}
 	, _m_left_up {}	  , _m_left_refresh {}, _m_left_browse {}
-	, _m_left_path {} , _m_left_list {}	  , _m_left_image_list {}
+	, _m_left_path {} , _m_left_list {}
 
 	, _m_title { 0 }	  , _m_window_class { 0 }
 	, _m_left_window { 0 }, _m_right_window { 0 }
@@ -38,10 +39,8 @@ main_window::main_window(HINSTANCE inst, int show_cmd)
 }
 
 main_window::~main_window() {
-	if (_m_left_image_list) {
-		_m_left_image_list->Release();
-	}
-
+	delete _m_left_list;
+	
 	while (!_m_providers.empty()) {
 		item_provider* p = _m_providers.top();
 		_m_providers.pop();
@@ -101,7 +100,8 @@ bool main_window::_register_class() const {
 	WNDCLASSEXW wcex {
 		sizeof(WNDCLASSEXW),
 		CS_HREDRAW | CS_VREDRAW,
-		_wnd_proc_fwd,
+		// Setting the WndProc to this uses the default WndProc for everything
+		wnd_proc_fwd,
 		0,
 		0,
 		_m_inst,
@@ -151,8 +151,8 @@ bool main_window::_init_instance(int show_cmd) {
 		return false;
 	}
 
-	// Set user data to a pointer to this instance
-	SetWindowLongPtrW(_m_hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+	set_handle(_m_hwnd);
+	use_wnd_proc(&main_window::_wnd_proc);
 
 	// Continue
 	UpdateWindow(_m_hwnd);
@@ -268,67 +268,21 @@ bool main_window::_create_subwindows() {
 
 	SendMessageW(_m_left_path, WM_SETFONT, WPARAM(font), true);
 
-	if (!_left_list_setup(window_width, rect.bottom)) {
+	// ListView ImageList
+	IImageList* imglist;
+	if (FAILED(SHGetImageList(SHIL_SMALL, IID_PPV_ARGS(&imglist)))) {
+		utils::coutln("failed to retrieve shell image list");
 		return false;
 	}
 	
+	_m_left_list = new list_view(this, { "Name", "Type", "Size", "Compressed" }, imglist);
+	(void) _m_left_list->move(0, control_height + (2 * gutter_size), window_width, rect.bottom);
+
 	DeleteObject(up_icon);
 	DeleteObject(refresh_icon);
 	DeleteObject(folder_icon);
 
 	FreeLibrary(shell32);
-
-	return true;
-}
-
-bool main_window::_left_list_setup(int window_width,int window_height) {
-	// Filesystem list view
-	_m_left_list = CreateWindowExW(0,
-		WC_LISTVIEWW, L"",
-		WS_CHILD | WS_VISIBLE |
-		LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS,
-		0, control_height + 2 * gutter_size, window_width, window_height,
-		_m_left, nullptr, _m_inst, nullptr);
-
-	if (!_m_left_list) {
-		utils::coutln("creating left list failed");
-		return false;
-	}
-	
-	SetWindowTheme(_m_left_list, L"Explorer", nullptr);
-	ListView_SetExtendedListViewStyle(_m_left_list, LVS_EX_FULLROWSELECT);
-
-	// And it's columns
-	{
-		LPCWSTR titles[] = { L"Name", L"Type", L"Size", L"Compressed" };
-		LVCOLUMNW col;
-		col.mask = LVCF_TEXT | LVCF_FMT | LVCF_WIDTH;
-		col.cx = window_width / 4;
-		col.fmt = LVCFMT_LEFT;
-
-		for (size_t i = 0; i < std::size(titles); ++i) {
-			col.iOrder = int(i);
-
-			size_t header_length = wcslen(titles[i]) + 1;
-			col.pszText = new WCHAR[header_length]();
-			wcscpy_s(col.pszText, header_length, titles[i]);
-
-			if (i == std::size(titles) - 1) {
-				// Pad with last item
-				col.cx = (window_width + 3) / 4;
-			}
-
-			ListView_InsertColumn(_m_left_list, i, &col);
-		}
-	}
-
-	// And the image list
-	if (FAILED(SHGetImageList(SHIL_SMALL, IID_PPV_ARGS(&_m_left_image_list)))) {
-		utils::coutln("failed to retrieve shell image list");
-		return false;
-	}
-
-	ListView_SetImageList(_m_left_list, _m_left_image_list, LVSIL_SMALL);
 
 	return true;
 }
@@ -382,13 +336,14 @@ LRESULT main_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 			break;
 
 		default:
-			return DefWindowProcW(hwnd, msg, wparam, lparam);
+			return default_wnd_proc()(hwnd, msg, wparam, lparam);
 	}
 
 	return EXIT_SUCCESS;
 }
 
 LRESULT main_window::_wnd_proc_left(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
+	utils::coutln(msg);
 	switch (msg) {
 		case WM_SIZE:
 			_left_size(lparam);
@@ -397,7 +352,9 @@ LRESULT main_window::_wnd_proc_left(HWND hwnd, UINT msg, WPARAM wparam, LPARAM l
 		case WM_NOTIFY: {
 			NMHDR* nm = reinterpret_cast<NMHDR*>(lparam);
 
-			if (nm->hwndFrom == _m_left_list) {
+			utils::coutln(nm->hwndFrom, _m_left_list->handle());
+
+			if (nm->hwndFrom == _m_left_list->handle()) {
 				switch (nm->code) {
 					case LVN_COLUMNCLICK: {
 						NMLISTVIEW* view = reinterpret_cast<NMLISTVIEW*>(nm);
@@ -462,7 +419,7 @@ void main_window::_left_size(LPARAM lparam) const {
 	HDWP dwp = BeginDeferWindowPos(3);
 	dwp = DeferWindowPos(dwp, _m_left_path, nullptr,
 		path_x_offset, gutter_size + 1, new_width - path_x_offset - browse_button_width - gutter_size * 2, control_height, 0);
-	dwp = DeferWindowPos(dwp, _m_left_list, nullptr,
+	dwp = DeferWindowPos(dwp, _m_left_list->handle(), nullptr,
 		0, control_height + (gutter_size * 2),
 		new_width, new_height - (gutter_size * 2) - control_height, 0);
 	dwp = DeferWindowPos(dwp, _m_left_browse, nullptr,
@@ -480,6 +437,8 @@ void main_window::_list_sort(int col) {
 			_set_left_sort_arrow(i, NO_ARROW);
 		}
 	}
+
+	utils::coutln("sorting");
 
 	int (CALLBACK * comp)(LPARAM, LPARAM, LPARAM) =
 		[](LPARAM lparam1, LPARAM lparam2, LPARAM info) -> int {
@@ -559,7 +518,7 @@ void main_window::_list_sort(int col) {
 		}
 	};
 	
-	ListView_SortItems(_m_left_list, comp, MAKELPARAM(col, _m_sort_order[col]));
+	ListView_SortItems(_m_left_list->handle(), comp, MAKELPARAM(col, _m_sort_order[col]));
 }
 
 void main_window::_open_folder() {
@@ -651,13 +610,8 @@ void main_window::_update_view() {
 void main_window::_get_provider() {
 	item_provider* p = nullptr;
 	if (GetFileAttributesW(_m_path.data()) & FILE_ATTRIBUTE_DIRECTORY) {
-		size_t required;
-		wcstombs_s(&required, nullptr, 0, _m_path.data(), 0);
-
-		std::string path(required - 1, '\0');
-		wcstombs_s(&required, path.data(), required, _m_path.data(), _TRUNCATE);
 		std::stringstream ss;
-		ss << path;
+		ss << utils::utf8(_m_path);
 
 		p = item_provider_factory::create(ss, this);
 	}
@@ -697,19 +651,19 @@ void main_window::_fill_view() {
 		int64_t size = data->size;
 		tmp = utils::wbytes(size);
 		
-		ListView_InsertItem(_m_left_list, &item);
-		ListView_SetItemText(_m_left_list, item.iItem, 1, data->type.data());
-		ListView_SetItemText(_m_left_list, item.iItem, 2, (size == 0) ? empty.data() : tmp.data());
+		ListView_InsertItem(_m_left_list->handle(), &item);
+		ListView_SetItemText(_m_left_list->handle(), item.iItem, 1, data->type.data());
+		ListView_SetItemText(_m_left_list->handle(), item.iItem, 2, (size == 0) ? empty.data() : tmp.data());
 
 		double compression = data->compression;
 		tmp = std::to_wstring(int64_t(compression / 100.)) + L'%';
 
-		ListView_SetItemText(_m_left_list, item.iItem, 3, (compression == 0) ? empty.data() : tmp.data());
+		ListView_SetItemText(_m_left_list->handle(), item.iItem, 3, (compression == 0) ? empty.data() : tmp.data());
 	}
 }
 
 void main_window::_set_left_sort_arrow(int col, sort_arrow type) const {
-	HWND header = ListView_GetHeader(_m_left_list);
+	HWND header = ListView_GetHeader(_m_left_list->handle());
 
 	if (header) {
 		HDITEMW hdr;
@@ -750,18 +704,6 @@ INT_PTR main_window::_about(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 		default:
 			return DefWindowProcW(hwnd, msg, wparam, lparam);
 	}
-}
-
-LRESULT main_window::_wnd_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
-	// Retrieve the instance pointer
-	main_window* _this = reinterpret_cast<main_window*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
-
-	if (_this) {
-		// Forward processing to the instance
-		return _this->_wnd_proc(hwnd, msg, wparam, lparam);
-	}
-
-	return DefWindowProcW(hwnd, msg, wparam, lparam);
 }
 
 LRESULT main_window::_left_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {

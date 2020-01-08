@@ -72,4 +72,27 @@ namespace utils {
 	std::wstring wperc(double p) {
         return std::to_wstring(int64_t(round(p * 100.))) + L'%';
 	}
+
+	std::string utf8(const std::wstring& str) {
+        size_t required;
+        wcstombs_s(&required, nullptr, 0, str.c_str(), _TRUNCATE);
+
+        std::string res(required - 1, '\0');
+        wcstombs_s(&required, res.data(), required, str.c_str(), _TRUNCATE);
+
+        return res;
+	}
+
+	std::wstring utf16(const std::string& str) {
+        size_t required;
+        mbstowcs_s(&required, nullptr, 0, str.c_str(), _TRUNCATE);
+
+        std::wstring res(required - 1, L'\0');
+        mbstowcs_s(&required, res.data(), required, str.c_str(), _TRUNCATE);
+
+        return res;
+	}
+
+
+
 }

@@ -188,20 +188,26 @@
     <Image Include="small.ico" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="child_window.h" />
     <ClInclude Include="frameworks.h" />
     <ClInclude Include="item_provider.h" />
     <ClInclude Include="item_provider_factory.h" />
+    <ClInclude Include="list_view.h" />
     <ClInclude Include="main_window.h" />
     <ClInclude Include="providers\filesystem_provider.h" />
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="ui_element.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="child_window.cpp" />
     <ClCompile Include="item_provider.cpp" />
     <ClCompile Include="item_provider_factory.cpp" />
+    <ClCompile Include="list_view.cpp" />
     <ClCompile Include="main_window.cpp" />
     <ClCompile Include="nao.cpp" />
     <ClCompile Include="providers\filesystem_provider.cpp" />
+    <ClCompile Include="ui_element.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>

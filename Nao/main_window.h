@@ -2,13 +2,15 @@
 
 #include "frameworks.h"
 
+#include "list_view.h"
+
 #include <string>
 #include <map>
 #include <stack>
 
 class item_provider;
 
-class main_window {
+class main_window : public ui_element {
 	public:
 	main_window(HINSTANCE inst, int show_cmd);
 	~main_window();
@@ -31,7 +33,6 @@ class main_window {
 	bool _register_class() const;
 	bool _init_instance(int show_cmd);
 	bool _create_subwindows();
-	bool _left_list_setup(int window_width, int window_height);
 
 	// Forwarded class WndProc function
 	LRESULT _wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
@@ -63,7 +64,6 @@ class main_window {
 	void _set_left_sort_arrow(int col, sort_arrow type) const;
 
 	// Forwards the message processing to the member function
-	static LRESULT CALLBACK _wnd_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 	static LRESULT CALLBACK _left_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 	static LRESULT CALLBACK _right_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 	
@@ -84,8 +84,10 @@ class main_window {
 	HWND _m_left_refresh;
 	HWND _m_left_browse;
 	HWND _m_left_path;
-	HWND _m_left_list;
-	IImageList* _m_left_image_list;
+	//HWND _m_left_list;
+	//IImageList* _m_left_image_list;
+	//
+	list_view* _m_left_list;
 
 	// Strings
 	WCHAR _m_title[STRING_SIZE];
