@@ -27,6 +27,7 @@ class main_window : public ui_element {
     bool wm_create(CREATESTRUCTW* create) override;
     void wm_destroy() override;
     void wm_size(int type, int width, int height) override;
+    void wm_command(WPARAM wparam, LPARAM lparam) override;
     
     private:
 
@@ -36,22 +37,21 @@ class main_window : public ui_element {
     bool _init(int show_cmd);
     bool _register_class() const;
     bool _init_instance(int show_cmd, const std::wstring& title);
-    bool _create_subwindows();
 
     // Forwarded class WndProc function
     LRESULT _wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
     // Message processing
-    void _list_sort(int col);
+    //void _list_sort(int col);
     
 
     // Set left list sort arrow
-    enum sort_arrow {
-        NO_ARROW,
-        UP_ARROW,
-        DOWN_ARROW
-    };
-    void _set_left_sort_arrow(int col, sort_arrow type) const;
+    //enum sort_arrow {
+    //    NO_ARROW,
+    //    UP_ARROW,
+    //    DOWN_ARROW
+    //};
+    //void _set_left_sort_arrow(int col, sort_arrow type) const;
 
     // Forwards the message processing to the member function
     static LRESULT CALLBACK _right_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
@@ -66,17 +66,11 @@ class main_window : public ui_element {
     HINSTANCE _m_inst;
 
     // Windows
-    HWND _m_hwnd;
     left_window* _m_left;
     HWND _m_right;
 
     std::wstring _m_window_class;
     std::wstring _m_right_class;
-
-    // Strings
-    //WCHAR _m_title[STRING_SIZE];
-    //WCHAR _m_window_class[STRING_SIZE];
-    //WCHAR _m_right_window[STRING_SIZE];
 
     // Accelerators
     HACCEL _m_accel;

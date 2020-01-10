@@ -11,8 +11,9 @@
 #include <cassert>
 #include <thread>
 
-left_window::left_window(ui_element* parent)
-    : ui_element(parent) {
+left_window::left_window(ui_element* parent, data_model& model)
+    : ui_element(parent)
+    , _m_model { model } {
     assert(parent);
     
     _init();

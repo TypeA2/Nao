@@ -36,6 +36,7 @@ class ui_element {
     virtual void wm_destroy();
     virtual void wm_size(int type, int width, int height);
     virtual void wm_paint();
+    virtual void wm_command(WPARAM wparam, LPARAM lparam);
 
     /*
      * Overridable WndProc,

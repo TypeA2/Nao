@@ -67,11 +67,15 @@ void ui_element::set_handle(HWND handle) {
 
 
 bool ui_element::wm_create(CREATESTRUCTW* create) {
-    return DefWindowProcW(handle(), WM_CREATE, 0, LPARAM(create)) == 0;
+    if (_m_mem_wnd_proc) {
+        return (this->*_m_mem_wnd_proc)(handle(), WM_CREATE, 0, LPARAM(create));
+    }
+
+    return DefWindowProcW(handle(), WM_CREATE, 0, LPARAM(create));
 }
 
 void ui_element::wm_destroy() {
-    
+    DefWindowProcW(handle(), WM_DESTROY, 0, 0);
 }
 
 void ui_element::wm_size(int type, int width, int height) {
@@ -89,6 +93,15 @@ void ui_element::wm_paint() {
     (void) hdc;
     EndPaint(handle(), &ps);
 }
+
+void ui_element::wm_command(WPARAM wparam, LPARAM lparam) {
+    if (_m_mem_wnd_proc) {
+        (this->*_m_mem_wnd_proc)(handle(), WM_COMMAND, wparam, lparam);
+    } else {
+        DefWindowProcW(handle(), WM_COMMAND, wparam, lparam);
+    }
+}
+
 
 
 
@@ -119,6 +132,10 @@ LRESULT ui_element::wnd_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
 
             case WM_PAINT:
                 _this->wm_paint();
+                return 0;
+
+            case WM_COMMAND:
+                _this->wm_command(wparam, lparam);
                 return 0;
 
             default: break;

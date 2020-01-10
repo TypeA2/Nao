@@ -19,7 +19,7 @@ main_window::main_window(HINSTANCE inst, int show_cmd, data_model& model)
     , _m_success(false)
     , _m_inst(inst)
 
-    , _m_hwnd {}      , _m_left {}          , _m_right {}
+    , _m_left { }, _m_right { }
     
     , _m_accel { }
     , _m_model { model } {
@@ -57,8 +57,21 @@ int main_window::run() const {
 
 bool main_window::wm_create(CREATESTRUCTW* create) {
     (void) create;
-    if (!_create_subwindows()) {
-        utils::coutln("_create_subwindows failed");
+    RECT rect;
+    GetClientRect(handle(), &rect);
+
+    int window_width = (rect.right - gutter_size) / 2;
+
+    _m_left = new left_window(this, _m_model);
+
+    _m_right = CreateWindowExW(0, _m_right_class.c_str(), L"",
+        WS_CHILD | WS_VISIBLE | SS_SUNKEN,
+        window_width + gutter_size, 0,
+        window_width, rect.bottom,
+        handle(), nullptr, _m_inst, nullptr);
+
+    if (!_m_right) {
+        utils::coutln("creating right window failed", GetLastError());
         return false;
     }
 
@@ -78,19 +91,41 @@ void main_window::wm_size(int type, int width, int height) {
     int window_width = (width - gutter_size) / 2;
 
     HDWP dwp = BeginDeferWindowPos(2);
+
     _m_left->move_dwp(dwp, 0, 0, window_width, height);
+
     dwp = DeferWindowPos(dwp, _m_right, nullptr,
         window_width + gutter_size, 0, window_width, height, 0);
 
     EndDeferWindowPos(dwp);
 }
 
+void main_window::wm_command(WPARAM wparam, LPARAM lparam) {
+    switch (LOWORD(wparam)) {
+        case IDM_ABOUT:
+            DialogBoxW(_m_inst, MAKEINTRESOURCEW(IDD_ABOUTBOX), handle(), _about);
+            break;
+
+        case IDM_EXIT:
+            DestroyWindow(handle());
+            break;
+
+        case ID_FILE_OPEN:
+            //_open_folder();
+            break;
+
+        default:
+            utils::coutln("WM_COMMAND", LOWORD(wparam));
+            DefWindowProcW(handle(), WM_COMMAND, wparam, lparam);
+    }
+}
 
 
 bool main_window::_init(int show_cmd) {
     // CRT locale
     std::setlocale(LC_ALL, "en_US.utf8");
 
+    // Load strings
     std::wstring app_title;
     {
         union {
@@ -101,24 +136,18 @@ bool main_window::_init(int show_cmd) {
         for (const int& resource : { IDS_APP_TITLE, IDC_NAO, IDS_RIGHT_WINDOW }) {
             std::wstring* container;
             switch (resource) {
-                case IDS_APP_TITLE:       container = &app_title;         break;
-                case IDC_NAO:           container = &_m_window_class; break;
+                case IDS_APP_TITLE:    container = &app_title;       break;
+                case IDC_NAO:          container = &_m_window_class; break;
                 case IDS_RIGHT_WINDOW: container = &_m_right_class;  break;
                 default: continue;
             }
 
-            int length = LoadStringW(_m_inst, resource, pun.buf, 0);
-            *container = std::wstring(length + 1i64, '\0');
-            wcsncpy_s(container->data(), length + 1i64, pun.str, length);
+            int length = LoadStringW(_m_inst, resource, pun.buf, 0) + 1;
+            *container = std::wstring(length, '\0');
+            wcsncpy_s(container->data(), length, pun.str, length - 1i64);
         }
     }
     
-    // Load string resources
-    //LoadStringW(_m_inst, IDS_APP_TITLE, _m_title, STRING_SIZE);
-    //LoadStringW(_m_inst, IDC_NAO, _m_window_class, STRING_SIZE);
-    //LoadStringW(_m_inst, IDS_LEFT_WINDOW, _m_left_window, STRING_SIZE);
-    //LoadStringW(_m_inst, IDS_RIGHT_WINDOW, _m_right_window, STRING_SIZE);
-
     // Additional setup
     if (!_register_class() || !_init_instance(show_cmd, app_title)) {
         utils::coutln("_register_class or _init_instance failed");
@@ -154,16 +183,7 @@ bool main_window::_register_class() const {
         return false;
     }
 
-    // Left window class
-
-    //wcex.lpfnWndProc = _left_proc_fwd;
-    //wcex.lpszClassName = _m_left_window;
-
-    //if (RegisterClassExW(&wcex) == 0) {
-    //    return false;
-    //}
-
-    // Right window
+    // Right window class
     wcex.lpfnWndProc = _right_proc_fwd;
     wcex.lpszClassName = _m_right_class.c_str();
 
@@ -172,6 +192,8 @@ bool main_window::_register_class() const {
 
 bool main_window::_init_instance(int show_cmd, const std::wstring& title) {
     (void) show_cmd;
+
+    // Centering
     int nx_size = GetSystemMetrics(SM_CXSCREEN);
     int ny_size = GetSystemMetrics(SM_CYSCREEN);
 
@@ -179,13 +201,13 @@ bool main_window::_init_instance(int show_cmd, const std::wstring& title) {
     int ny_pos = (ny_size - 960) / 2;
 
     // Create the main window
-    _m_hwnd = CreateWindowExW(0, _m_window_class.c_str(), title.c_str(),
+    HANDLE hwnd = CreateWindowExW(0, _m_window_class.c_str(), title.c_str(),
         WS_OVERLAPPEDWINDOW | WS_VISIBLE,
         nx_pos, ny_pos, 1280, 800,
         nullptr, nullptr, _m_inst,
         new wnd_init(this, &main_window::_wnd_proc));
 
-    if (!_m_hwnd) {
+    if (!hwnd) {
         utils::coutln("main window creation failed");
         return false;
     }
@@ -193,56 +215,15 @@ bool main_window::_init_instance(int show_cmd, const std::wstring& title) {
     return true;
 }
 
-bool main_window::_create_subwindows() {
-    RECT rect;
-    GetClientRect(_m_hwnd, &rect);
-    
-    int window_width = (rect.right - gutter_size) / 2;
-
-    _m_left = new left_window(this);
-
-    _m_right = CreateWindowExW(0, _m_right_class.c_str(), L"",
-        WS_CHILD | WS_VISIBLE | SS_SUNKEN,
-        window_width + gutter_size, 0,
-        window_width, rect.bottom,
-        handle(), nullptr, _m_inst, nullptr);
-
-    if (!_m_right) {
-        utils::coutln("creating right window failed", GetLastError());
-        return false;
-    }
-
-    return true;
-}
 
 LRESULT main_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
-    // Message processing
-    switch (msg) {
-        case WM_COMMAND: {
-            switch (LOWORD(wparam)) {
-                case IDM_ABOUT:
-                    DialogBoxW(_m_inst, MAKEINTRESOURCEW(IDD_ABOUTBOX), hwnd, _about);
-                    break;
-                case IDM_EXIT:
-                    DestroyWindow(hwnd);
-                    break;
-                case ID_FILE_OPEN:
-                    //_open_folder();
-                    break;
-                default:
-                    utils::coutln("WM_COMMAND", LOWORD(wparam));
-                    return DefWindowProcW(hwnd, msg, wparam, lparam);
-            }
-            break;
-        }
-        default:
-            return DefWindowProcW(hwnd, msg, wparam, lparam);
-    }
+    (void) this;
 
-    return EXIT_SUCCESS;
+    // Message processing
+    return DefWindowProcW(hwnd, msg, wparam, lparam);
 }
 
-void main_window::_list_sort(int col) {
+//void main_window::_list_sort(int col) {
     /*for (int i = 0; i < int(std::size(_m_sort_order)); ++i) {
         if (i == col) {
             _set_left_sort_arrow(i,
@@ -333,7 +314,7 @@ void main_window::_list_sort(int col) {
     };
 
     ListView_SortItems(_m_left_list->handle(), comp, MAKELPARAM(col, _m_sort_order[col]));*/
-}
+//}
 
 
 /*
@@ -392,7 +373,7 @@ void main_window::_fill_view() {
     }
 }*/
 
-void main_window::_set_left_sort_arrow(int col, sort_arrow type) const {
+//void main_window::_set_left_sort_arrow(int col, sort_arrow type) const {
     /*HWND header = ListView_GetHeader(_m_left_list->handle());
 
     if (header) {
@@ -415,7 +396,7 @@ void main_window::_set_left_sort_arrow(int col, sort_arrow type) const {
 
         Header_SetItem(header, col, &hdr);
     }*/
-}
+//}
 
 INT_PTR main_window::_about(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
     (void) lparam;

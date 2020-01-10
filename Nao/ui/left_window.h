@@ -3,9 +3,11 @@
 #include "ui_element.h"
 #include "list_view.h"
 
+class data_model;
+
 class left_window : public ui_element {
     public:
-    explicit left_window(ui_element* parent);
+    explicit left_window(ui_element* parent, data_model& model);
     ~left_window();
 
     protected:
@@ -33,6 +35,8 @@ class left_window : public ui_element {
     HWND _m_refresh;
     HWND _m_browse;
     HWND _m_path;
+
+    data_model& _m_model;
 
     std::wstring _m_current_path;
 
