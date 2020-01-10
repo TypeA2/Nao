@@ -114,7 +114,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)ui;$(ProjectDir)providers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>6388;6387;26712;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -161,7 +161,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)ui;$(ProjectDir)providers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <DisableSpecificWarnings>6388;6387;26712;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -188,26 +188,29 @@
     <Image Include="small.ico" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="child_window.h" />
+    <ClInclude Include="data_model.h" />
     <ClInclude Include="frameworks.h" />
     <ClInclude Include="item_provider.h" />
     <ClInclude Include="item_provider_factory.h" />
-    <ClInclude Include="list_view.h" />
-    <ClInclude Include="main_window.h" />
     <ClInclude Include="providers\filesystem_provider.h" />
     <ClInclude Include="Resource.h" />
-    <ClInclude Include="ui_element.h" />
+    <ClInclude Include="ui\dimensions.h" />
+    <ClInclude Include="ui\left_window.h" />
+    <ClInclude Include="ui\list_view.h" />
+    <ClInclude Include="ui\main_window.h" />
+    <ClInclude Include="ui\ui_element.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="child_window.cpp" />
+    <ClCompile Include="data_model.cpp" />
     <ClCompile Include="item_provider.cpp" />
     <ClCompile Include="item_provider_factory.cpp" />
-    <ClCompile Include="list_view.cpp" />
-    <ClCompile Include="main_window.cpp" />
     <ClCompile Include="nao.cpp" />
     <ClCompile Include="providers\filesystem_provider.cpp" />
-    <ClCompile Include="ui_element.cpp" />
+    <ClCompile Include="ui\left_window.cpp" />
+    <ClCompile Include="ui\list_view.cpp" />
+    <ClCompile Include="ui\main_window.cpp" />
+    <ClCompile Include="ui\ui_element.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>

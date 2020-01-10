@@ -53,21 +53,22 @@ void list_view::set_image_list(IImageList* list) {
 	assert(handle());
 
 	_m_image_list = list;
-
+	
 	ListView_SetImageList(handle(), list, LVSIL_SMALL);
 }
 
 void list_view::_init() {
+	HINSTANCE inst = GetModuleHandleW(nullptr);
+	
 	HWND handle = CreateWindowExW(0,
 		WC_LISTVIEWW, L"",
 		WS_CHILD | WS_VISIBLE |
 		LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS,
 		0, 0, 360, 360,
-		parent()->handle(), nullptr, GetModuleHandleW(nullptr), nullptr);
+		parent()->handle(), nullptr, inst,
+		nullptr);
 
 	assert(("listview created", handle));
-
-	SetWindowLongPtrW(handle, GWLP_USERDATA, LONG_PTR(this));
 
 	SetWindowTheme(handle, L"Explorer", nullptr);
 	ListView_SetExtendedListViewStyle(handle, LVS_EX_FULLROWSELECT);
@@ -75,4 +76,3 @@ void list_view::_init() {
 	set_handle(handle);
 
 }
-

@@ -2,6 +2,9 @@
 
 #include <CommCtrl.h>
 
+#include "utils.h"
+#include "data_model.h"
+
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
 	_In_ LPWSTR lpCmdLine,
@@ -20,7 +23,11 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 	InitCommonControlsEx(&picce);
 
+	utils::coutln("down to", sizeof(main_window), "model", sizeof(data_model));
+
+	data_model model(L"D:\\Steam\\steamapps\\common\\NieRAutomata");
+	
 	// Forward to MainWindow class
-	return main_window(hInstance, nShowCmd).run();
+	return main_window(hInstance, nShowCmd, model).run();
 
 }

@@ -2,12 +2,12 @@
 
 #include "frameworks.h"
 
-#include <cstdint>
 #include <type_traits>
 
 class ui_element {
     public:
     explicit ui_element(ui_element* parent);
+	
     ui_element() = delete;
 
     virtual ~ui_element();
@@ -15,8 +15,8 @@ class ui_element {
     // Call DestroyWindow on the window handle
     bool destroy();
 
-    virtual ui_element* parent() const;
-    virtual HWND handle() const;
+    ui_element* parent() const;
+    HWND handle() const;
 
     virtual long width() const;
     virtual long height() const;
@@ -29,6 +29,13 @@ class ui_element {
 
     protected:
     void set_handle(HWND handle);
+
+
+	// Overridable message handlers
+    virtual bool wm_create(CREATESTRUCTW* create);
+    virtual void wm_destroy();
+    virtual void wm_size(int type, int width, int height);
+    virtual void wm_paint();
 
     /*
      * Overridable WndProc,
@@ -45,16 +52,21 @@ class ui_element {
         use_wnd_proc(member_wnd_proc<>(new_proc));
     }
 
-    //template <typename T = ui_element>
-    //void use_wnd_proc(T* ctx, member_wnd_proc<T> new_proc) {
-    //    static_assert(std::is_base_of_v<ui_element, T>, "T must derive from ui_element");
-    //    use_wnd_proc(ctx, member_wnd_proc<>(new_proc));
-    //}
+	// Struct passed as lparam to CreateWindow to automate setup
+    struct wnd_init {
+        ui_element* element;
+        member_wnd_proc<> proc;
+
+        template <typename T = ui_element>
+    	wnd_init(ui_element* element, member_wnd_proc<T> proc)
+    		: wnd_init(element, member_wnd_proc<>(proc)) {
+            static_assert(std::is_base_of_v<ui_element, T>);
+        }
+
+        wnd_init(ui_element* element, member_wnd_proc<> proc);
+    };
 
     void use_wnd_proc(member_wnd_proc<> new_proc);
-    //void use_wnd_proc(ui_element* ctx, member_wnd_proc<> new_proc);
-    
-    WNDPROC default_wnd_proc() const;
 
     static LRESULT CALLBACK wnd_proc_fwd(HWND hwnd, UINT msg,
         WPARAM wparam, LPARAM lparam);
@@ -64,7 +76,7 @@ class ui_element {
     HWND _m_handle;
 
     member_wnd_proc<> _m_mem_wnd_proc;
-    WNDPROC _m_default_wnd_proc;
-    //ui_element* _m_wnd_proc_ctx;
+
+    bool _m_created;
 };
 

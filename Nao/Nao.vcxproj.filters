@@ -19,10 +19,10 @@
     <Filter Include="Source Files\providers">
       <UniqueIdentifier>{4376c9b5-a2e0-4813-81c6-719d0637ad89}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\ui_elements">
+    <Filter Include="Header Files\ui">
       <UniqueIdentifier>{6db671ff-731c-47aa-b4ab-45f6e107a01d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\ui_elements">
+    <Filter Include="Source Files\ui">
       <UniqueIdentifier>{89003a4a-5248-4616-9afa-fb65b4280843}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -58,17 +58,23 @@
     <ClInclude Include="providers\filesystem_provider.h">
       <Filter>Header Files\providers</Filter>
     </ClInclude>
-    <ClInclude Include="ui_element.h">
-      <Filter>Header Files\ui_elements</Filter>
+    <ClInclude Include="ui\list_view.h">
+      <Filter>Header Files\ui</Filter>
     </ClInclude>
-    <ClInclude Include="list_view.h">
-      <Filter>Header Files\ui_elements</Filter>
+    <ClInclude Include="ui\main_window.h">
+      <Filter>Header Files\ui</Filter>
     </ClInclude>
-    <ClInclude Include="main_window.h">
-      <Filter>Header Files\ui_elements</Filter>
+    <ClInclude Include="ui\ui_element.h">
+      <Filter>Header Files\ui</Filter>
     </ClInclude>
-    <ClInclude Include="child_window.h">
-      <Filter>Header Files\ui_elements</Filter>
+    <ClInclude Include="ui\left_window.h">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\dimensions.h">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="data_model.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -87,17 +93,20 @@
     <ClCompile Include="providers\filesystem_provider.cpp">
       <Filter>Source Files\providers</Filter>
     </ClCompile>
-    <ClCompile Include="list_view.cpp">
-      <Filter>Source Files\ui_elements</Filter>
+    <ClCompile Include="ui\list_view.cpp">
+      <Filter>Source Files\ui</Filter>
     </ClCompile>
-    <ClCompile Include="ui_element.cpp">
-      <Filter>Source Files\ui_elements</Filter>
+    <ClCompile Include="ui\main_window.cpp">
+      <Filter>Source Files\ui</Filter>
     </ClCompile>
-    <ClCompile Include="child_window.cpp">
-      <Filter>Source Files\ui_elements</Filter>
+    <ClCompile Include="ui\ui_element.cpp">
+      <Filter>Source Files\ui</Filter>
     </ClCompile>
-    <ClCompile Include="main_window.cpp">
-      <Filter>Source Files\ui_elements</Filter>
+    <ClCompile Include="ui\left_window.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="data_model.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

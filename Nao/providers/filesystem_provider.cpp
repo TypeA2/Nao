@@ -44,7 +44,7 @@ void filesystem_provider::_populate() {
 	HANDLE f = FindFirstFileW((_m_path + L"\\*").data(), &data);
 
 	if (f == INVALID_HANDLE_VALUE) {
-		MessageBoxW(_m_window->hwnd(), L"Failed to get directory contents", L"Error",
+		MessageBoxW(_m_window->handle(), L"Failed to get directory contents", L"Error",
 			MB_OK | MB_ICONWARNING);
 		return;
 	}
@@ -72,7 +72,7 @@ void filesystem_provider::_populate() {
 		if (hr == 0) {
 			std::wstringstream ss;
 			ss << L"Failed to get icon, error code " << GetLastError();
-			MessageBoxW(_m_window->hwnd(), ss.str().c_str(), L"Error",
+			MessageBoxW(_m_window->handle(), ss.str().c_str(), L"Error",
 				MB_OK | MB_ICONEXCLAMATION);
 			continue;
 		}
@@ -92,7 +92,7 @@ void filesystem_provider::_populate() {
 	} while (FindNextFileW(f, &data) != 0);
 
 	if (GetLastError() != ERROR_NO_MORE_FILES) {
-		MessageBoxW(_m_window->hwnd(), L"Unexpected error", L"Error",
+		MessageBoxW(_m_window->handle(), L"Unexpected error", L"Error",
 			MB_OK | MB_ICONWARNING);
 		utils::coutln("Error:", GetLastError());
 	}
