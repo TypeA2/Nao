@@ -36,14 +36,16 @@ HWND ui_element::handle() const {
 
 long ui_element::width() const {
     RECT rect;
-    assert(GetWindowRect(handle(), &rect));
+    bool res = GetWindowRect(handle(), &rect);
+    assert(res);
 
     return rect.right - rect.left;
 }
 
 long ui_element::height() const {
     RECT rect;
-    assert(GetWindowRect(handle(), &rect));
+    bool res = GetWindowRect(handle(), &rect);
+    assert(res);
 
     return rect.bottom - rect.top;
 }
