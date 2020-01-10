@@ -19,7 +19,7 @@ main_window::main_window(HINSTANCE inst, int show_cmd, data_model& model)
     , _m_success(false)
     , _m_inst(inst)
 
-    , _m_hwnd {}	  , _m_left {}		  , _m_right {}
+    , _m_hwnd {}      , _m_left {}          , _m_right {}
     
     , _m_accel { }
     , _m_model { model } {
@@ -97,12 +97,12 @@ bool main_window::_init(int show_cmd) {
             LPCWSTR str;
             WCHAR buf[sizeof(str) / sizeof(WCHAR)];
         } pun { };
-    	
+        
         for (const int& resource : { IDS_APP_TITLE, IDC_NAO, IDS_RIGHT_WINDOW }) {
             std::wstring* container;
             switch (resource) {
-                case IDS_APP_TITLE:	   container = &app_title;		 break;
-                case IDC_NAO:		   container = &_m_window_class; break;
+                case IDS_APP_TITLE:       container = &app_title;         break;
+                case IDC_NAO:           container = &_m_window_class; break;
                 case IDS_RIGHT_WINDOW: container = &_m_right_class;  break;
                 default: continue;
             }
@@ -160,7 +160,7 @@ bool main_window::_register_class() const {
     //wcex.lpszClassName = _m_left_window;
 
     //if (RegisterClassExW(&wcex) == 0) {
-    //	return false;
+    //    return false;
     //}
 
     // Right window

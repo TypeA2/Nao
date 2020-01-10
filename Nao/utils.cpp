@@ -3,25 +3,25 @@
 #include <iomanip>
 
 namespace utils {
-	void cout(LPCSTR str) {
-		OutputDebugStringA(str);
-	}
+    void cout(LPCSTR str) {
+        OutputDebugStringA(str);
+    }
 
-	void cout(LPCWSTR wstr) {
-		OutputDebugStringW(wstr);
-	}
+    void cout(LPCWSTR wstr) {
+        OutputDebugStringW(wstr);
+    }
 
-	void coutln(LPCSTR str) {
-		cout(str);
-		OutputDebugStringW(L"\n");
-	}
+    void coutln(LPCSTR str) {
+        cout(str);
+        OutputDebugStringW(L"\n");
+    }
 
-	void coutln(LPCWSTR wstr) {
-		cout(wstr);
-		OutputDebugStringW(L"\n");
-	}
+    void coutln(LPCWSTR wstr) {
+        cout(wstr);
+        OutputDebugStringW(L"\n");
+    }
 
-	std::string bytes(int64_t n) {
+    std::string bytes(int64_t n) {
         std::stringstream ss;
         ss << std::setprecision(3) << std::fixed;
         if (n > 0x1000000000000000) {
@@ -38,13 +38,13 @@ namespace utils {
             ss << (n / 1024.L) << " KiB";;
         } else {
             ss << n << " bytes";
-	    }
+        }
 
-		return ss.str();
-	}
+        return ss.str();
+    }
 
-	std::wstring wbytes(int64_t n) {
-		std::wstringstream ss;
+    std::wstring wbytes(int64_t n) {
+        std::wstringstream ss;
         ss << std::setprecision(3) << std::fixed;
         if (n > 0x1000000000000000) {
             ss << ((n >> 50) / 1024.L) << L" EiB";;
@@ -63,17 +63,17 @@ namespace utils {
         }
 
         return ss.str();
-	}
+    }
 
-	std::string perc(double p) {
+    std::string perc(double p) {
         return std::to_string(int64_t(round(p * 100.))) + '%';
-	}
+    }
 
-	std::wstring wperc(double p) {
+    std::wstring wperc(double p) {
         return std::to_wstring(int64_t(round(p * 100.))) + L'%';
-	}
+    }
 
-	std::string utf8(const std::wstring& str) {
+    std::string utf8(const std::wstring& str) {
         size_t required;
         wcstombs_s(&required, nullptr, 0, str.c_str(), _TRUNCATE);
 
@@ -81,9 +81,9 @@ namespace utils {
         wcstombs_s(&required, res.data(), required, str.c_str(), _TRUNCATE);
 
         return res;
-	}
+    }
 
-	std::wstring utf16(const std::string& str) {
+    std::wstring utf16(const std::string& str) {
         size_t required;
         mbstowcs_s(&required, nullptr, 0, str.c_str(), _TRUNCATE);
 
@@ -91,7 +91,7 @@ namespace utils {
         mbstowcs_s(&required, res.data(), required, str.c_str(), _TRUNCATE);
 
         return res;
-	}
+    }
 
 
 

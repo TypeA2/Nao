@@ -7,7 +7,7 @@
 class ui_element {
     public:
     explicit ui_element(ui_element* parent);
-	
+    
     ui_element() = delete;
 
     virtual ~ui_element();
@@ -31,7 +31,7 @@ class ui_element {
     void set_handle(HWND handle);
 
 
-	// Overridable message handlers
+    // Overridable message handlers
     virtual bool wm_create(CREATESTRUCTW* create);
     virtual void wm_destroy();
     virtual void wm_size(int type, int width, int height);
@@ -52,14 +52,14 @@ class ui_element {
         use_wnd_proc(member_wnd_proc<>(new_proc));
     }
 
-	// Struct passed as lparam to CreateWindow to automate setup
+    // Struct passed as lparam to CreateWindow to automate setup
     struct wnd_init {
         ui_element* element;
         member_wnd_proc<> proc;
 
         template <typename T = ui_element>
-    	wnd_init(ui_element* element, member_wnd_proc<T> proc)
-    		: wnd_init(element, member_wnd_proc<>(proc)) {
+        wnd_init(ui_element* element, member_wnd_proc<T> proc)
+            : wnd_init(element, member_wnd_proc<>(proc)) {
             static_assert(std::is_base_of_v<ui_element, T>);
         }
 
