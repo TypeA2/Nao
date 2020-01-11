@@ -5,8 +5,6 @@
 #include "ui_element.h"
 
 #include <string>
-#include <map>
-#include <stack>
 
 class item_provider;
 class left_window;

@@ -4,11 +4,11 @@
 
 #include <vector>
 
-class main_window;
+class ui_element;
 
 class filesystem_provider : public item_provider {
     public:
-    explicit filesystem_provider(std::wstring path, main_window* window);
+    explicit filesystem_provider(std::wstring path, ui_element* window);
     ~filesystem_provider() override = default;
     
     size_t count() const override;
@@ -34,9 +34,9 @@ class filesystem_provider : public item_provider {
     std::vector<fs_entry> _m_contents;
     
     std::wstring _m_path;
-    main_window* _m_window;
+    ui_element* _m_window;
     
     // Factory registration
-    static item_provider* _create(std::istream& file, main_window* window);
+    static item_provider* _create(std::istream& file, ui_element* window);
     static size_t _id;
 };

@@ -2,12 +2,9 @@
 
 #include "utils.h"
 
-#include <cassert>
-
 list_view::list_view(ui_element* parent) : ui_element(parent) {
     // This element can only be a child
-    assert(parent);
-    assert(parent->handle());
+    ASSERT(parent && parent->handle());
     _init();
 }
 
@@ -22,8 +19,8 @@ list_view::~list_view() {
 }
 
 void list_view::set_columns(const std::vector<std::string>& hdr) {
-    assert(handle());
-    assert(("too many columns", hdr.size() <= std::numeric_limits<int>::max()));
+    ASSERT(handle());
+    ASSERT(hdr.size() <= std::numeric_limits<int>::max());
 
     _m_cols = int(hdr.size());
 
@@ -49,8 +46,7 @@ void list_view::set_columns(const std::vector<std::string>& hdr) {
 }
 
 void list_view::set_image_list(IImageList* list) {
-    assert(list);
-    assert(handle());
+    ASSERT(list && handle());
 
     _m_image_list = list;
     
@@ -68,7 +64,7 @@ void list_view::_init() {
         parent()->handle(), nullptr, inst,
         nullptr);
 
-    assert(("listview created", handle));
+    ASSERT(handle);
 
     SetWindowTheme(handle, L"Explorer", nullptr);
     ListView_SetExtendedListViewStyle(handle, LVS_EX_FULLROWSELECT);

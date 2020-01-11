@@ -193,11 +193,14 @@
     <ClInclude Include="item_provider.h" />
     <ClInclude Include="item_provider_factory.h" />
     <ClInclude Include="providers\filesystem_provider.h" />
+    <ClInclude Include="push_button.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="ui\dimensions.h" />
     <ClInclude Include="ui\left_window.h" />
+    <ClInclude Include="ui\line_edit.h" />
     <ClInclude Include="ui\list_view.h" />
     <ClInclude Include="ui\main_window.h" />
+    <ClInclude Include="ui\push_button.h" />
     <ClInclude Include="ui\ui_element.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>
@@ -208,8 +211,10 @@
     <ClCompile Include="nao.cpp" />
     <ClCompile Include="providers\filesystem_provider.cpp" />
     <ClCompile Include="ui\left_window.cpp" />
+    <ClCompile Include="ui\line_edit.cpp" />
     <ClCompile Include="ui\list_view.cpp" />
     <ClCompile Include="ui\main_window.cpp" />
+    <ClCompile Include="ui\push_button.cpp" />
     <ClCompile Include="ui\ui_element.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>

@@ -6,21 +6,25 @@
 #include "dimensions.h"
 
 #include "main_window.h"
+#include "list_view.h"
+#include "line_edit.h"
+#include "data_model.h"
+#include "push_button.h"
 
 #include <string>
-#include <cassert>
 #include <thread>
 
 left_window::left_window(ui_element* parent, data_model& model)
     : ui_element(parent)
     , _m_model { model } {
-    assert(parent);
+    ASSERT(parent);
     
     _init();
 }
 
 left_window::~left_window() {
     delete _m_list;
+    delete _m_path;
 }
 
 
@@ -35,6 +39,7 @@ bool left_window::wm_create(CREATESTRUCTW* create) {
     }
 
     _m_list = new list_view(this, { "Name", "Type", "Size", "Compressed" }, imglist);
+    _m_model.set_listview(_m_list);
 
     HINSTANCE inst = GetModuleHandleW(nullptr);
     
@@ -62,15 +67,8 @@ bool left_window::wm_create(CREATESTRUCTW* create) {
         return false;
     }
 
-    RECT rect;
-    GetClientRect(parent()->handle(), &rect);
-
-    HFONT font = HFONT(GetStockObject(DEFAULT_GUI_FONT));
-
-    int window_width = (rect.right - dims::gutter_size) / 2;
-    
     // Browse button
-    _m_browse = CreateWindowExW(0, WC_BUTTONW, L"Browse...",
+    /*_m_browse = CreateWindowExW(0, WC_BUTTONW, L"Browse...",
         WS_CHILD | WS_VISIBLE | WS_TABSTOP,
         window_width - dims::browse_button_width - dims::gutter_size, dims::gutter_size, 
         dims::browse_button_width, dims::control_height + 2,
@@ -81,28 +79,15 @@ bool left_window::wm_create(CREATESTRUCTW* create) {
         return false;
     }
 
-    SendMessageW(_m_browse, WM_SETFONT, WPARAM(font), true);
+    SendMessageW(_m_browse, WM_SETFONT, WPARAM(font), true);*/
+    _m_browse = new push_button(this, L"Browse...");
 
-    // Current path edit control
-    _m_path = CreateWindowExW(WS_EX_CLIENTEDGE, WC_EDITW, L"",
-        WS_CHILD | WS_VISIBLE |
-        ES_LEFT,
-        // gutter_size + 1 to accommodate the border
-        dims::path_x_offset, dims::gutter_size + 1,
-        window_width - dims::path_x_offset
-            - dims::browse_button_width - dims::gutter_size * 2, dims::control_height,
-        handle(), nullptr, inst, nullptr);
-
-    if (!_m_path) {
-        utils::coutln("creating left path edit failed");
-        return false;
-    }
-
-    SendMessageW(_m_path, WM_SETFONT, WPARAM(font), true);
+    _m_path = new line_edit(this);
+    _m_model.set_path_edit(_m_path);
 
     // Button icons
     HMODULE shell32 = LoadLibraryW(L"shell32.dll");
-    assert(shell32);
+    ASSERT(shell32);
     
     HICON up_icon;
     LoadIconWithScaleDown(shell32, MAKEINTRESOURCEW(16817), 16, 16, &up_icon);
@@ -115,7 +100,8 @@ bool left_window::wm_create(CREATESTRUCTW* create) {
     
     SendMessageW(_m_up, BM_SETIMAGE, IMAGE_ICON, LPARAM(up_icon));
     SendMessageW(_m_refresh, BM_SETIMAGE, IMAGE_ICON, LPARAM(refresh_icon));
-    SendMessageW(_m_browse, BM_SETIMAGE, IMAGE_ICON, LPARAM(folder_icon));
+    //SendMessageW(_m_browse, BM_SETIMAGE, IMAGE_ICON, LPARAM(folder_icon));
+    _m_browse->set_icon(folder_icon);
 
     
     DeleteObject(up_icon);
@@ -129,18 +115,19 @@ bool left_window::wm_create(CREATESTRUCTW* create) {
 
 void left_window::wm_size(int type, int width, int height) {
     HDWP dwp = BeginDeferWindowPos(3);
-    dwp = DeferWindowPos(dwp, _m_path, nullptr,
-        dims::path_x_offset, dims::gutter_size + 1,
+
+    _m_path->move_dwp(dwp, dims::path_x_offset, dims::gutter_size + 1,
         width - dims::path_x_offset
-        - dims::browse_button_width- dims::gutter_size * 2, dims::control_height, 0);
-    
+        - dims::browse_button_width - dims::gutter_size * 2, dims::control_height);
+
     _m_list->move_dwp(dwp,
         0, dims::control_height + (dims::gutter_size * 2),
         width, height - (dims::gutter_size * 2) - dims::control_height);
     
-    dwp = DeferWindowPos(dwp, _m_browse, nullptr,
+    _m_browse->move_dwp(dwp,
         width - dims::browse_button_width - dims::gutter_size, dims::gutter_size, 
-        dims::browse_button_width, dims::control_height + 2, 0);
+        dims::browse_button_width, dims::control_height + 2);
+
     EndDeferWindowPos(dwp);
 }
 
@@ -171,7 +158,7 @@ void left_window::_init() {
         nullptr, class_name.c_str(), nullptr
     };
 
-    assert(RegisterClassExW(&wcx) != 0);
+    ASSERT(RegisterClassExW(&wcx) != 0);
 
     RECT rect;
     GetClientRect(parent()->handle(), &rect);
@@ -183,8 +170,7 @@ void left_window::_init() {
         parent()->handle(), nullptr, inst,
         new wnd_init(this, &left_window::_wnd_proc));
 
-    assert(handle);
-    
+    ASSERT(handle);
 }
 
 void left_window::_open_folder() {
@@ -305,7 +291,7 @@ LRESULT left_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
         }
 
         case WM_COMMAND:
-            if (HWND(lparam) == _m_browse) {
+            if (HWND(lparam) == _m_browse->handle()) {
                 _open_folder();
             }
             break;

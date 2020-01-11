@@ -4,6 +4,8 @@
 
 #include <sstream>
 
+#define ASSERT(cond) do { if (!(cond)) { throw std::runtime_error("assertion failed: " #cond); }} while (0)
+
 namespace utils {
     void cout(LPCSTR str);
     void cout(LPCWSTR wstr);

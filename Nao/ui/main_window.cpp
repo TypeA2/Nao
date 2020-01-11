@@ -7,12 +7,12 @@
 #include "item_provider_factory.h"
 
 #include "left_window.h"
+#include "data_model.h"
 
 #include <process.h>
 
 #include <clocale>
 #include <algorithm>
-#include <cassert>
 
 main_window::main_window(HINSTANCE inst, int show_cmd, data_model& model)
     : ui_element(nullptr)
@@ -23,12 +23,17 @@ main_window::main_window(HINSTANCE inst, int show_cmd, data_model& model)
     
     , _m_accel { }
     , _m_model { model } {
-    
+
     _m_inst = inst;
-    assert(inst);
+    ASSERT(inst);
 
     // Whether the setup was a success
     _m_success = _init(show_cmd);
+
+    // We're done
+    _m_model.set_window(this);
+
+    _m_model.startup();
 }
 
 main_window::~main_window() {
@@ -156,7 +161,7 @@ bool main_window::_init(int show_cmd) {
 
     // Load accelerators
     _m_accel = LoadAcceleratorsW(_m_inst, MAKEINTRESOURCEW(IDC_NAO));
-    assert(_m_accel);
+    ASSERT(_m_accel);
     
     return true;
 }
@@ -318,22 +323,6 @@ LRESULT main_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
 
 
 /*
-void main_window::_get_provider() {
-    item_provider* p = nullptr;
-    if (GetFileAttributesW(_m_path.data()) & FILE_ATTRIBUTE_DIRECTORY) {
-        std::stringstream ss;
-        ss << utils::utf8(_m_path);
-
-        p = item_provider_factory::create(ss, this);
-    }
-
-    if (!p) {
-        MessageBoxW(_m_hwnd, (L"Could not open " + _m_path).c_str(), L"Error", MB_OK | MB_ICONEXCLAMATION);
-        return;
-    }
-
-    _m_providers.push(p);
-}
 
 void main_window::_fill_view() {
     item_provider* p = _m_providers.top();

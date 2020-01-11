@@ -1,9 +1,14 @@
 #pragma once
 
+#include <string>
+
 #include "ui_element.h"
-#include "list_view.h"
 
 class data_model;
+
+class list_view;
+class line_edit;
+class push_button;
 
 class left_window : public ui_element {
     public:
@@ -33,8 +38,8 @@ class left_window : public ui_element {
     list_view* _m_list;
     HWND _m_up;
     HWND _m_refresh;
-    HWND _m_browse;
-    HWND _m_path;
+    push_button* _m_browse;
+    line_edit* _m_path;
 
     data_model& _m_model;
 

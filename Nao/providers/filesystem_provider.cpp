@@ -1,10 +1,10 @@
 #include "filesystem_provider.h"
 
 #include "item_provider_factory.h"
-#include "main_window.h"
+#include "ui_element.h"
 #include "utils.h"
 
-filesystem_provider::filesystem_provider(std::wstring path, main_window* window)
+filesystem_provider::filesystem_provider(std::wstring path, ui_element* window)
     : _m_path(std::move(path))
     , _m_window(window) {
     _populate();
@@ -100,7 +100,7 @@ void filesystem_provider::_populate() {
     FindClose(f);
 }
 
-item_provider* filesystem_provider::_create(std::istream& file, main_window* window) {
+item_provider* filesystem_provider::_create(std::istream& file, ui_element* window) {
     if (!dynamic_cast<std::stringstream*>(&file)) {
         return nullptr;
     }
