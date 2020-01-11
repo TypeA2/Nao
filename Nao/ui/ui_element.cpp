@@ -10,10 +10,7 @@ ui_element::ui_element(ui_element* parent)
     , _m_handle { }
     , _m_mem_wnd_proc { }
     , _m_created { } {
-    //std::unique_lock lock(handle_mutex);
 
-    // Only return once the handle has been set
-    //handle_condition.wait(lock);
 }
 
 ui_element::~ui_element() {
@@ -50,15 +47,26 @@ long ui_element::height() const {
     return rect.bottom - rect.top;
 }
 
-bool ui_element::move(int x, int y, int width, int height) const {
-    return SetWindowPos(handle(), nullptr, x, y, width, height, 0);
+void ui_element::move(int x, int y, int width, int height) {
+    SetWindowPos(handle(), nullptr, x, y, width, height, 0);
 }
 
-HDWP& ui_element::move_dwp(HDWP& dwp, int x, int y, int width, int height) const {
+HDWP& ui_element::move_dwp(HDWP& dwp, int x, int y, int width, int height) {
     dwp = DeferWindowPos(dwp, handle(), nullptr, x, y, width, height, 0);
 
     return dwp;
 }
+
+void ui_element::set_style(DWORD style, bool enable) {
+    LONG_PTR old_style = GetWindowLongPtrW(handle(), GWL_STYLE);
+    
+    if (enable) {
+        SetWindowLongPtrW(handle(), GWL_STYLE, old_style | style);
+    } else {
+        SetWindowLongPtrW(handle(), GWL_STYLE, old_style & ~LONG_PTR(style));
+    }
+}
+
 
 void ui_element::set_handle(HWND handle) {
     assert(!_m_handle && handle);

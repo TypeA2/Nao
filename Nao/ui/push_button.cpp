@@ -9,6 +9,18 @@ push_button::push_button(ui_element* parent, const std::wstring& text) : push_bu
     set_text(text);
 }
 
+push_button::push_button(ui_element* parent, HICON icon) : push_button(parent) {
+    ui_element::set_style(BS_ICON, true);
+    set_icon(icon);
+}
+
+push_button::push_button(ui_element* parent, const std::wstring& text, HICON icon)
+    : push_button(parent) {
+    set_text(text);
+    set_icon(icon);
+}
+
+
 void push_button::set_text(const std::wstring& text) const {
     SendMessageW(handle(), WM_SETTEXT, 0, LPARAM(text.c_str()));
 }

@@ -24,6 +24,9 @@ left_window::left_window(ui_element* parent, data_model& model)
 
 left_window::~left_window() {
     delete _m_list;
+    delete _m_up;
+    delete _m_refresh;
+    delete _m_browse;
     delete _m_path;
 }
 
@@ -41,47 +44,6 @@ bool left_window::wm_create(CREATESTRUCTW* create) {
     _m_list = new list_view(this, { "Name", "Type", "Size", "Compressed" }, imglist);
     _m_model.set_listview(_m_list);
 
-    HINSTANCE inst = GetModuleHandleW(nullptr);
-    
-    // Folder up
-    _m_up = CreateWindowExW(0, WC_BUTTONW, L"",
-        WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_ICON | WS_DISABLED,
-        dims::gutter_size, dims::gutter_size, dims::control_button_width, dims::control_height + 2,
-        handle(), nullptr, inst, nullptr);
-
-    if (!_m_up) {
-        utils::coutln("creating left up button failed");
-        return false;
-    }
-
-    // Reload view
-    _m_refresh = CreateWindowExW(0, WC_BUTTONW, L"",
-        WS_CHILD | WS_VISIBLE | WS_TABSTOP | BS_ICON | WS_DISABLED,
-        // control_height + 2 because the border is within the window
-        dims::control_button_width + 2 * dims::gutter_size, dims::gutter_size, 
-        dims::control_button_width, dims::control_height + 2,
-        handle(), nullptr, inst, nullptr);
-
-    if (!_m_refresh) {
-        utils::coutln("creating left refresh button failed");
-        return false;
-    }
-
-    // Browse button
-    /*_m_browse = CreateWindowExW(0, WC_BUTTONW, L"Browse...",
-        WS_CHILD | WS_VISIBLE | WS_TABSTOP,
-        window_width - dims::browse_button_width - dims::gutter_size, dims::gutter_size, 
-        dims::browse_button_width, dims::control_height + 2,
-        handle(), nullptr, inst, nullptr);
-
-    if (!_m_browse) {
-        utils::coutln("creating left browse button failed");
-        return false;
-    }
-
-    SendMessageW(_m_browse, WM_SETFONT, WPARAM(font), true);*/
-    _m_browse = new push_button(this, L"Browse...");
-
     _m_path = new line_edit(this);
     _m_model.set_path_edit(_m_path);
 
@@ -91,21 +53,25 @@ bool left_window::wm_create(CREATESTRUCTW* create) {
     
     HICON up_icon;
     LoadIconWithScaleDown(shell32, MAKEINTRESOURCEW(16817), 16, 16, &up_icon);
+    _m_up = new push_button(this, up_icon);
+    _m_up->move(dims::gutter_size, dims::gutter_size,
+        dims::control_button_width, dims::control_height + 2);
+    _m_up->set_style(WS_DISABLED);
+    DeleteObject(up_icon);
+
 
     HICON refresh_icon;
     LoadIconWithScaleDown(shell32, MAKEINTRESOURCEW(16739), 16, 16, &refresh_icon);
+    _m_refresh = new push_button(this, refresh_icon);
+    _m_refresh->move(dims::control_button_width + 2 * dims::gutter_size, dims::gutter_size,
+        dims::control_button_width, dims::control_height + 2);
+    _m_refresh->set_style(WS_DISABLED);
+    DeleteObject(refresh_icon);
+
 
     HICON folder_icon;
     LoadIconWithScaleDown(shell32, MAKEINTRESOURCEW(4), 16, 16, &folder_icon);
-    
-    SendMessageW(_m_up, BM_SETIMAGE, IMAGE_ICON, LPARAM(up_icon));
-    SendMessageW(_m_refresh, BM_SETIMAGE, IMAGE_ICON, LPARAM(refresh_icon));
-    //SendMessageW(_m_browse, BM_SETIMAGE, IMAGE_ICON, LPARAM(folder_icon));
-    _m_browse->set_icon(folder_icon);
-
-    
-    DeleteObject(up_icon);
-    DeleteObject(refresh_icon);
+    _m_browse = new push_button(this, L"Browse...", folder_icon);
     DeleteObject(folder_icon);
 
     FreeLibrary(shell32);

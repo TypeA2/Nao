@@ -36,8 +36,8 @@ class left_window : public ui_element {
     LRESULT _wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
     list_view* _m_list;
-    HWND _m_up;
-    HWND _m_refresh;
+    push_button* _m_up;
+    push_button* _m_refresh;
     push_button* _m_browse;
     line_edit* _m_path;
 

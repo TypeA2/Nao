@@ -4,6 +4,7 @@
 
 #include "utils.h"
 #include "data_model.h"
+#include "left_window.h"
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     _In_opt_ HINSTANCE hPrevInstance,
@@ -23,7 +24,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     InitCommonControlsEx(&picce);
 
-    utils::coutln("down to", sizeof(main_window), "model", sizeof(data_model));
+    utils::coutln("down to", sizeof(main_window), "model", sizeof(data_model), "left", sizeof(left_window));
 
     data_model model(L"D:\\Steam\\steamapps\\common\\NieRAutomata");
     

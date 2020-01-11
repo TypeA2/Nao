@@ -22,10 +22,13 @@ class ui_element {
     virtual long height() const;
 
     // Move using SetWindowPos
-    virtual bool move(int x, int y, int width, int height) const;
+    virtual void move(int x, int y, int width, int height);
 
     // Move using DeferWindowPos, for multiple windows
-    virtual HDWP& move_dwp(HDWP& dwp, int x, int y, int width, int height) const;
+    virtual HDWP& move_dwp(HDWP& dwp, int x, int y, int width, int height);
+
+    // Set the window style
+    virtual void set_style(DWORD style, bool enable = true);
 
     protected:
     void set_handle(HWND handle);
