@@ -85,6 +85,12 @@
     <ClInclude Include="ui\push_button.h">
       <Filter>Header Files\ui</Filter>
     </ClInclude>
+    <ClInclude Include="steam_utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vdf_parser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="nao.cpp">
@@ -122,6 +128,9 @@
     </ClCompile>
     <ClCompile Include="ui\push_button.cpp">
       <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="steam_utils.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

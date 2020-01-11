@@ -74,23 +74,30 @@ namespace utils {
     }
 
     std::string utf8(const std::wstring& str) {
-        size_t required;
-        wcstombs_s(&required, nullptr, 0, str.c_str(), _TRUNCATE);
+        int size = WideCharToMultiByte(CP_UTF8,
+            WC_COMPOSITECHECK | WC_NO_BEST_FIT_CHARS, str.c_str(), int(str.size()),
+            nullptr, 0, nullptr, nullptr);
 
-        std::string res(required - 1, '\0');
-        wcstombs_s(&required, res.data(), required, str.c_str(), _TRUNCATE);
+        std::string conv(size, '\0');
+        WideCharToMultiByte(CP_UTF8,
+            WC_COMPOSITECHECK | WC_NO_BEST_FIT_CHARS, str.c_str(), -1,
+            conv.data(), size, nullptr, nullptr);
 
-        return res;
+        return conv;
     }
 
     std::wstring utf16(const std::string& str) {
-        size_t required;
-        mbstowcs_s(&required, nullptr, 0, str.c_str(), _TRUNCATE);
+        int size = MultiByteToWideChar(CP_UTF8,
+            MB_ERR_INVALID_CHARS, str.c_str(), int(str.size()),
+            nullptr, 0);
 
-        std::wstring res(required - 1, L'\0');
-        mbstowcs_s(&required, res.data(), required, str.c_str(), _TRUNCATE);
 
-        return res;
+        std::wstring conv(size, L'\0');
+        MultiByteToWideChar(CP_UTF8,
+            MB_ERR_INVALID_CHARS, str.c_str(), -1,
+            conv.data(), size);
+
+        return conv;
     }
 
 
