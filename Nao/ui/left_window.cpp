@@ -8,7 +8,6 @@
 #include "main_window.h"
 #include "list_view.h"
 #include "line_edit.h"
-#include "data_model.h"
 #include "push_button.h"
 
 #include <string>
@@ -41,11 +40,12 @@ bool left_window::wm_create(CREATESTRUCTW* create) {
         return false;
     }
 
-    _m_list = new list_view(this, { "Name", "Type", "Size", "Compressed" }, imglist);
+    _m_list = new list_view(this, data_model::listview_header(), imglist);
     _m_model.set_listview(_m_list);
 
     _m_path = new line_edit(this);
     _m_model.set_path_edit(_m_path);
+    _m_path->set_style(WS_DISABLED);
 
     // Button icons
     HMODULE shell32 = LoadLibraryW(L"shell32.dll");
@@ -72,6 +72,7 @@ bool left_window::wm_create(CREATESTRUCTW* create) {
     HICON folder_icon;
     LoadIconWithScaleDown(shell32, MAKEINTRESOURCEW(4), 16, 16, &folder_icon);
     _m_browse = new push_button(this, L"Browse...", folder_icon);
+    _m_browse->set_style(WS_DISABLED);
     DeleteObject(folder_icon);
 
     FreeLibrary(shell32);
@@ -203,6 +204,11 @@ void left_window::_move_to(std::wstring path) {
     }
 }
 
+void left_window::_sort(NMLISTVIEW* view) const{
+    _m_model.sort_list(view->iSubItem);
+}
+
+
 void left_window::_update_view() {
     //SendMessageW(_m_left_path, WM_SETTEXT, 0, reinterpret_cast<LPARAM>(_m_path.data()));
 
@@ -235,17 +241,7 @@ LRESULT left_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
             if (nm->hwndFrom == _m_list->handle()) {
                 switch (nm->code) {
                     case LVN_COLUMNCLICK: {
-                        NMLISTVIEW* view = reinterpret_cast<NMLISTVIEW*>(nm);
-                        if (_m_selected_col != view->iSubItem) {
-                            // Set default order
-                            _m_sort_order[view->iSubItem] = default_order[view->iSubItem];
-                        } else {
-                            _m_sort_order[_m_selected_col]
-                                = (_m_sort_order[_m_selected_col] == REVERSE) ? NORMAL : REVERSE;
-                        }
-
-                        _m_selected_col = view->iSubItem;
-                        //_list_sort(_m_selected_col);
+                        _sort(reinterpret_cast<NMLISTVIEW*>(nm));
                         break;
                     }
 

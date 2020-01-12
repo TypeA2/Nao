@@ -25,10 +25,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     InitCommonControlsEx(&picce);
 
-    utils::coutln("down to", sizeof(main_window), "model", sizeof(data_model), "left", sizeof(left_window));
+    utils::coutln("down to", sizeof(main_window), "\nmodel", sizeof(data_model), "\nleft", sizeof(left_window));
 
     data_model model(steam_utils::game_path(L"NieRAutomata", L"data"));
     
-    // Forward to MainWindow class
-    return main_window(hInstance, nShowCmd, model).run();
+    main_window nao(hInstance, nShowCmd, model);
+
+    model.startup();
+
+    return nao.run();
 }

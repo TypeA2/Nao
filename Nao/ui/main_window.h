@@ -44,11 +44,7 @@ class main_window : public ui_element {
     
 
     // Set left list sort arrow
-    //enum sort_arrow {
-    //    NO_ARROW,
-    //    UP_ARROW,
-    //    DOWN_ARROW
-    //};
+    //
     //void _set_left_sort_arrow(int col, sort_arrow type) const;
 
     // Forwards the message processing to the member function
@@ -76,16 +72,6 @@ class main_window : public ui_element {
     // Current path
     std::wstring _m_path;
     data_model& _m_model;
-
-    // LPARAM for list items
-    struct list_item_data {
-        std::wstring name;
-        std::wstring type;
-        int64_t size {};
-        double compression {};
-        int icon {};
-        bool dir {};
-    };
     
     // Constants
     static constexpr int gutter_size = 2;

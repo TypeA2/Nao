@@ -25,13 +25,13 @@ namespace utils {
         std::stringstream ss;
         ss << std::setprecision(3) << std::fixed;
         if (n > 0x1000000000000000) {
-            ss << ((n >> 50) / 1024.L) << " EiB";;
+            ss << ((n >> 50) / 1024.L) << " EiB";
         } else if (n > 0x4000000000000) {
-            ss << ((n >> 40) / 1024.L) << " PiB";;
+            ss << ((n >> 40) / 1024.L) << " PiB";
         } else if (n > 0x10000000000) {
-            ss << ((n >> 30) / 1024.L) << " TiB";;
+            ss << ((n >> 30) / 1024.L) << " TiB";
         } else if (n > 0x40000000) {
-            ss << ((n >> 20) / 1024.L) << " GiB";;
+            ss << ((n >> 20) / 1024.L) << " GiB";
         } else if (n > 0x100000) {
             ss << ((n >> 10) / 1024.L) << " MiB";
         } else if (n > 0x400) {
@@ -40,29 +40,18 @@ namespace utils {
             ss << n << " bytes";
         }
 
-        return ss.str();
+        // Remove trailing whitespace and zeroes
+        std::string s = ss.str();
+        std::string suffix = s.substr(s.find_last_of(' '));;
+        s = s.substr(0, s.find_last_of(L' '));
+
+        s.erase(s.find_last_not_of("0.") + 1);
+
+        return s + suffix;
     }
 
     std::wstring wbytes(int64_t n) {
-        std::wstringstream ss;
-        ss << std::setprecision(3) << std::fixed;
-        if (n > 0x1000000000000000) {
-            ss << ((n >> 50) / 1024.L) << L" EiB";;
-        } else if (n > 0x4000000000000) {
-            ss << ((n >> 40) / 1024.L) << L" PiB";;
-        } else if (n > 0x10000000000) {
-            ss << ((n >> 30) / 1024.L) << L" TiB";;
-        } else if (n > 0x40000000) {
-            ss << ((n >> 20) / 1024.L) << L" GiB";;
-        } else if (n > 0x100000) {
-            ss << ((n >> 10) / 1024.L) << L" MiB";
-        } else if (n > 0x400) {
-            ss << (n / 1024.L) << L" KiB";;
-        } else {
-            ss << n << L" bytes";
-        }
-
-        return ss.str();
+        return utf16(bytes(n));
     }
 
     std::string perc(double p) {

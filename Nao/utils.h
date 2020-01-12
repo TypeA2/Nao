@@ -4,7 +4,12 @@
 
 #include <sstream>
 
+#ifdef NDEBUG
 #define ASSERT(cond) do { if (!(cond)) { throw std::runtime_error("assertion failed: " #cond); }} while (0)
+#else
+#include <cassert>
+#define ASSERT(cond) assert(cond);
+#endif
 
 namespace utils {
     void cout(LPCSTR str);

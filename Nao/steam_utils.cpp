@@ -23,7 +23,7 @@ namespace steam_utils {
 
     std::vector<std::wstring> steam_install_folders() {
         auto vdf_path = std::filesystem::path(
-            steam_path() + L"/SteamApps/libraryfolders.vdf")
+            steam_path() + L"\\SteamApps\\libraryfolders.vdf")
                 .lexically_normal();
 
         std::ifstream in(vdf_path);

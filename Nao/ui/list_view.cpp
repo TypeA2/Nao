@@ -2,6 +2,8 @@
 
 #include "utils.h"
 
+#include <algorithm>
+
 list_view::list_view(ui_element* parent) : ui_element(parent) {
     // This element can only be a child
     ASSERT(parent && parent->handle());
@@ -20,7 +22,7 @@ list_view::~list_view() {
 
 void list_view::set_columns(const std::vector<std::string>& hdr) {
     ASSERT(handle());
-    ASSERT(hdr.size() <= std::numeric_limits<int>::max());
+    ASSERT(!hdr.empty() && hdr.size() <= std::numeric_limits<int>::max());
 
     _m_cols = int(hdr.size());
 
@@ -52,6 +54,70 @@ void list_view::set_image_list(IImageList* list) {
     
     ListView_SetImageList(handle(), list, LVSIL_SMALL);
 }
+
+int list_view::column_count() const {
+    return Header_GetItemCount(ListView_GetHeader(handle()));
+}
+
+
+int list_view::add_item(const std::vector<std::string>& text, int image, LPARAM extra) const {
+    std::vector<std::wstring> wide;
+    std::transform(text.begin(), text.end(), std::back_inserter(wide), utils::utf16);
+
+    return add_item(wide, image, extra);
+}
+
+int list_view::add_item(const std::vector<std::wstring>& text, int image, LPARAM extra) const {
+    ASSERT(_m_image_list);
+    ASSERT(!text.empty());
+    ASSERT(text.size() == size_t(Header_GetItemCount(ListView_GetHeader(handle()))));
+
+    LVITEMW item { };
+    item.mask = LVIF_TEXT | LVIF_IMAGE | LVIF_PARAM;
+    item.lParam = extra;
+    item.iItem = ListView_GetItemCount(handle());
+    item.iImage = image;
+    item.pszText = const_cast<LPWSTR>(text.front().data());
+
+    ListView_InsertItem(handle(), &item);
+    for (size_t i = 1; i < text.size(); ++i) {
+        ListView_SetItemText(handle(), item.iItem, int(i), const_cast<LPWSTR>(text[i].data()));
+    }
+
+    return item.iItem;
+}
+
+void list_view::sort(int (CALLBACK* cb)(LPARAM, LPARAM, LPARAM), LPARAM extra) const {
+    ListView_SortItems(handle(), cb, extra);
+}
+
+void list_view::set_sort_arrow(int col, sort_arrow direction) const {
+    HWND header = ListView_GetHeader(handle());
+
+    if (header) {
+        HDITEMW hdr;
+        hdr.mask = HDI_FORMAT;
+
+        Header_GetItem(header, col, &hdr);
+
+        switch (direction) {
+            case NoArrow:
+                hdr.fmt = (hdr.fmt & ~(HDF_SORTDOWN | HDF_SORTUP));
+                break;
+            case UpArrow:
+                hdr.fmt = (hdr.fmt & ~HDF_SORTDOWN) | HDF_SORTUP;
+                break;
+            case DownArrow:
+                hdr.fmt = (hdr.fmt & ~HDF_SORTUP) | HDF_SORTDOWN;
+                break;
+        }
+
+        Header_SetItem(header, col, &hdr);
+    }
+}
+
+
+
 
 void list_view::_init() {
     HINSTANCE inst = GetModuleHandleW(nullptr);
