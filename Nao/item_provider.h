@@ -14,6 +14,8 @@ class item_provider {
     virtual const std::wstring& name(size_t index) const;
     
     virtual int64_t size(size_t index) const = 0;
+    virtual std::wstring& size_str(size_t index) = 0;
+    virtual const std::wstring& size_str(size_t index) const;
     
     virtual std::wstring& type(size_t index) = 0;
     virtual const std::wstring& type(size_t index) const;

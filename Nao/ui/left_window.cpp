@@ -54,9 +54,9 @@ bool left_window::wm_create(CREATESTRUCTW* create) {
     HICON up_icon;
     LoadIconWithScaleDown(shell32, MAKEINTRESOURCEW(16817), 16, 16, &up_icon);
     _m_up = new push_button(this, up_icon);
+    _m_model.set_up_button(_m_up);
     _m_up->move(dims::gutter_size, dims::gutter_size,
         dims::control_button_width, dims::control_height + 2);
-    _m_up->set_style(WS_DISABLED);
     DeleteObject(up_icon);
 
 
@@ -81,6 +81,8 @@ bool left_window::wm_create(CREATESTRUCTW* create) {
 }
 
 void left_window::wm_size(int type, int width, int height) {
+    (void) type;
+
     HDWP dwp = BeginDeferWindowPos(3);
 
     _m_path->move_dwp(dwp, dims::path_x_offset, dims::gutter_size + 1,
@@ -165,7 +167,8 @@ void left_window::_open_folder() {
                 if (FAILED(hr)) {
                     utils::coutln("Failed to get path");
                 } else {
-                    _move_to(path);
+                    //_move_to(path);
+                    (void) this;
                 }
 
                 item->Release();
@@ -176,6 +179,7 @@ void left_window::_open_folder() {
     dialog->Release();
 }
 
+/*
 void left_window::_move_to(std::wstring path) {
     // Only move to an existing path
 
@@ -196,20 +200,20 @@ void left_window::_move_to(std::wstring path) {
 
         if (success) {
             _m_current_path = path;
-            _update_view();
+            //_update_view();
         } else {
             MessageBoxW(handle(), L"Failed to find existing folder in path", L"Error",
                 MB_OK | MB_ICONEXCLAMATION);
         }
     }
-}
+} */
 
 void left_window::_sort(NMLISTVIEW* view) const{
     _m_model.sort_list(view->iSubItem);
 }
 
 
-void left_window::_update_view() {
+/*void left_window::_update_view() {
     //SendMessageW(_m_left_path, WM_SETTEXT, 0, reinterpret_cast<LPARAM>(_m_path.data()));
 
     void(__cdecl * fwd)(void*) = [](void* args) {
@@ -229,7 +233,7 @@ void left_window::_update_view() {
 
     _beginthread(fwd, unsigned(high - low), this);
 
-}
+}*/
 
 
 
@@ -237,7 +241,7 @@ LRESULT left_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
     switch (msg) {
         case WM_NOTIFY: {
             NMHDR* nm = reinterpret_cast<NMHDR*>(lparam);
-
+            
             if (nm->hwndFrom == _m_list->handle()) {
                 switch (nm->code) {
                     case LVN_COLUMNCLICK: {
@@ -252,11 +256,16 @@ LRESULT left_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
             break;
         }
 
-        case WM_COMMAND:
-            if (HWND(lparam) == _m_browse->handle()) {
+        case WM_COMMAND: {
+            HWND target = HWND(lparam);
+            if (target == _m_browse->handle()) {
                 _open_folder();
+            } else if (target == _m_up->handle()) {
+                _m_model.move_relative(L"..");
             }
+
             break;
+        }
 
         default:
             return DefWindowProcW(hwnd, msg, wparam, lparam);

@@ -20,15 +20,16 @@ list_view::~list_view() {
     _m_image_list->Release();
 }
 
-void list_view::set_columns(const std::vector<std::string>& hdr) {
+void list_view::set_columns(const std::vector<std::string>& hdr) const {
     ASSERT(handle());
     ASSERT(!hdr.empty() && hdr.size() <= std::numeric_limits<int>::max());
 
-    _m_cols = int(hdr.size());
+    int columns = int(hdr.size());
 
     LVCOLUMNW col;
-    col.mask = LVCF_TEXT | LVCF_FMT | LVCF_WIDTH;
-    col.cx = width() / _m_cols;
+    col.mask = LVCF_TEXT | LVCF_FMT | LVCF_WIDTH | LVCF_MINWIDTH;
+    col.cx = width() / columns;
+    col.cxMin = col.cx;
     col.fmt = LVCFMT_LEFT;
     int i = 0;
 
@@ -38,9 +39,10 @@ void list_view::set_columns(const std::vector<std::string>& hdr) {
         std::wstring wide = utils::utf16(header);
         col.pszText = wide.data();
 
-        if (col.iOrder == (_m_cols - 1)) {
+        if (col.iOrder == (columns - 1)) {
             // Pad with last item
-            col.cx = (width() + (_m_cols - 1)) / _m_cols;
+            col.cx = (width() + (columns - 1)) / columns;
+            col.cxMin = col.cx;
         }
 
         ListView_InsertColumn(handle(), col.iOrder, &col);
@@ -116,6 +118,52 @@ void list_view::set_sort_arrow(int col, sort_arrow direction) const {
     }
 }
 
+void list_view::set_column_width(int col, int width, int min) const {
+    ListView_SetColumnWidth(handle(), col, width);
+
+    if (width == LVSCW_AUTOSIZE) {
+        // Fix min width
+        if (ListView_GetColumnWidth(handle(), col) < min) {
+            ListView_SetColumnWidth(handle(), col, min);
+        }
+    }
+}
+
+void list_view::set_column_alignment(int col, column_alignment align) const {
+    LVCOLUMNW c { };
+    c.mask = LVCF_FMT;
+    c.fmt = align;
+    ListView_SetColumn(handle(), col, &c);
+
+    if (align != Left) {
+        // Keep header left-aligned
+        HWND header = ListView_GetHeader(handle());
+        HDITEMW item { };
+        item.mask = HDI_FORMAT;
+        Header_GetItem(header, col, &item);
+
+        // Zero alignment bits, which also left-aligns
+        item.fmt &= ~HDF_JUSTIFYMASK;
+        Header_SetItem(header, col, &item);
+    }
+}
+
+void list_view::clear(const std::function<void(void*)>& deleter) const {
+    if (deleter) {
+        LVITEMW item { };
+        item.mask = LVIF_PARAM;
+
+        for (int i = 0; i < ListView_GetItemCount(handle()); ++i) {
+            item.iItem = i;
+            ListView_GetItem(handle(), &item);
+
+            deleter(reinterpret_cast<void*>(item.lParam));
+        }
+    }
+    
+
+    ListView_DeleteAllItems(handle());
+}
 
 
 
@@ -126,14 +174,15 @@ void list_view::_init() {
         WC_LISTVIEWW, L"",
         WS_CHILD | WS_VISIBLE |
         LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS,
-        0, 0, 360, 360,
+        0, 0, parent()->width(), parent()->height(),
         parent()->handle(), nullptr, inst,
         nullptr);
 
     ASSERT(handle);
 
     SetWindowTheme(handle, L"Explorer", nullptr);
-    ListView_SetExtendedListViewStyle(handle, LVS_EX_FULLROWSELECT);
+    ListView_SetExtendedListViewStyle(handle, LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
+    
     
     set_handle(handle);
 

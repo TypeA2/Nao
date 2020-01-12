@@ -26,16 +26,14 @@ class left_window : public ui_element {
     void _open_folder();
 
     // Move to a specific (non-relative) path
-    void _move_to(std::wstring path);
+    //void _move_to(std::wstring path);
 
     // Sort the left list view
     void _sort(NMLISTVIEW* view) const;
 
     // Update the left window's contents
-    void _update_view();
-    //void _get_provider();
-    //void _fill_view();
-    
+    //void _update_view();
+
     LRESULT _wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
     list_view* _m_list;

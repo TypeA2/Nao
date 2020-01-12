@@ -14,6 +14,7 @@ class filesystem_provider : public item_provider {
     size_t count() const override;
     std::wstring& name(size_t index) override;
     int64_t size(size_t index) const override;
+    std::wstring& size_str(size_t index) override;
     std::wstring& type(size_t index) override;
     double compression(size_t index) const override;
     int icon(size_t index) const override;

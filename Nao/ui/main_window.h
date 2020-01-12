@@ -19,7 +19,7 @@ class main_window : public ui_element {
     int run() const;
 
     // Some public types
-    using icon_index = std::pair<std::wstring, int>;
+    //using icon_index = std::pair<std::wstring, int>;
 
     protected:
     bool wm_create(CREATESTRUCTW* create) override;
