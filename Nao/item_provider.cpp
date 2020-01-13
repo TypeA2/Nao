@@ -1,19 +1,15 @@
 #include "item_provider.h"
 
-// Linker wants this
-item_provider::~item_provider() {
+item_provider::item_provider(std::string name, data_model& model)
+    : name { std::move(name) }
+    , model { model } {
     
 }
 
-const std::wstring& item_provider::name(size_t index) const {
-    return const_cast<const item_provider*>(this)->name(index);
+const item_provider::item_data& item_provider::data(size_t index) const {
+    return const_cast<item_provider*>(this)->data(index);
 }
 
-const std::wstring& item_provider::size_str(size_t index) const {
-    return const_cast<const item_provider*>(this)->size_str(index);
+const std::string& item_provider::get_name() const {
+    return name;
 }
-
-const std::wstring& item_provider::type(size_t index) const {
-    return const_cast<const item_provider*>(this)->type(index);
-}
-

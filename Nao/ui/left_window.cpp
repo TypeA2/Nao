@@ -212,30 +212,9 @@ void left_window::_sort(NMLISTVIEW* view) const{
     _m_model.sort_list(view->iSubItem);
 }
 
-
-/*void left_window::_update_view() {
-    //SendMessageW(_m_left_path, WM_SETTEXT, 0, reinterpret_cast<LPARAM>(_m_path.data()));
-
-    void(__cdecl * fwd)(void*) = [](void* args) {
-        (void) CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-
-        main_window* _this = reinterpret_cast<main_window*>(args);
-        //_this->_get_provider();
-        //_this->_fill_view();
-        //_this->_list_sort(_this->_m_selected_col);
-
-        CoUninitialize();
-    };
-
-    size_t low;
-    size_t high;
-    GetCurrentThreadStackLimits(&low, &high);
-
-    _beginthread(fwd, unsigned(high - low), this);
-
-}*/
-
-
+void left_window::_dblclick(NMITEMACTIVATE* item) const {
+    _m_model.clicked(item->iItem);
+}
 
 LRESULT left_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
     switch (msg) {
@@ -246,6 +225,11 @@ LRESULT left_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
                 switch (nm->code) {
                     case LVN_COLUMNCLICK: {
                         _sort(reinterpret_cast<NMLISTVIEW*>(nm));
+                        break;
+                    }
+
+                    case NM_DBLCLK: {
+                        _dblclick(reinterpret_cast<NMITEMACTIVATE*>(nm));
                         break;
                     }
 

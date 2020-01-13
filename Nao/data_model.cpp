@@ -73,6 +73,11 @@ push_button* data_model::up_button() const {
     return _m_up_button;
 }
 
+HWND data_model::handle() const {
+    ASSERT(_m_window);
+    return _m_window->handle();
+}
+
 std::vector<std::string> data_model::listview_header() {
     return { "Name", "Type", "Size", "Compressed" };
 }
@@ -89,7 +94,11 @@ void data_model::startup() {
     // "Size" alignment
     _m_listview->set_column_alignment(2, list_view::Right);
 
-    _fill();
+    if (_m_path.empty()) {
+        _m_path = L"\\";
+    }
+
+    move(_m_path);
 
     // Default sort
     _m_sort_order[0] = Reverse;
@@ -132,6 +141,7 @@ void data_model::move_relative(const std::wstring& rel) {
     std::wstring old_path = _m_path;
 
     if (rel == L"..") {
+        delete _m_providers.back();
         _m_providers.pop_back();
 
         if (_m_path.size() == 3 &&
@@ -159,33 +169,72 @@ void data_model::move_relative(const std::wstring& rel) {
     }
 }
 
+void data_model::move(const std::wstring& path) {
+    if (!_lock()) {
+        return;
+    }
+
+    std::wstring old_path = _m_path;
+
+    _rebuild();
+
+    _fill();
+}
+
+
+void data_model::clicked(int index) {
+    ASSERT(index < _m_listview->item_count());
+
+    LVITEMW item { };
+    item.mask = LVIF_PARAM;
+    item.iItem = index;
+    _m_listview->get_item(item);
+    item_data* data = reinterpret_cast<item_data*>(item.lParam);
+
+    if (data->dir) {
+        move_relative(data->name);
+    } else if (data->drive) {
+        move({ data->drive_letter, L':', L'\\' });
+    }
+}
+
+
 
 
 item_provider* data_model::_get_provider(const std::wstring& path) {
+    if (!_m_providers.empty()) {
+        std::wstring name = utils::utf16(_m_providers.back()->get_name());
+
+        if (name.back() == L'\\' && path.back() != L'\\') {
+            name.pop_back();
+        }
+
+        if (name == path) {
+            return _m_providers.back();
+        }
+    }
+
     item_provider* p = nullptr;
 
     if (GetFileAttributesW(path.c_str()) & FILE_ATTRIBUTE_DIRECTORY) {
         // "\" is also regarded a directory
-        std::stringstream ss;
-        ss << utils::utf8(path);
-
-        p = item_provider_factory::create(ss, _m_window);
+        std::stringstream null;
+        p = item_provider_factory::create(null, utils::utf8(path), *this);
     }
 
     if (!p) {
-        MessageBoxW(_m_window->handle(), (L"Could not open " + path).c_str(),
+        MessageBoxW(handle(), (L"Could not open " + path).c_str(),
             L"Error", MB_OK | MB_ICONEXCLAMATION);
         return nullptr;
     }
 
-    _m_providers.push_back(p);
     return p;
 }
 
 void data_model::_fill() {
     _m_path_edit->set_text(_m_path);
 
-    _m_listview->clear([](void* data) { delete reinterpret_cast<list_item_data*>(data); });
+    _m_listview->clear([](void* data) { delete reinterpret_cast<item_data*>(data); });
     
     void(__cdecl * fwd)(void*) = [](void* args) {
         (void) CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
@@ -193,26 +242,19 @@ void data_model::_fill() {
         data_model* _this = reinterpret_cast<data_model*>(args);
         item_provider* p = _this->_get_provider(_this->_m_path);
         // Sort columns
-        std::vector<list_item_data*> items(p->count());
+        std::vector<item_data*> items(p->count());
         for (size_t i = 0; i < p->count(); ++i) {
-            items[i] = new list_item_data {
-                p->name(i),
-                p->type(i),
-                p->size(i),
-                p->size_str(i),
-                p->compression(i),
-                p->icon(i),
-                p->dir(i)
-            };
+            items[i] = new item_data;
+            *items[i] = p->data(i);
         }
 
-        std::sort(items.begin(), items.end(), [_this](list_item_data* left, list_item_data* right) -> bool {
+        std::sort(items.begin(), items.end(), [_this](item_data* left, item_data* right) -> bool {
             return _sort_impl(LPARAM(left), LPARAM(right),
                 MAKELPARAM(_this->_m_selected_col, _this->_m_sort_order[_this->_m_selected_col])) == -1;
             });
 
         // Add items
-        for (list_item_data* data : items) {
+        for (item_data* data : items) {
             _this->_m_listview->add_item(
                 { data->name, data->type,
                     (data->size == 0)
@@ -261,11 +303,32 @@ bool data_model::_lock() {
     return true;
 }
 
+void data_model::_rebuild() {
+    while (!_m_providers.empty()) {
+        delete _m_providers.back();
+        _m_providers.pop_back();
+    }
+
+    _m_providers.push_back(_get_provider(L"\\"));
+
+    if (_m_path == L"\\") {
+        return;
+    }
+
+    std::wstring current;
+    do {
+        current = _m_path.substr(0,
+            _m_path.find_first_of(L'\\', current.size() + 1));
+
+        _m_providers.push_back(_get_provider(current + L'\\'));
+    } while (current != _m_path);
+}
+
 
 
 int data_model::_sort_impl(LPARAM lparam1, LPARAM lparam2, LPARAM info) {
-    list_item_data* item1 = reinterpret_cast<list_item_data*>(lparam1);
-    list_item_data* item2 = reinterpret_cast<list_item_data*>(lparam2);
+    item_data* item1 = reinterpret_cast<item_data*>(lparam1);
+    item_data* item2 = reinterpret_cast<item_data*>(lparam2);
 
     if (!item1 || !item2) {
         return 0;

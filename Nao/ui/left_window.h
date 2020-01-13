@@ -25,14 +25,11 @@ class left_window : public ui_element {
     // Open a new folder
     void _open_folder();
 
-    // Move to a specific (non-relative) path
-    //void _move_to(std::wstring path);
-
     // Sort the left list view
     void _sort(NMLISTVIEW* view) const;
 
-    // Update the left window's contents
-    //void _update_view();
+    // An item has been double-clicked
+    void _dblclick(NMITEMACTIVATE* item) const;
 
     LRESULT _wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 

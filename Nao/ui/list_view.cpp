@@ -61,6 +61,15 @@ int list_view::column_count() const {
     return Header_GetItemCount(ListView_GetHeader(handle()));
 }
 
+int list_view::item_count() const {
+    return ListView_GetItemCount(handle());
+}
+
+void list_view::get_item(LVITEMW& item) const  {
+    ListView_GetItem(handle(), &item);
+}
+
+
 
 int list_view::add_item(const std::vector<std::string>& text, int image, LPARAM extra) const {
     std::vector<std::wstring> wide;

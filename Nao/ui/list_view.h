@@ -30,6 +30,9 @@ class list_view : public ui_element {
     void set_image_list(IImageList* list);
 
     int column_count() const;
+    int item_count() const;
+
+    void get_item(LVITEMW& item) const;
 
     int add_item(const std::vector<std::string>& text,
         int image, LPARAM extra = 0) const;

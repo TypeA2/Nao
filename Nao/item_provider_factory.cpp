@@ -16,11 +16,12 @@ size_t item_provider_factory::register_class(create_func creator) {
     return _next_id++;
 }
 
-item_provider* item_provider_factory::create(std::istream& file, ui_element* window) {
+item_provider* item_provider_factory::create(std::istream& file,
+    const std::string& name, data_model& model) {
     item_provider* p;
 
     for (create_func f : _registered_classes) {
-        p = f(file, window);
+        p = f(file, name, model);
 
         if (p) {
             return p;
@@ -31,6 +32,7 @@ item_provider* item_provider_factory::create(std::istream& file, ui_element* win
 }
 
 
-item_provider* item_provider_factory::create(size_t id, std::istream& file, ui_element* window) {
-    return _registered_classes[id](file, window);
+item_provider* item_provider_factory::create(size_t id, std::istream& file,
+    const std::string& name, data_model& model) {
+    return _registered_classes[id](file, name, model);
 }

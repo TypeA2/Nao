@@ -4,16 +4,18 @@
 #include <fstream>
 
 class item_provider;
-class ui_element;
+class data_model;
 
 class item_provider_factory {
     public:
-    using create_func = item_provider* (*)(std::istream&, ui_element*);
+    using create_func = item_provider* (*)(std::istream&,
+        const std::string& name, data_model&);
 
     static size_t register_class(create_func creator);
     static item_provider* create(size_t id, std::istream& file,
-        ui_element* window);
-    static item_provider* create(std::istream& file, ui_element* window);
+        const std::string& name, data_model& model);
+    static item_provider* create(std::istream& file,
+        const std::string& name, data_model& model);
 
     private:
     item_provider_factory() = default;

@@ -4,7 +4,6 @@
 
 #include "utils.h"
 #include "data_model.h"
-#include "left_window.h"
 #include "steam_utils.h"
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -24,8 +23,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     };
 
     InitCommonControlsEx(&picce);
-
-    utils::coutln("down to", sizeof(main_window), "\nmodel", sizeof(data_model), "\nleft", sizeof(left_window));
 
     data_model model(steam_utils::game_path(L"NieRAutomata", L"data"));
     

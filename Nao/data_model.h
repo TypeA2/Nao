@@ -2,13 +2,13 @@
 
 #include "frameworks.h"
 
-#include <string>
+#include "item_provider.h"
+
 #include <deque>
 #include <stdexcept>
 #include <vector>
 #include <atomic>
 
-class item_provider;
 class main_window;
 class list_view;
 class line_edit;
@@ -22,6 +22,8 @@ class data_model {
         Reverse
     };
 
+    // LPARAM for list items
+    using item_data = item_provider::item_data;
 
     data_model() = delete;
     explicit data_model(std::wstring initial_path);
@@ -37,6 +39,8 @@ class data_model {
     line_edit* path_edit() const;
     push_button* up_button() const;
 
+    HWND handle() const;
+
     static std::vector<std::string> listview_header();
     static std::vector<sort_order> listview_default_sort();
 
@@ -45,20 +49,12 @@ class data_model {
     void sort_list(int col);
 
     void move_relative(const std::wstring& rel);
+    void move(const std::wstring& path);
+
+    void clicked(int index);
 
 
     private:
-    // LPARAM for list items
-    struct list_item_data {
-        std::wstring name;
-        std::wstring type;
-        int64_t size {};
-        std::wstring size_str;
-        double compression {};
-        int icon {};
-        bool dir {};
-    };
-
     item_provider* _get_provider(const std::wstring& path);
 
     // Fill view with items from the specified path
@@ -66,6 +62,9 @@ class data_model {
 
     // Thread locking, stop if false
     bool _lock();
+
+    // Rebuild provider queue from current path
+    void _rebuild();
 
     // Function used for sorting
     static int CALLBACK _sort_impl(LPARAM lparam1, LPARAM lparam2, LPARAM info);
