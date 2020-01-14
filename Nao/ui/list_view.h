@@ -34,10 +34,19 @@ class list_view : public ui_element {
 
     void get_item(LVITEMW& item) const;
 
+    void* get_item_data(int index) const;
+
+    template <typename T>
+    T* get_item_data(int index) const {
+        return reinterpret_cast<T*>(get_item_data(index));
+    }
+
     int add_item(const std::vector<std::string>& text,
         int image, LPARAM extra = 0) const;
     int add_item(const std::vector<std::wstring>& text,
         int image, LPARAM extra = 0) const;
+
+    int item_at(POINT pt) const;
 
     void sort(int(CALLBACK* cb)(LPARAM, LPARAM, LPARAM), LPARAM extra) const;
 

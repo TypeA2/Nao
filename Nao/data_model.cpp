@@ -7,6 +7,9 @@
 #include "line_edit.h"
 #include "list_view.h"
 #include "push_button.h"
+#include "left_window.h"
+
+#include <ShlObj_core.h>
 
 #include <filesystem>
 #include <thread>
@@ -15,10 +18,13 @@ data_model::data_model(std::wstring initial_path)
     : _m_path { std::move(initial_path) }
     , _m_lock { true } 
     , _m_window { }
+    , _m_left { }
     , _m_listview { }
     , _m_path_edit { }
     , _m_up_button { }
-    , _m_selected_col { } {
+    , _m_selected_col { }
+    , _m_menu_item { }
+    , _m_menu_item_index { -1 } {
     
 }
 
@@ -35,6 +41,12 @@ void data_model::set_window(main_window* window) {
     ASSERT(!_m_window && window);
     _m_window = window;
 }
+
+void data_model::set_left_window(left_window* left) {
+    ASSERT(!_m_left && left)
+    _m_left = left;
+}
+
 
 void data_model::set_listview(list_view* listview) {
     ASSERT(!_m_listview && listview);
@@ -57,6 +69,11 @@ void data_model::set_up_button(push_button* up) {
 main_window* data_model::window() const {
     ASSERT(_m_window);
     return _m_window;
+}
+
+left_window* data_model::left() const {
+    ASSERT(_m_left);
+    return _m_left;
 }
 
 list_view* data_model::listview() const {
@@ -93,7 +110,7 @@ std::vector<data_model::sort_order> data_model::listview_default_sort() {
 
 
 void data_model::startup() {
-    ASSERT(_m_window && _m_listview && _m_path_edit && _m_up_button);
+    ASSERT(_m_window && _m_left && _m_listview && _m_path_edit && _m_up_button);
 
     // "Size" alignment
     _m_listview->set_column_alignment(2, list_view::Right);
@@ -178,11 +195,7 @@ void data_model::move(const std::wstring& path) {
 void data_model::clicked(int index) {
     ASSERT(index < _m_listview->item_count());
 
-    LVITEMW item { };
-    item.mask = LVIF_PARAM;
-    item.iItem = index;
-    _m_listview->get_item(item);
-    item_data* data = reinterpret_cast<item_data*>(item.lParam);
+    item_data* data = _m_listview->get_item_data<item_data>(index);
 
     if (data->dir) {
         move_relative(data->name);
@@ -191,6 +204,82 @@ void data_model::clicked(int index) {
     }
 }
 
+void data_model::context_menu(POINT pt) {
+    (void) this;
+    int index = _m_listview->item_at(pt);
+    ASSERT(index < _m_listview->item_count());
+
+    ClientToScreen(_m_listview->handle(), &pt);
+
+    item_data* data = _m_listview->get_item_data<item_data>(index);
+    _m_menu_item = data;
+    _m_menu_item_index = index;
+
+    HMENU popup = CreatePopupMenu();
+
+    // Should the "Show in explorer" entry be appended
+    bool insert = false;
+    if (!data->drive) {
+        if (GetFileAttributesW((_m_path + data->name).c_str()) != INVALID_FILE_ATTRIBUTES) {
+            insert = true;
+        }
+    } else {
+        if ((GetLogicalDrives() >> (data->drive - L'A')) & 1) {
+            insert = true;
+        }
+    }
+
+    if (data->dir || data->drive) {
+        InsertMenuW(popup, -1, MF_BYPOSITION | MF_STRING, CtxOpen, L"Open");
+
+        // Separator if there's another item that follows
+        if (insert) {
+            InsertMenuW(popup, -1, MF_BYPOSITION | MF_SEPARATOR, 0, nullptr);
+        }
+    }
+
+    if (insert) {
+        InsertMenuW(popup, -1, MF_BYPOSITION | MF_STRING, CtxShowInExplorer, L"Show in explorer");
+    }
+
+    
+    TrackPopupMenuEx(popup, TPM_TOPALIGN | TPM_LEFTALIGN | TPM_VERPOSANIMATION,
+        pt.x, pt.y, _m_left->handle(), nullptr);
+
+    DestroyMenu(popup);
+}
+
+void data_model::menu_clicked(short id) {
+    item_data* data = _m_menu_item;
+    switch (id) {
+        case CtxOpen: {
+            if (data->dir || data->drive) {
+                clicked(_m_menu_item_index);
+            }
+            break;
+        }
+
+        case CtxShowInExplorer: {
+            show_in_explorer(_m_menu_item_index);
+            break;
+        }
+
+        default: return;
+    }
+
+    _m_menu_item = nullptr;
+    _m_menu_item_index = -1;
+}
+
+void data_model::show_in_explorer(int index) const {
+    item_data* data = _m_listview->get_item_data<item_data>(index);
+    LPITEMIDLIST idl = ILCreateFromPathW((_m_path + data->name).c_str());
+    if (idl) {
+        SHOpenFolderAndSelectItems(idl, 0, nullptr, 0);
+
+        ILFree(idl);
+    }
+}
 
 
 

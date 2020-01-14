@@ -69,6 +69,16 @@ void list_view::get_item(LVITEMW& item) const  {
     ListView_GetItem(handle(), &item);
 }
 
+void* list_view::get_item_data(int index) const {
+    LVITEMW item { };
+    item.mask = LVIF_PARAM;
+    item.iItem = index;
+    ListView_GetItem(handle(), &item);
+
+    return reinterpret_cast<void*>(item.lParam);
+}
+
+
 
 
 int list_view::add_item(const std::vector<std::string>& text, int image, LPARAM extra) const {
@@ -97,6 +107,16 @@ int list_view::add_item(const std::vector<std::wstring>& text, int image, LPARAM
 
     return item.iItem;
 }
+
+int list_view::item_at(POINT pt) const {
+    LVHITTESTINFO info { };
+    info.pt = pt;
+
+    ListView_SubItemHitTest(handle(), &info);
+
+    return info.iItem;
+}
+
 
 void list_view::sort(int (CALLBACK* cb)(LPARAM, LPARAM, LPARAM), LPARAM extra) const {
     ListView_SortItems(handle(), cb, extra);

@@ -31,6 +31,9 @@ class left_window : public ui_element {
     // An item has been double-clicked
     void _dblclick(NMITEMACTIVATE* item) const;
 
+    // Right-clicked
+    void _rclick(NMITEMACTIVATE* item) const;
+
     LRESULT _wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
     list_view* _m_list;

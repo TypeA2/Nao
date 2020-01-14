@@ -20,6 +20,8 @@ left_window::left_window(ui_element* parent, data_model& model)
     ASSERT(parent);
     
     _init();
+
+    _m_model.set_left_window(this);
 }
 
 left_window::~left_window() {
@@ -217,6 +219,12 @@ void left_window::_dblclick(NMITEMACTIVATE* item) const {
     _m_model.clicked(item->iItem);
 }
 
+void left_window::_rclick(NMITEMACTIVATE* item) const {
+    _m_model.context_menu(item->ptAction);
+}
+
+
+
 LRESULT left_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
     switch (msg) {
         case WM_NOTIFY: {
@@ -234,6 +242,11 @@ LRESULT left_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
                         break;
                     }
 
+                    case NM_RCLICK: {
+                        _rclick(reinterpret_cast<NMITEMACTIVATE*>(nm));
+                        break;
+                    }
+
                     default:
                         break;
                 }
@@ -247,7 +260,13 @@ LRESULT left_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
                 _open_folder();
             } else if (target == _m_up->handle()) {
                 _m_model.move_relative(L"..");
+            } else if (!target) {
+                if (HIWORD(wparam) == 0) {
+                    // Menu
+                    _m_model.menu_clicked(LOWORD(wparam));
+                }
             }
+
 
             break;
         }
