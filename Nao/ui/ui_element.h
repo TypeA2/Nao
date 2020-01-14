@@ -30,6 +30,9 @@ class ui_element {
     // Set the window style
     virtual void set_style(DWORD style, bool enable = true);
 
+    // Specifically enable or disable
+    virtual void set_enabled(bool enabled = true);
+
     protected:
     void set_handle(HWND handle);
 

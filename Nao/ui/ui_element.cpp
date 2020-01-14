@@ -58,14 +58,20 @@ HDWP& ui_element::move_dwp(HDWP& dwp, int x, int y, int width, int height) {
 }
 
 void ui_element::set_style(DWORD style, bool enable) {
-    LONG_PTR old_style = GetWindowLongPtrW(handle(), GWL_STYLE);
-    
-    if (enable) {
+    DWORD old_style = DWORD(GetWindowLongPtrW(handle(), GWL_STYLE));
+
+    // Don't re-apply style
+    if (enable && !(old_style & style)) {
         SetWindowLongPtrW(handle(), GWL_STYLE, old_style | style);
-    } else {
-        SetWindowLongPtrW(handle(), GWL_STYLE, old_style & ~LONG_PTR(style));
+    } else if (!enable && (old_style & style)) {
+        SetWindowLongPtrW(handle(), GWL_STYLE, old_style & ~style);
     }
 }
+
+void ui_element::set_enabled(bool enabled) {
+    EnableWindow(handle(), enabled);
+}
+
 
 
 void ui_element::set_handle(HWND handle) {

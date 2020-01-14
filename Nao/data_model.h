@@ -41,6 +41,8 @@ class data_model {
 
     HWND handle() const;
 
+    const std::wstring& path() const;
+
     static std::vector<std::string> listview_header();
     static std::vector<sort_order> listview_default_sort();
 
@@ -63,8 +65,8 @@ class data_model {
     // Thread locking, stop if false
     bool _lock();
 
-    // Rebuild provider queue from current path
-    void _rebuild();
+    // Build provider queue for the current path
+    void _build();
 
     // Function used for sorting
     static int CALLBACK _sort_impl(LPARAM lparam1, LPARAM lparam2, LPARAM info);

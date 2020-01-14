@@ -12,6 +12,7 @@
 
 #include <string>
 #include <thread>
+#include <filesystem>
 
 left_window::left_window(ui_element* parent, data_model& model)
     : ui_element(parent)

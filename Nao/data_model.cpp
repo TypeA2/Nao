@@ -78,6 +78,10 @@ HWND data_model::handle() const {
     return _m_window->handle();
 }
 
+const std::wstring& data_model::path() const {
+    return _m_path;
+}
+
 std::vector<std::string> data_model::listview_header() {
     return { "Name", "Type", "Size", "Compressed" };
 }
@@ -98,6 +102,7 @@ void data_model::startup() {
         _m_path = L"\\";
     }
 
+    _m_providers.push_back(_get_provider(L"\\"));
     move(_m_path);
 
     // Default sort
@@ -133,40 +138,21 @@ void data_model::sort_list(int col) {
 }
 
 void data_model::move_relative(const std::wstring& rel) {
-    // Still running previous operation
-    if (!_lock()) {
-        return;
-    }
-
-    std::wstring old_path = _m_path;
-
     if (rel == L"..") {
         delete _m_providers.back();
         _m_providers.pop_back();
 
+        // A directory (C:\)
         if (_m_path.size() == 3 &&
             _m_path[0] >= L'A' &&
             _m_path[0] <= L'Z' &&
             _m_path.substr(1, 2) == L":\\") {
-            // List devices
-            _m_path = L"\\";
-
-            _m_up_button->set_style(WS_DISABLED, true);
-        } else {
-            _m_up_button->set_style(WS_DISABLED, false);
+            move(L"\\");
+            return;
         }
     }
 
-    // Hasn't changed, resolve new path
-    if (old_path == _m_path) {
-        _m_path = std::filesystem::absolute(_m_path + L'\\' + rel);
-    }
-
-    utils::coutln("from", old_path, "to", _m_path);
-
-    if (_m_path != old_path) {
-        _fill();
-    }
+    move(std::filesystem::absolute(_m_path + L'\\' + rel));
 }
 
 void data_model::move(const std::wstring& path) {
@@ -176,7 +162,14 @@ void data_model::move(const std::wstring& path) {
 
     std::wstring old_path = _m_path;
 
-    _rebuild();
+    _m_path = path;
+
+    utils::coutln("from", old_path, "to", _m_path);
+
+    // Go to root or not
+    _m_up_button->set_enabled(_m_path != L"\\");
+
+    _build();
 
     _fill();
 }
@@ -205,7 +198,7 @@ item_provider* data_model::_get_provider(const std::wstring& path) {
     if (!_m_providers.empty()) {
         std::wstring name = utils::utf16(_m_providers.back()->get_name());
 
-        if (name.back() == L'\\' && path.back() != L'\\') {
+        if (path.size() > 1 && name.back() == L'\\' && path.back() != L'\\') {
             name.pop_back();
         }
 
@@ -303,25 +296,40 @@ bool data_model::_lock() {
     return true;
 }
 
-void data_model::_rebuild() {
-    while (!_m_providers.empty()) {
-        delete _m_providers.back();
-        _m_providers.pop_back();
-    }
-
-    _m_providers.push_back(_get_provider(L"\\"));
-
-    if (_m_path == L"\\") {
-        return;
+void data_model::_build() {
+    if (_m_path.size() > 1 && _m_path.back() != L'\\') {
+        _m_path.push_back(L'\\');
     }
 
     std::wstring current;
-    do {
-        current = _m_path.substr(0,
-            _m_path.find_first_of(L'\\', current.size() + 1));
+    // Never remove root
+    while (_m_providers.size() > 1) {
+        item_provider* p = _m_providers.back();
+        std::wstring name = utils::utf16(p->get_name());
 
-        _m_providers.push_back(_get_provider(current + L'\\'));
-    } while (current != _m_path);
+        // Stop if this provider is part of the current path
+        if (name.size() <= _m_path.size() && // Equal or smaller (this should be a substring)
+            name == _m_path.substr(0, name.size())) {
+            current = name;
+            break;
+        }
+
+        delete p;
+        _m_providers.pop_back();
+    }
+
+    // Root-only base case
+    if (_m_providers.size() == 1 && _m_path == L"\\") {
+        return;
+    }
+
+    // Build path
+    while (current != _m_path) {
+        current = _m_path.substr(0,
+            _m_path.find_first_of(L'\\', current.size() + 1) + 1);
+
+        _m_providers.push_back(_get_provider(current));
+    }
 }
 
 
