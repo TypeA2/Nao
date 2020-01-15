@@ -4,15 +4,15 @@
 
 #include "ui_element.h"
 
-#include "data_model.h"
-
 class list_view;
 class line_edit;
 class push_button;
 
+class data_model;
+
 class left_window : public ui_element {
     public:
-    explicit left_window(ui_element* parent, data_model& model);
+    left_window(ui_element* parent, data_model& model);
     ~left_window();
 
     protected:

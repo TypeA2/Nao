@@ -84,10 +84,10 @@ void ui_element::set_handle(HWND handle) {
 
 bool ui_element::wm_create(CREATESTRUCTW* create) {
     if (_m_mem_wnd_proc) {
-        return (this->*_m_mem_wnd_proc)(handle(), WM_CREATE, 0, LPARAM(create));
+        return (this->*_m_mem_wnd_proc)(handle(), WM_CREATE, 0, LPARAM(create)) == 0;
     }
 
-    return DefWindowProcW(handle(), WM_CREATE, 0, LPARAM(create));
+    return DefWindowProcW(handle(), WM_CREATE, 0, LPARAM(create)) == 0;
 }
 
 void ui_element::wm_destroy() {

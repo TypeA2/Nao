@@ -202,6 +202,7 @@
     <ClInclude Include="ui\list_view.h" />
     <ClInclude Include="ui\main_window.h" />
     <ClInclude Include="ui\push_button.h" />
+    <ClInclude Include="ui\right_window.h" />
     <ClInclude Include="ui\ui_element.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="vdf_parser.h" />
@@ -218,6 +219,7 @@
     <ClCompile Include="ui\list_view.cpp" />
     <ClCompile Include="ui\main_window.cpp" />
     <ClCompile Include="ui\push_button.cpp" />
+    <ClCompile Include="ui\right_window.cpp" />
     <ClCompile Include="ui\ui_element.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>

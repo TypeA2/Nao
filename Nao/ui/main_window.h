@@ -8,6 +8,7 @@
 
 class item_provider;
 class left_window;
+class right_window;
 class data_model;
 
 class main_window : public ui_element {
@@ -39,17 +40,6 @@ class main_window : public ui_element {
     // Forwarded class WndProc function
     LRESULT _wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
-    // Message processing
-    //void _list_sort(int col);
-    
-
-    // Set left list sort arrow
-    //
-    //void _set_left_sort_arrow(int col, sort_arrow type) const;
-
-    // Forwards the message processing to the member function
-    static LRESULT CALLBACK _right_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
-    
     // Static, doesn't require the member variables
     static INT_PTR CALLBACK _about(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
@@ -61,7 +51,7 @@ class main_window : public ui_element {
 
     // Windows
     left_window* _m_left;
-    HWND _m_right;
+    right_window* _m_right;
 
     std::wstring _m_window_class;
     std::wstring _m_right_class;
@@ -72,13 +62,4 @@ class main_window : public ui_element {
     // Current path
     std::wstring _m_path;
     data_model& _m_model;
-    
-    // Constants
-    static constexpr int gutter_size = 2;
-    static constexpr int control_height = 22;
-    static constexpr int control_button_width = 26;
-    static constexpr int browse_button_width = 73;
-    static constexpr int path_x_offset = control_button_width * 2 + gutter_size * 3;
-
-    
 };

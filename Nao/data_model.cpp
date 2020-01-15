@@ -7,7 +7,6 @@
 #include "line_edit.h"
 #include "list_view.h"
 #include "push_button.h"
-#include "left_window.h"
 
 #include <ShlObj_core.h>
 
@@ -18,7 +17,6 @@ data_model::data_model(std::wstring initial_path)
     : _m_path { std::move(initial_path) }
     , _m_lock { true } 
     , _m_window { }
-    , _m_left { }
     , _m_listview { }
     , _m_path_edit { }
     , _m_up_button { }
@@ -42,12 +40,6 @@ void data_model::set_window(main_window* window) {
     _m_window = window;
 }
 
-void data_model::set_left_window(left_window* left) {
-    ASSERT(!_m_left && left)
-    _m_left = left;
-}
-
-
 void data_model::set_listview(list_view* listview) {
     ASSERT(!_m_listview && listview);
 
@@ -69,11 +61,6 @@ void data_model::set_up_button(push_button* up) {
 main_window* data_model::window() const {
     ASSERT(_m_window);
     return _m_window;
-}
-
-left_window* data_model::left() const {
-    ASSERT(_m_left);
-    return _m_left;
 }
 
 list_view* data_model::listview() const {
@@ -110,7 +97,7 @@ std::vector<data_model::sort_order> data_model::listview_default_sort() {
 
 
 void data_model::startup() {
-    ASSERT(_m_window && _m_left && _m_listview && _m_path_edit && _m_up_button);
+    ASSERT(_m_window && _m_listview && _m_path_edit && _m_up_button);
 
     // "Size" alignment
     _m_listview->set_column_alignment(2, list_view::Right);
@@ -244,7 +231,7 @@ void data_model::context_menu(POINT pt) {
 
     
     TrackPopupMenuEx(popup, TPM_TOPALIGN | TPM_LEFTALIGN | TPM_VERPOSANIMATION,
-        pt.x, pt.y, _m_left->handle(), nullptr);
+        pt.x, pt.y, _m_listview->parent()->handle(), nullptr);
 
     DestroyMenu(popup);
 }

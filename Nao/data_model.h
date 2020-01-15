@@ -10,7 +10,6 @@
 #include <atomic>
 
 class main_window;
-class left_window;
 class list_view;
 class line_edit;
 class push_button;
@@ -31,13 +30,11 @@ class data_model {
     ~data_model();
 
     void set_window(main_window* window);
-    void set_left_window(left_window* left);
     void set_listview(list_view* listview);
     void set_path_edit(line_edit* path_edit);
     void set_up_button(push_button* up);
 
     main_window* window() const;
-    left_window* left() const;
     list_view* listview() const;
     line_edit* path_edit() const;
     push_button* up_button() const;
@@ -91,7 +88,6 @@ class data_model {
     std::deque<item_provider*> _m_providers;
     
     main_window* _m_window;
-    left_window* _m_left;
     list_view* _m_listview;
     line_edit* _m_path_edit;
     push_button* _m_up_button;

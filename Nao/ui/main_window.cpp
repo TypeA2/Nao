@@ -7,7 +7,9 @@
 #include "item_provider_factory.h"
 
 #include "left_window.h"
+#include "right_window.h"
 #include "data_model.h"
+#include "dimensions.h"
 
 #include <process.h>
 
@@ -36,6 +38,7 @@ main_window::main_window(HINSTANCE inst, int show_cmd, data_model& model)
 
 main_window::~main_window() {
     delete _m_left;
+    delete _m_right;
 }
 
 int main_window::run() const {
@@ -60,23 +63,8 @@ int main_window::run() const {
 
 bool main_window::wm_create(CREATESTRUCTW* create) {
     (void) create;
-    RECT rect;
-    GetClientRect(handle(), &rect);
-
-    int window_width = (rect.right - gutter_size) / 2;
-
     _m_left = new left_window(this, _m_model);
-
-    _m_right = CreateWindowExW(0, _m_right_class.c_str(), L"",
-        WS_CHILD | WS_VISIBLE | SS_SUNKEN,
-        window_width + gutter_size, 0,
-        window_width, rect.bottom,
-        handle(), nullptr, _m_inst, nullptr);
-
-    if (!_m_right) {
-        utils::coutln("creating right window failed", GetLastError());
-        return false;
-    }
+    _m_right = new right_window(this, _m_model);
 
     return true;
 }
@@ -91,14 +79,12 @@ void main_window::wm_size(int type, int width, int height) {
         return;
     }
     
-    int window_width = (width - gutter_size) / 2;
+    int window_width = (width - dims::gutter_size) / 2;
 
     HDWP dwp = BeginDeferWindowPos(2);
 
     _m_left->move_dwp(dwp, 0, 0, window_width, height);
-
-    dwp = DeferWindowPos(dwp, _m_right, nullptr,
-        window_width + gutter_size, 0, window_width, height, 0);
+    _m_right->move_dwp(dwp, window_width + dims::gutter_size, 0, window_width, height);
 
     EndDeferWindowPos(dwp);
 }
@@ -136,12 +122,11 @@ bool main_window::_init(int show_cmd) {
             WCHAR buf[sizeof(str) / sizeof(WCHAR)];
         } pun { };
         
-        for (const int& resource : { IDS_APP_TITLE, IDC_NAO, IDS_RIGHT_WINDOW }) {
+        for (const int& resource : { IDS_APP_TITLE, IDC_NAO }) {
             std::wstring* container;
             switch (resource) {
                 case IDS_APP_TITLE:    container = &app_title;       break;
                 case IDC_NAO:          container = &_m_window_class; break;
-                case IDS_RIGHT_WINDOW: container = &_m_right_class;  break;
                 default: continue;
             }
 
@@ -186,11 +171,7 @@ bool main_window::_register_class() const {
         return false;
     }
 
-    // Right window class
-    wcex.lpfnWndProc = _right_proc_fwd;
-    wcex.lpszClassName = _m_right_class.c_str();
-
-    return RegisterClassExW(&wcex) != 0;
+    return true;
 }
 
 bool main_window::_init_instance(int show_cmd, const std::wstring& title) {
@@ -243,30 +224,4 @@ INT_PTR main_window::_about(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
         default:
             return DefWindowProcW(hwnd, msg, wparam, lparam);
     }
-}
-
-LRESULT main_window::_right_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
-    switch (msg) {
-        case WM_PAINT: {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hwnd, &ps);
-
-            RECT rect;
-            GetClientRect(hwnd, &rect);
-
-            HBRUSH brush = CreateSolidBrush(RGB(0xff, 0, 0));
-
-            FillRect(hdc, &rect, brush);
-
-            DeleteObject(brush);
-
-            EndPaint(hwnd, &ps);
-            break;
-        }
-
-        default:
-            return DefWindowProcW(hwnd, msg, wparam, lparam);
-    }
-
-    return DefWindowProcW(hwnd, msg, wparam, lparam);
 }

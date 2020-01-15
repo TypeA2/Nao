@@ -36,7 +36,6 @@ class ui_element {
     protected:
     void set_handle(HWND handle);
 
-
     // Overridable message handlers
     virtual bool wm_create(CREATESTRUCTW* create);
     virtual void wm_destroy();

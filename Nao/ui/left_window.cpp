@@ -9,6 +9,7 @@
 #include "list_view.h"
 #include "line_edit.h"
 #include "push_button.h"
+#include "data_model.h"
 
 #include <string>
 #include <thread>
@@ -20,8 +21,6 @@ left_window::left_window(ui_element* parent, data_model& model)
     ASSERT(parent);
     
     _init();
-
-    _m_model.set_left_window(this);
 }
 
 left_window::~left_window() {
