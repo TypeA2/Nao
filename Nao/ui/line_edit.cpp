@@ -1,7 +1,6 @@
 #include "line_edit.h"
 
 #include "utils.h"
-#include "dimensions.h"
 
 line_edit::line_edit(ui_element* parent) : ui_element(parent) {
     ASSERT(parent && parent->handle());

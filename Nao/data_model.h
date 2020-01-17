@@ -10,6 +10,7 @@
 #include <atomic>
 
 class main_window;
+class right_window;
 class list_view;
 class line_edit;
 class push_button;
@@ -30,11 +31,13 @@ class data_model {
     ~data_model();
 
     void set_window(main_window* window);
+    void set_right(right_window* right);
     void set_listview(list_view* listview);
     void set_path_edit(line_edit* path_edit);
     void set_up_button(push_button* up);
 
     main_window* window() const;
+    right_window* right() const;
     list_view* listview() const;
     line_edit* path_edit() const;
     push_button* up_button() const;
@@ -46,6 +49,8 @@ class data_model {
     static std::vector<std::string> listview_header();
     static std::vector<sort_order> listview_default_sort();
 
+    static IImageList* shell_image_list();
+
     void startup();
 
     void sort_list(int col);
@@ -55,6 +60,7 @@ class data_model {
 
     void clicked(int index);
     void context_menu(POINT pt);
+    void selected(POINT pt);
     void menu_clicked(short id);
 
     void show_in_explorer(int index) const;
@@ -67,7 +73,7 @@ class data_model {
         CtxShowInExplorer
     };
 
-    item_provider* _get_provider(const std::wstring& path);
+    item_provider* _get_provider(const std::wstring& path, bool return_on_error = false);
 
     // Fill view with items from the specified path
     void _fill();
@@ -77,6 +83,9 @@ class data_model {
 
     // Build provider queue for the current path
     void _build();
+
+    // Use the provider as a preview
+    void _preview(item_provider* p);
 
     // Function used for sorting
     static int CALLBACK _sort_impl(LPARAM lparam1, LPARAM lparam2, LPARAM info);
@@ -88,6 +97,7 @@ class data_model {
     std::deque<item_provider*> _m_providers;
     
     main_window* _m_window;
+    right_window* _m_right;
     list_view* _m_listview;
     line_edit* _m_path_edit;
     push_button* _m_up_button;
@@ -96,8 +106,15 @@ class data_model {
     int _m_selected_col;
     std::vector<sort_order> _m_sort_order;
 
+    int _m_preview_selected;
+    std::vector<sort_order> _m_preview_order;
+
     // Menus
     item_data* _m_menu_item;
     int _m_menu_item_index;
+
+    // Preview
+    item_data* _m_preview_data;
+    item_provider* _m_preview_provider;
 };
 

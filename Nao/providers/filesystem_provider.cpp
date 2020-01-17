@@ -4,6 +4,10 @@
 #include "utils.h"
 #include "data_model.h"
 
+#include <shellapi.h>
+#include <thread>
+#include <filesystem>
+
 filesystem_provider::filesystem_provider(const std::string& path, data_model& model)
     : item_provider(path, model)
     , _m_path { utils::utf16(path) } {
@@ -74,6 +78,7 @@ void filesystem_provider::_populate() {
 
         return;
     }
+
     WIN32_FIND_DATAW data;
     HANDLE f = FindFirstFileW((_m_path + L"\\*").c_str(), &data);
 
@@ -105,9 +110,12 @@ void filesystem_provider::_populate() {
             file_path = _m_path + data.cFileName;
         }
 
-        SHFILEINFOW finfo { };
+        SHFILEINFOW finfo {  };
+        static size_t x = 0;
+        utils::coutln(std::this_thread::get_id(), x++, file_path.c_str());
         DWORD_PTR hr = SHGetFileInfoW(file_path.c_str(), 0, &finfo,
-            sizeof(finfo), SHGFI_TYPENAME | SHGFI_ICON | SHGFI_ICONLOCATION | SHGFI_ADDOVERLAYS);
+            sizeof(finfo),
+            SHGFI_TYPENAME | SHGFI_ICON | SHGFI_ICONLOCATION | SHGFI_SMALLICON | SHGFI_SYSICONINDEX);
 
         if (hr == 0) {
             std::wstringstream ss;

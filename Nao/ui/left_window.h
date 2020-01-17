@@ -1,13 +1,12 @@
 #pragma once
 
-#include <string>
-
 #include "ui_element.h"
+
+#include <string>
 
 class list_view;
 class line_edit;
 class push_button;
-
 class data_model;
 
 class left_window : public ui_element {
@@ -31,8 +30,9 @@ class left_window : public ui_element {
     // An item has been double-clicked
     void _dblclick(NMITEMACTIVATE* item) const;
 
-    // Right-clicked
+    // Right or left click
     void _rclick(NMITEMACTIVATE* item) const;
+    void _lclick(NMITEMACTIVATE* item) const;
 
     LRESULT _wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 

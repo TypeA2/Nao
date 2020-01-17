@@ -4,35 +4,49 @@
 #include "resource.h"
 #include "frameworks.h"
 #include "dimensions.h"
+#include "data_model.h"
 
 right_window::right_window(ui_element* parent, data_model& model)
     : ui_element(parent)
-    , _m_model(model) {
+    , _m_model(model)
+    , _m_preview { } {
     ASSERT(parent);
 
     _init();
+
+    _m_model.set_right(this);
 }
 
 right_window::~right_window() {
-    (void) this;
+    delete _m_preview;
 }
 
 
 
-void right_window::wm_paint() {
-    PAINTSTRUCT ps;
-    HDC hdc = BeginPaint(handle(), &ps);
+void right_window::set_preview(ui_element* element) {
+    ASSERT(element);
+    _m_preview = element;
+}
 
-    RECT rect;
-    GetClientRect(handle(), &rect);
+void right_window::clear_preview() {
+    delete _m_preview;
+    _m_preview = nullptr;
+}
 
-    HBRUSH brush = CreateSolidBrush(RGB(0xff, 0, 0));
+ui_element* right_window::preview() const {
+    return _m_preview;
+}
 
-    FillRect(hdc, &rect, brush);
 
-    DeleteObject(brush);
 
-    EndPaint(handle(), &ps);
+void right_window::wm_size(int type, int width, int height) {
+    if (_m_preview) {
+        HDWP dwp = BeginDeferWindowPos(1);
+
+        _m_preview->move_dwp(dwp, 0, 0, width, height);
+
+        EndDeferWindowPos(dwp);
+    }
 }
 
 

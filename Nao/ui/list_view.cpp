@@ -11,9 +11,12 @@ list_view::list_view(ui_element* parent) : ui_element(parent) {
 }
 
 list_view::list_view(ui_element* parent,
-    const std::vector<std::string>& hdr, IImageList* list): list_view(parent) {
+    const std::vector<std::string>& hdr, IImageList* list) : list_view(parent) {
     set_columns(hdr);
-    set_image_list(list);
+
+    if (list) {
+        set_image_list(list);
+    }
 }
 
 list_view::~list_view() {
@@ -212,7 +215,5 @@ void list_view::_init() {
     SetWindowTheme(handle, L"Explorer", nullptr);
     ListView_SetExtendedListViewStyle(handle, LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
     
-    
     set_handle(handle);
-
 }

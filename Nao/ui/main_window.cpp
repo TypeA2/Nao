@@ -202,7 +202,7 @@ bool main_window::_init_instance(int show_cmd, const std::wstring& title) {
 
 LRESULT main_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
     (void) this;
-
+    
     // Message processing
     return DefWindowProcW(hwnd, msg, wparam, lparam);
 }

@@ -193,7 +193,6 @@
     <ClInclude Include="item_provider.h" />
     <ClInclude Include="item_provider_factory.h" />
     <ClInclude Include="providers\filesystem_provider.h" />
-    <ClInclude Include="push_button.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="steam_utils.h" />
     <ClInclude Include="ui\dimensions.h" />

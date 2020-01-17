@@ -79,9 +79,6 @@
     <ClInclude Include="ui\line_edit.h">
       <Filter>Header Files\ui</Filter>
     </ClInclude>
-    <ClInclude Include="push_button.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ui\push_button.h">
       <Filter>Header Files\ui</Filter>
     </ClInclude>

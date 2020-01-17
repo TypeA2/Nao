@@ -35,14 +35,7 @@ left_window::~left_window() {
 
 bool left_window::wm_create(CREATESTRUCTW* create) {
     (void) create;
-    // ListView ImageList
-    IImageList* imglist;
-    if (FAILED(SHGetImageList(SHIL_SMALL, IID_PPV_ARGS(&imglist)))) {
-        utils::coutln("failed to retrieve shell image list");
-        return false;
-    }
-
-    _m_list = new list_view(this, data_model::listview_header(), imglist);
+    _m_list = new list_view(this, data_model::listview_header(), data_model::shell_image_list());
     _m_model.set_listview(_m_list);
 
     _m_path = new line_edit(this);
@@ -222,6 +215,10 @@ void left_window::_rclick(NMITEMACTIVATE* item) const {
     _m_model.context_menu(item->ptAction);
 }
 
+void left_window::_lclick(NMITEMACTIVATE* item) const {
+    _m_model.selected(item->ptAction);
+}
+
 
 
 LRESULT left_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
@@ -244,6 +241,10 @@ LRESULT left_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
                     case NM_RCLICK: {
                         _rclick(reinterpret_cast<NMITEMACTIVATE*>(nm));
                         break;
+                    }
+
+                    case NM_CLICK: {
+                        _lclick(reinterpret_cast<NMITEMACTIVATE*>(nm));
                     }
 
                     default:
