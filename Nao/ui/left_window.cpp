@@ -60,14 +60,14 @@ bool left_window::wm_create(CREATESTRUCTW* create) {
     _m_refresh = new push_button(this, refresh_icon);
     _m_refresh->move(dims::control_button_width + 2 * dims::gutter_size, dims::gutter_size,
         dims::control_button_width, dims::control_height + 2);
-    _m_refresh->set_style(WS_DISABLED);
+    _m_refresh->set_enabled(false);
     DeleteObject(refresh_icon);
 
 
     HICON folder_icon;
     LoadIconWithScaleDown(shell32, MAKEINTRESOURCEW(4), 16, 16, &folder_icon);
     _m_browse = new push_button(this, L"Browse...", folder_icon);
-    _m_browse->set_style(WS_DISABLED);
+    _m_browse->set_enabled(false);
     DeleteObject(folder_icon);
 
     FreeLibrary(shell32);

@@ -5,7 +5,7 @@
 #include <sstream>
 
 #ifdef NDEBUG
-#define ASSERT(cond) do { if (!(cond)) { throw std::runtime_error("assertion failed: " #cond); }} while (0)
+#define ASSERT(cond) do { if (!(cond)) { throw std::runtime_error("assertion failed in " __FILE__ " at " __LINE__ ": " #cond); }} while (0)
 #else
 #include <cassert>
 #define ASSERT(cond) assert(cond);
@@ -19,7 +19,7 @@ namespace utils {
     void coutln(LPCWSTR wstr);
 
     template <typename T>
-    void cout(const T& v) {
+    void cout(T&& v) {
         std::wstringstream ss;
         ss << v;
         cout(ss.str().c_str());
@@ -39,15 +39,15 @@ namespace utils {
     }
 
     template <typename T, typename... Args>
-    void cout(const T& v, Args... args) {
-        cout(v);
+    void cout(T&& v, Args&&... args) {
+        cout(std::forward<T>(v));
         cout(" ");
-        cout(args...);
+        cout(std::forward<Args>(args)...);
     }
 
     template <typename... Args>
-    void coutln (Args... args) {
-        cout(args...);
+    void coutln(Args&&... args) {
+        cout(std::forward<Args>(args)...);
         cout("\n");
     }
 

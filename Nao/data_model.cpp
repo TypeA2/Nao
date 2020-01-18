@@ -17,17 +17,19 @@
 
 data_model::data_model(std::wstring initial_path)
     : _m_path { std::move(initial_path) }
-    , _m_lock { true } 
+    , _m_locked { false } 
     , _m_window { }
     , _m_right { }
     , _m_listview { }
     , _m_path_edit { }
     , _m_up_button { }
     , _m_selected_col { }
+    , _m_preview_selected { }
     , _m_menu_item { }
     , _m_menu_item_index { -1 }
     , _m_preview_data { }
-    , _m_preview_provider { } {
+    , _m_preview_provider { }
+    , _m_worker(1) {
     
 }
 
@@ -181,7 +183,7 @@ void data_model::move_relative(const std::wstring& rel) {
         delete _m_providers.back();
         _m_providers.pop_back();
 
-        // A directory (C:\)
+        // Current directory is a drive (C:\)
         if (_m_path.size() == 3 &&
             _m_path[0] >= L'A' &&
             _m_path[0] <= L'Z' &&
@@ -205,9 +207,6 @@ void data_model::move(const std::wstring& path) {
 
     utils::coutln("from", old_path, "to", _m_path);
 
-    // Go to root or not
-    _m_up_button->set_enabled(_m_path != L"\\");
-
     _build();
 
     _fill();
@@ -216,6 +215,11 @@ void data_model::move(const std::wstring& path) {
 
 
 void data_model::clicked(int index) {
+    if (index < 0) {
+        // No item clicked;
+        return;
+    }
+
     ASSERT(index < _m_listview->item_count());
 
     item_data* data = _m_listview->get_item_data<item_data>(index);
@@ -273,60 +277,59 @@ void data_model::context_menu(POINT pt) {
 }
 
 void data_model::selected(POINT pt) {
-    if (!_lock()) {
-        return;
-    }
-
-    int index = _m_listview->item_at(pt);
-    if (index < 0) {
-        // No item was clicked
-        return;
-    }
-
-    ASSERT(index < _m_listview->item_count());
-
-    item_data* data = _m_listview->get_item_data<item_data>(index);
-    _m_preview_data = data;
-
-    // Clear old preview
-    delete _m_preview_provider;
-    _m_right->clear_preview();
-
-    _m_preview_selected = _m_selected_col;
-    _m_preview_order = _m_sort_order;
-
-    if (data->dir || data->drive) {
-        std::wstring path = _m_path + data->name;
-
-        if (data->drive) {
-            path = { data->drive_letter, L':', L'\\' };
+    auto fwd = [this, pt] {
+        int index = _m_listview->item_at(pt);
+        if (index < 0) {
+            // No item was clicked
+            return;
         }
 
-        auto get = [this, &path] {
-            auto hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-            
-            if (hr != S_OK) {
-                throw std::runtime_error("CoInitializeEx failed");
+        auto hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+        ASSERT(hr == S_OK);
+
+        ASSERT(index < _m_listview->item_count());
+
+        item_data* data = _m_listview->get_item_data<item_data>(index);
+
+        if (_m_preview_data != data) {
+            _m_preview_data = data;
+
+            // Clear old preview
+            delete _m_preview_provider;
+            _m_preview_provider = nullptr;
+            SendMessageW(handle(), ClearPreviewElement, 0, 0);
+
+            _m_preview_selected = _m_selected_col;
+            _m_preview_order = _m_sort_order;
+
+            if (data->dir || data->drive) {
+                std::wstring path = _m_path + data->name;
+
+                if (data->drive) {
+                    path = { data->drive_letter, L':', L'\\' };
+                }
+
+                // Get preview provider
+                if (item_provider* p = _get_provider(path, true); p && p->count()) {
+                    std::function<ui_element * ()> creator([this] {
+                        return new list_view(_m_right, listview_header(), shell_image_list());
+                        });
+                    SendMessageW(handle(), CreatePreviewElement, 1, LPARAM(&creator));
+
+                    std::unique_lock lock(_m_mutex);
+                    _m_cond.wait(lock, [this] { return !!_m_right->preview(); });
+
+                    _m_preview_provider = p;
+                    _preview(p);
+                }
+
             }
-
-            item_provider* p = _get_provider(path, true);
-
-            CoUninitialize();
-
-            return p;
-        };
-
-        // Get preview provider
-        if (item_provider* p = get(); p && p->count()) {
-            list_view* preview_list = new list_view(_m_right, listview_header(), shell_image_list());
-
-            _m_right->set_preview(preview_list);
-
-            _m_preview_provider = p;
-            std::thread(&data_model::_preview, this, p).detach();
         }
-    }
 
+        CoUninitialize();
+    };
+
+    _m_worker.push_detached(fwd);
 }
 
 void data_model::menu_clicked(short id) {
@@ -359,6 +362,30 @@ void data_model::show_in_explorer(int index) const {
 
         ILFree(idl);
     }
+}
+
+
+
+void data_model::handle_message(messages msg, WPARAM wparam, LPARAM lparam) {
+    switch (msg) {
+        case CreatePreviewElement: {
+            auto creator = reinterpret_cast<std::function<ui_element*()>*>(lparam);
+            _m_right->set_preview((*creator)());
+
+            if (wparam == 0) {
+                delete creator;
+            }
+            break;
+        }
+
+        case ClearPreviewElement: {
+            _m_right->clear_preview();
+            break;
+        }
+    }
+
+    std::unique_lock lock(_m_mutex);
+    _m_cond.notify_all();
 }
 
 
@@ -443,7 +470,8 @@ void data_model::_fill() {
 
         // Items already sorted, we're done
 
-        _m_lock = true;
+        _m_up_button->set_enabled(_m_path != L"\\");
+        _unlock();
 
         CoUninitialize();
     };
@@ -452,12 +480,16 @@ void data_model::_fill() {
 }
 
 bool data_model::_lock() {
-    if (!_m_lock) {
+    if (_m_locked) {
         return false;
     }
 
-    _m_lock = true;
+    _m_locked = true;
     return true;
+}
+
+void data_model::_unlock() {
+    _m_locked = false;
 }
 
 void data_model::_build() {
@@ -537,8 +569,6 @@ void data_model::_preview(item_provider* p) {
 
     // Fill remainder with last column
     preview_list->set_column_width(preview_list->column_count() - 1, LVSCW_AUTOSIZE_USEHEADER);
-
-    _m_lock = true;
 }
 
 

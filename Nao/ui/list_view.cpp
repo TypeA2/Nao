@@ -94,7 +94,8 @@ int list_view::add_item(const std::vector<std::string>& text, int image, LPARAM 
 int list_view::add_item(const std::vector<std::wstring>& text, int image, LPARAM extra) const {
     ASSERT(_m_image_list);
     ASSERT(!text.empty());
-    ASSERT(text.size() == size_t(Header_GetItemCount(ListView_GetHeader(handle()))));
+    size_t header_size = Header_GetItemCount(ListView_GetHeader(handle()));
+    ASSERT(text.size() == header_size);
 
     LVITEMW item { };
     item.mask = LVIF_TEXT | LVIF_IMAGE | LVIF_PARAM;

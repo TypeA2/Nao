@@ -3,11 +3,10 @@
 #include "frameworks.h"
 
 #include "item_provider.h"
+#include "thread_pool.h"
 
 #include <deque>
 #include <stdexcept>
-#include <vector>
-#include <atomic>
 
 class main_window;
 class right_window;
@@ -25,6 +24,28 @@ class data_model {
 
     // LPARAM for list items
     using item_data = item_provider::item_data;
+
+    // Messages
+    enum messages : UINT {
+        First = WM_USER,
+
+        /*
+         * Set the preview element in _m_right
+         *
+         * WPARAM: 0 if LPARAM should be `delete`ed, nonzero if not
+         * LPARAM: pointer to a std::function<ui_element*()>
+         */
+        CreatePreviewElement,
+
+        /*
+         * Delete the current preview element
+         *
+         * No parameters
+         */
+        ClearPreviewElement,
+
+        Last
+    };
 
     data_model() = delete;
     explicit data_model(std::wstring initial_path);
@@ -65,6 +86,8 @@ class data_model {
 
     void show_in_explorer(int index) const;
 
+    void handle_message(messages msg, WPARAM wparam, LPARAM lparam);
+
     private:
     // Context menu actions
     enum context_menu_action : uint16_t {
@@ -80,6 +103,7 @@ class data_model {
 
     // Thread locking, stop if false
     bool _lock();
+    void _unlock();
 
     // Build provider queue for the current path
     void _build();
@@ -93,7 +117,7 @@ class data_model {
     std::wstring _m_path;
 
     // Only allow 1 async operation at a time
-    std::atomic<bool> _m_lock;
+    std::atomic<bool> _m_locked;
     std::deque<item_provider*> _m_providers;
     
     main_window* _m_window;
@@ -116,5 +140,10 @@ class data_model {
     // Preview
     item_data* _m_preview_data;
     item_provider* _m_preview_provider;
+
+    // Event handler worker (pool)
+    thread_pool _m_worker;
+    std::mutex _m_mutex;
+    std::condition_variable _m_cond;
 };
 

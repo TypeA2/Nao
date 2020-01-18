@@ -11,10 +11,7 @@
 #include "data_model.h"
 #include "dimensions.h"
 
-#include <process.h>
-
 #include <clocale>
-#include <algorithm>
 
 main_window::main_window(HINSTANCE inst, int show_cmd, data_model& model)
     : ui_element(nullptr)
@@ -202,8 +199,12 @@ bool main_window::_init_instance(int show_cmd, const std::wstring& title) {
 
 LRESULT main_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
     (void) this;
+
+    if (msg > data_model::First && msg < data_model::Last) {
+        _m_model.handle_message(static_cast<data_model::messages>(msg), wparam, lparam);
+        return 0;
+    }
     
-    // Message processing
     return DefWindowProcW(hwnd, msg, wparam, lparam);
 }
 

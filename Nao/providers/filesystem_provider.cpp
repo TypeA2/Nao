@@ -111,8 +111,6 @@ void filesystem_provider::_populate() {
         }
 
         SHFILEINFOW finfo {  };
-        static size_t x = 0;
-        utils::coutln(std::this_thread::get_id(), x++, file_path.c_str());
         DWORD_PTR hr = SHGetFileInfoW(file_path.c_str(), 0, &finfo,
             sizeof(finfo),
             SHGFI_TYPENAME | SHGFI_ICON | SHGFI_ICONLOCATION | SHGFI_SMALLICON | SHGFI_SYSICONINDEX);
