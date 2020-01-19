@@ -12,7 +12,6 @@
 #include "data_model.h"
 
 #include <string>
-#include <thread>
 #include <filesystem>
 
 left_window::left_window(ui_element* parent, data_model& model)
@@ -36,7 +35,7 @@ left_window::~left_window() {
 bool left_window::wm_create(CREATESTRUCTW* create) {
     (void) create;
     _m_list = new list_view(this, data_model::listview_header(), data_model::shell_image_list());
-    _m_model.set_listview(_m_list);
+    _m_model.set_list_view(_m_list);
 
     _m_path = new line_edit(this);
     _m_model.set_path_edit(_m_path);
@@ -208,7 +207,7 @@ void left_window::_sort(NMLISTVIEW* view) const{
 }
 
 void left_window::_dblclick(NMITEMACTIVATE* item) const {
-    _m_model.clicked(item->iItem);
+    _m_model.opened(item->iItem);
 }
 
 void left_window::_rclick(NMITEMACTIVATE* item) const {

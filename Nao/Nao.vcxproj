@@ -188,6 +188,7 @@
     <Image Include="small.ico" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="com_thread.h" />
     <ClInclude Include="data_model.h" />
     <ClInclude Include="frameworks.h" />
     <ClInclude Include="item_provider.h" />
@@ -208,6 +209,7 @@
     <ClInclude Include="vdf_parser.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="com_thread.cpp" />
     <ClCompile Include="data_model.cpp" />
     <ClCompile Include="item_provider.cpp" />
     <ClCompile Include="item_provider_factory.cpp" />

@@ -142,7 +142,7 @@ bool main_window::_init(int show_cmd) {
     // Load accelerators
     _m_accel = LoadAcceleratorsW(_m_inst, MAKEINTRESOURCEW(IDC_NAO));
     ASSERT(_m_accel);
-    
+
     return true;
 }
 

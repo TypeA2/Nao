@@ -4,8 +4,14 @@
 
 #include <sstream>
 
+#define LINE_STRINGIFY(x) LINE_STRINGIFY2(x)
+#define LINE_STRINGIFY2(x) #x
+#define FILE_AT __FILE__ ":" LINE_STRINGIFY(__LINE__)
+
 #ifdef NDEBUG
-#define ASSERT(cond) do { if (!(cond)) { throw std::runtime_error("assertion failed in " __FILE__ " at " __LINE__ ": " #cond); }} while (0)
+#define ASSERT(cond) do { if (!(cond)) { throw std::runtime_error( \
+    "assertion failed in " FILE_AT " -> " #cond); }} while (0)
+
 #else
 #include <cassert>
 #define ASSERT(cond) assert(cond);

@@ -8,6 +8,7 @@
 #include "list_view.h"
 #include "push_button.h"
 #include "right_window.h"
+#include "com_thread.h"
 
 #include <ShlObj_core.h>
 
@@ -20,11 +21,10 @@ data_model::data_model(std::wstring initial_path)
     , _m_locked { false } 
     , _m_window { }
     , _m_right { }
-    , _m_listview { }
     , _m_path_edit { }
     , _m_up_button { }
-    , _m_selected_col { }
-    , _m_preview_selected { }
+    , _m_list_view { }
+    , _m_preview_list { }
     , _m_menu_item { }
     , _m_menu_item_index { -1 }
     , _m_preview_data { }
@@ -52,12 +52,12 @@ void data_model::set_right(right_window* right) {
     _m_right = right;
 }
 
-void data_model::set_listview(list_view* listview) {
-    ASSERT(!_m_listview && listview);
+void data_model::set_list_view(list_view* list_view) {
+    ASSERT(!_m_list_view && list_view);
 
-    _m_listview = listview;
+    _m_list_view = list_view;
 
-    _m_sort_order.resize(_m_listview->column_count());
+    _m_list_view.order.resize(list_view->column_count());
 }
 
 void data_model::set_path_edit(line_edit* path_edit) {
@@ -70,27 +70,27 @@ void data_model::set_up_button(push_button* up) {
     _m_up_button = up;
 }
 
-main_window* data_model::window() const {
+main_window* data_model::get_window() const {
     ASSERT(_m_window);
     return _m_window;
 }
 
-right_window* data_model::right() const {
+right_window* data_model::get_right() const {
     ASSERT(_m_right);
     return _m_right;
 }
 
-list_view* data_model::listview() const {
-    ASSERT(_m_listview);
-    return _m_listview;
+list_view* data_model::get_list_view() const {
+    ASSERT(_m_list_view);
+    return _m_list_view;
 }
 
-line_edit* data_model::path_edit() const {
+line_edit* data_model::get_path_edit() const {
     ASSERT(_m_path_edit);
     return _m_path_edit;
 }
 
-push_button* data_model::up_button() const {
+push_button* data_model::get_up_button() const {
     return _m_up_button;
 }
 
@@ -134,10 +134,10 @@ IImageList* data_model::shell_image_list() {
 
 
 void data_model::startup() {
-    ASSERT(_m_window && _m_right && _m_listview && _m_path_edit && _m_up_button);
+    ASSERT(_m_window && _m_right && _m_list_view && _m_path_edit && _m_up_button);
 
     // "Size" alignment
-    _m_listview->set_column_alignment(2, list_view::Right);
+    _m_list_view->set_column_alignment(2, list_view::Right);
 
     if (_m_path.empty()) {
         _m_path = L"\\";
@@ -147,98 +147,53 @@ void data_model::startup() {
     move(_m_path);
 
     // Default sort
-    _m_sort_order[0] = Reverse;
+    _m_list_view.order[0] = Reverse;
     sort_list(0);
 }
 
 void data_model::sort_list(int col) {
-    _m_selected_col = col;
-
-    std::vector default_order = listview_default_sort();
-
-    if (_m_selected_col != col) {
-        // Set default order
-        _m_sort_order[col] = default_order[col];
-    } else {
-        _m_sort_order[_m_selected_col]
-            = (_m_sort_order[_m_selected_col] == Reverse) ? Normal : Reverse;
-    }
-
-    _m_selected_col = col;
-
-    for (int i = 0; i < int(std::size(_m_sort_order)); ++i) {
-        if (i == col) {
-            _m_listview->set_sort_arrow(i,
-                (_m_sort_order[i] == Reverse) ? list_view::DownArrow : list_view::UpArrow);
-        } else {
-            _m_listview->set_sort_arrow(i, list_view::NoArrow);
-        }
-    }
-
-    ListView_SortItems(_m_listview->handle(), &data_model::_sort_impl, MAKELPARAM(col, _m_sort_order[col]));
+    _sort(_m_list_view, col);
 }
 
 void data_model::move_relative(const std::wstring& rel) {
-    if (rel == L"..") {
-        delete _m_providers.back();
-        _m_providers.pop_back();
+    _m_worker.push_detached(com_thread::bind([this, rel] {
+        if (rel == L"..") {
+            delete _m_providers.back();
+            _m_providers.pop_back();
 
-        // Current directory is a drive (C:\)
-        if (_m_path.size() == 3 &&
-            _m_path[0] >= L'A' &&
-            _m_path[0] <= L'Z' &&
-            _m_path.substr(1, 2) == L":\\") {
-            move(L"\\");
-            return;
+            // Current directory is a drive (C:\)
+            if (_m_path.size() == 3 &&
+                _m_path[0] >= L'A' &&
+                _m_path[0] <= L'Z' &&
+                _m_path.substr(1, 2) == L":\\") {
+                _move(L"\\");
+                return;
+            }
         }
-    }
 
-    move(std::filesystem::absolute(_m_path + L'\\' + rel));
+        _move(std::filesystem::absolute(_m_path + L'\\' + rel));
+        }));
 }
 
 void data_model::move(const std::wstring& path) {
-    if (!_lock()) {
-        return;
-    }
-
-    std::wstring old_path = _m_path;
-
-    _m_path = path;
-
-    utils::coutln("from", old_path, "to", _m_path);
-
-    _build();
-
-    _fill();
+    _m_worker.push_detached(com_thread::bind(std::bind(&data_model::_move, this, path)));
 }
 
-
-
-void data_model::clicked(int index) {
-    if (index < 0) {
-        // No item clicked;
-        return;
-    }
-
-    ASSERT(index < _m_listview->item_count());
-
-    item_data* data = _m_listview->get_item_data<item_data>(index);
-
-    if (data->dir) {
-        move_relative(data->name);
-    } else if (data->drive) {
-        move({ data->drive_letter, L':', L'\\' });
-    }
+void data_model::opened(int index) {
+    _m_worker.push_detached(
+        com_thread::bind_cond(
+            [index] { return index >= 0; },
+            std::bind(&data_model::_opened, this, index)));
 }
 
 void data_model::context_menu(POINT pt) {
     (void) this;
-    int index = _m_listview->item_at(pt);
-    ASSERT(index < _m_listview->item_count());
+    int index = _m_list_view->item_at(pt);
+    ASSERT(index < _m_list_view->item_count());
 
-    ClientToScreen(_m_listview->handle(), &pt);
+    ClientToScreen(_m_list_view->handle(), &pt);
 
-    item_data* data = _m_listview->get_item_data<item_data>(index);
+    item_data* data = _m_list_view->get_item_data<item_data>(index);
     _m_menu_item = data;
     _m_menu_item_index = index;
 
@@ -246,90 +201,44 @@ void data_model::context_menu(POINT pt) {
 
     // Should the "Show in explorer" entry be appended
     bool insert = false;
-    if (!data->drive) {
-        if (GetFileAttributesW((_m_path + data->name).c_str()) != INVALID_FILE_ATTRIBUTES) {
-            insert = true;
+    // Could have clicked outside items
+    if (data) {
+        if (!data->drive) {
+            if (GetFileAttributesW((_m_path + data->name).c_str()) != INVALID_FILE_ATTRIBUTES) {
+                insert = true;
+            }
+        } else {
+            if ((GetLogicalDrives() >> (data->drive - L'A')) & 1) {
+                insert = true;
+            }
         }
-    } else {
-        if ((GetLogicalDrives() >> (data->drive - L'A')) & 1) {
-            insert = true;
+
+        if (data->dir || data->drive) {
+            InsertMenuW(popup, -1, MF_BYPOSITION | MF_STRING, CtxOpen, L"Open");
+
+            // Separator if there's another item that follows
+            if (insert) {
+                InsertMenuW(popup, -1, MF_BYPOSITION | MF_SEPARATOR, 0, nullptr);
+            }
         }
     }
 
-    if (data->dir || data->drive) {
-        InsertMenuW(popup, -1, MF_BYPOSITION | MF_STRING, CtxOpen, L"Open");
-
-        // Separator if there's another item that follows
-        if (insert) {
-            InsertMenuW(popup, -1, MF_BYPOSITION | MF_SEPARATOR, 0, nullptr);
-        }
-    }
-
-    if (insert) {
+    if (insert || index < 0) {
         InsertMenuW(popup, -1, MF_BYPOSITION | MF_STRING, CtxShowInExplorer, L"Show in explorer");
     }
 
     
     TrackPopupMenuEx(popup, TPM_TOPALIGN | TPM_LEFTALIGN | TPM_VERPOSANIMATION,
-        pt.x, pt.y, _m_listview->parent()->handle(), nullptr);
+        pt.x, pt.y, _m_list_view->parent()->handle(), nullptr);
 
     DestroyMenu(popup);
 }
 
 void data_model::selected(POINT pt) {
-    auto fwd = [this, pt] {
-        int index = _m_listview->item_at(pt);
-        if (index < 0) {
-            // No item was clicked
-            return;
-        }
-
-        auto hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
-        ASSERT(hr == S_OK);
-
-        ASSERT(index < _m_listview->item_count());
-
-        item_data* data = _m_listview->get_item_data<item_data>(index);
-
-        if (_m_preview_data != data) {
-            _m_preview_data = data;
-
-            // Clear old preview
-            delete _m_preview_provider;
-            _m_preview_provider = nullptr;
-            SendMessageW(handle(), ClearPreviewElement, 0, 0);
-
-            _m_preview_selected = _m_selected_col;
-            _m_preview_order = _m_sort_order;
-
-            if (data->dir || data->drive) {
-                std::wstring path = _m_path + data->name;
-
-                if (data->drive) {
-                    path = { data->drive_letter, L':', L'\\' };
-                }
-
-                // Get preview provider
-                if (item_provider* p = _get_provider(path, true); p && p->count()) {
-                    std::function<ui_element * ()> creator([this] {
-                        return new list_view(_m_right, listview_header(), shell_image_list());
-                        });
-                    SendMessageW(handle(), CreatePreviewElement, 1, LPARAM(&creator));
-
-                    std::unique_lock lock(_m_mutex);
-                    _m_cond.wait(lock, [this] { return !!_m_right->preview(); });
-
-                    _m_preview_provider = p;
-                    _preview(p);
-                }
-
-            }
-        }
-
-        CoUninitialize();
-    };
-
-    _m_worker.push_detached(fwd);
+    _m_worker.push_detached(
+        com_thread::bind_cond(
+            [this, pt] { return _m_list_view->item_at(pt) >= 0; },
+            std::bind(&data_model::_selected, this, pt)));
 }
 
 void data_model::menu_clicked(short id) {
@@ -337,7 +246,7 @@ void data_model::menu_clicked(short id) {
     switch (id) {
         case CtxOpen: {
             if (data->dir || data->drive) {
-                clicked(_m_menu_item_index);
+                opened(_m_menu_item_index);
             }
             break;
         }
@@ -349,14 +258,20 @@ void data_model::menu_clicked(short id) {
 
         default: return;
     }
-
+    
     _m_menu_item = nullptr;
     _m_menu_item_index = -1;
 }
 
 void data_model::show_in_explorer(int index) const {
-    item_data* data = _m_listview->get_item_data<item_data>(index);
-    LPITEMIDLIST idl = ILCreateFromPathW((_m_path + data->name).c_str());
+    LPITEMIDLIST idl;
+    if (index >= 0) {
+        item_data* data = _m_list_view->get_item_data<item_data>(index);
+        idl = ILCreateFromPathW((_m_path + data->name).c_str());
+    } else {
+        idl = ILCreateFromPathW(_m_path.c_str());
+    }
+
     if (idl) {
         SHOpenFolderAndSelectItems(idl, 0, nullptr, 0);
 
@@ -384,8 +299,23 @@ void data_model::handle_message(messages msg, WPARAM wparam, LPARAM lparam) {
         }
     }
 
-    std::unique_lock lock(_m_mutex);
+    std::unique_lock lock(_m_message_mutex);
     _m_cond.notify_all();
+}
+
+
+
+data_model::sorted_list_view::operator list_view*() const {
+    return list;
+}
+
+data_model::sorted_list_view& data_model::sorted_list_view::operator=(list_view* list) {
+    this->list = list;
+    return *this;
+}
+
+list_view* data_model::sorted_list_view::operator->() const noexcept {
+    return list;
 }
 
 
@@ -420,63 +350,50 @@ item_provider* data_model::_get_provider(const std::wstring& path, bool return_o
     return p;
 }
 
-void data_model::_fill() {
-    _m_path_edit->set_text(_m_path);
-
-    _m_listview->clear([](void* data) { delete reinterpret_cast<item_data*>(data); });
+void data_model::_fill(sorted_list_view& list, item_provider* provider) {
+    list->clear([](void* data) { delete reinterpret_cast<item_data*>(data); });
     
-    auto fwd = [this] {
-        (void) CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+    item_provider* p = provider ? provider : _get_provider(_m_path);
+    // Sort columns
+    std::vector<item_data*> items(p->count());
+    for (size_t i = 0; i < p->count(); ++i) {
+        items[i] = new item_data;
+        *items[i] = p->data(i);
+    }
 
-        item_provider* p = _get_provider(_m_path);
-        // Sort columns
-        std::vector<item_data*> items(p->count());
-        for (size_t i = 0; i < p->count(); ++i) {
-            items[i] = new item_data;
-            *items[i] = p->data(i);
+    std::sort(items.begin(), items.end(), [list](item_data* left, item_data* right) -> bool {
+        return _sort_impl(LPARAM(left), LPARAM(right),
+            MAKELPARAM(list.selected, list.order[list.selected])) == -1;
+        });
+
+    // Add items
+    for (item_data* data : items) {
+        list->add_item(
+            { data->name, data->type,
+                (data->size == 0)
+                    ? std::wstring()
+                    : data->size_str,
+                (data->compression == 0.)
+                    ? std::wstring()
+                    : (std::to_wstring(int64_t(data->compression / 100.)) + L'%') },
+            data->icon, LPARAM(data));
+    }
+
+    // Fit columns
+    for (int i = 0; i < list->column_count() - 1; ++i) {
+        int min = 0;
+
+        if (i == 0) {
+            min = list->width() / list->column_count();
         }
 
-        std::sort(items.begin(), items.end(), [this](item_data* left, item_data* right) -> bool {
-            return _sort_impl(LPARAM(left), LPARAM(right),
-                MAKELPARAM(_m_selected_col, _m_sort_order[_m_selected_col])) == -1;
-            });
+        list->set_column_width(i, LVSCW_AUTOSIZE, min);
+    }
 
-        // Add items
-        for (item_data* data : items) {
-            _m_listview->add_item(
-                { data->name, data->type,
-                    (data->size == 0)
-                        ? std::wstring()
-                        : data->size_str,
-                    (data->compression == 0.)
-                        ? std::wstring()
-                        : (std::to_wstring(int64_t(data->compression / 100.)) + L'%') },
-                data->icon, LPARAM(data));
-        }
+    // Fill remainder with last column
+    list->set_column_width(list->column_count() - 1, LVSCW_AUTOSIZE_USEHEADER);
 
-        // Fit columns
-        for (int i = 0; i < _m_listview->column_count() - 1; ++i) {
-            int min = 0;
-
-            if (i == 0) {
-                min = _m_listview->width() / _m_listview->column_count();
-            }
-
-            _m_listview->set_column_width(i, LVSCW_AUTOSIZE, min);
-        }
-
-        // Fill remainder with last column
-        _m_listview->set_column_width(_m_listview->column_count() - 1, LVSCW_AUTOSIZE_USEHEADER);
-
-        // Items already sorted, we're done
-
-        _m_up_button->set_enabled(_m_path != L"\\");
-        _unlock();
-
-        CoUninitialize();
-    };
-
-    std::thread(fwd).detach();
+    // Items already sorted, we're done
 }
 
 bool data_model::_lock() {
@@ -528,50 +445,124 @@ void data_model::_build() {
     }
 }
 
-void data_model::_preview(item_provider* p) {
-    list_view* preview_list = dynamic_cast<list_view*>(_m_right->preview());
+void data_model::_opened(int index) {
+    ASSERT(index < _m_list_view->item_count());
 
-    // Sort columns
-    std::vector<item_data*> items(p->count());
-    for (size_t i = 0; i < p->count(); ++i) {
-        items[i] = new item_data;
-        *items[i] = p->data(i);
+    item_data* data = _m_list_view->get_item_data<item_data>(index);
+
+    if (data->dir) {
+        _move(std::filesystem::absolute(_m_path + L'\\' + data->name));
+    } else if (data->drive) {
+        _move({ data->drive_letter, L':', L'\\' });
     }
-
-    std::sort(items.begin(), items.end(), [this](item_data* left, item_data* right) -> bool {
-        return _sort_impl(LPARAM(left), LPARAM(right),
-            MAKELPARAM(_m_preview_selected, _m_preview_order[_m_preview_selected])) == -1;
-        });
-
-    // Add items
-    for (item_data* data : items) {
-        preview_list->add_item(
-            { data->name, data->type,
-                (data->size == 0)
-                    ? std::wstring()
-                    : data->size_str,
-                (data->compression == 0.)
-                    ? std::wstring()
-                    : (std::to_wstring(int64_t(data->compression / 100.)) + L'%') },
-            data->icon, LPARAM(data));
-    }
-
-    // Fit columns
-    for (int i = 0; i < preview_list->column_count() - 1; ++i) {
-        int min = 0;
-
-        if (i == 0) {
-            min = preview_list->width() / preview_list->column_count();
-        }
-
-        preview_list->set_column_width(i, LVSCW_AUTOSIZE, min);
-    }
-
-    // Fill remainder with last column
-    preview_list->set_column_width(preview_list->column_count() - 1, LVSCW_AUTOSIZE_USEHEADER);
 }
 
 
+void data_model::_move(const std::wstring& path) {
+    {
+        std::unique_lock preview_lock(_m_preview_mutex);
+        delete _m_preview_provider;
+        _m_preview_provider = nullptr;
+        PostMessageW(handle(), ClearPreviewElement, 0, 0);
+
+        std::unique_lock lock(_m_message_mutex);
+        _m_cond.wait(lock, [this] { return !_m_right->preview(); });
+    }
+
+    std::wstring old_path = _m_path;
+
+    _m_path = path;
+
+    utils::coutln("from", old_path, "to", _m_path);
+
+    _build();
+
+    _m_path_edit->set_text(_m_path);
+
+    _fill(_m_list_view);
+
+    _m_up_button->set_enabled(_m_path != L"\\");
+    _unlock();
+}
+
+void data_model::_selected(POINT pt) {
+    int index = _m_list_view->item_at(pt);
+
+    ASSERT(index < _m_list_view->item_count());
+
+    item_data* data = _m_list_view->get_item_data<item_data>(index);
+
+    // If the selected item changed
+    if (_m_preview_data != data) {
+        _m_preview_data = data;
+
+        // Clear old preview
+        std::unique_lock preview_lock(_m_preview_mutex);
+        delete _m_preview_provider;
+        _m_preview_provider = nullptr;
+        PostMessageW(handle(), ClearPreviewElement, 0, 0);
+
+        {
+            std::unique_lock lock(_m_message_mutex);
+            _m_cond.wait(lock, [this] { return !_m_right->preview(); });
+        }
+
+        // First-time setup
+        if (!_m_preview_list) {
+            _m_preview_list.selected = _m_list_view.selected;
+            _m_preview_list.order = _m_list_view.order;
+        }
+
+        if (data->dir || data->drive) {
+            std::wstring path = _m_path + data->name;
+
+            if (data->drive) {
+                path = { data->drive_letter, L':', L'\\' };
+            }
+
+            // Get preview provider
+            if (item_provider* p = _get_provider(path, true); p && p->count()) {
+                std::function<ui_element * ()> creator([this] {
+                    return new list_view(_m_right, listview_header(), shell_image_list());
+                    });
+                PostMessageW(handle(), CreatePreviewElement, 1, LPARAM(&creator));
+
+                std::unique_lock lock(_m_message_mutex);
+                _m_cond.wait(lock, [this] { return !!_m_right->preview(); });
+
+                _m_preview_list = dynamic_cast<list_view*>(_m_right->preview());
+                _m_preview_provider = p;
+                _fill(_m_preview_list, p);
+            }
+
+        }
+    }
+}
+
+void data_model::_sort(sorted_list_view& list, int col) const {
+    std::vector default_order = listview_default_sort();
+
+    if (list.selected != col) {
+        // Set default order
+        list.order[col] = default_order[col];
+    } else {
+        list.order[list.selected]
+            = (list.order[col] == Reverse) ? Normal : Reverse;
+    }
+
+    list.selected = col;
+
+    for (int i = 0; i < int(std::size(list.order)); ++i) {
+        if (i == col) {
+            list->set_sort_arrow(i,
+                (list.order[i] == Reverse) ? list_view::DownArrow : list_view::UpArrow);
+        } else {
+            list->set_sort_arrow(i, list_view::NoArrow);
+        }
+    }
+
+    ListView_SortItems(list->handle(), &data_model::_sort_impl, MAKELPARAM(col, list.order[col]));
+}
 
 int data_model::_sort_impl(LPARAM lparam1, LPARAM lparam2, LPARAM info) {
     item_data* item1 = reinterpret_cast<item_data*>(lparam1);

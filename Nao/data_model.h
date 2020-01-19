@@ -53,15 +53,15 @@ class data_model {
 
     void set_window(main_window* window);
     void set_right(right_window* right);
-    void set_listview(list_view* listview);
+    void set_list_view(list_view* list_view);
     void set_path_edit(line_edit* path_edit);
     void set_up_button(push_button* up);
 
-    main_window* window() const;
-    right_window* right() const;
-    list_view* listview() const;
-    line_edit* path_edit() const;
-    push_button* up_button() const;
+    main_window* get_window() const;
+    right_window* get_right() const;
+    list_view* get_list_view() const;
+    line_edit* get_path_edit() const;
+    push_button* get_up_button() const;
 
     HWND handle() const;
 
@@ -79,7 +79,7 @@ class data_model {
     void move_relative(const std::wstring& rel);
     void move(const std::wstring& path);
 
-    void clicked(int index);
+    void opened(int index);
     void context_menu(POINT pt);
     void selected(POINT pt);
     void menu_clicked(short id);
@@ -96,10 +96,22 @@ class data_model {
         CtxShowInExplorer
     };
 
+    // Encapsulate a list_view and it's sorting information
+    struct sorted_list_view {
+        operator list_view* () const;
+        sorted_list_view& operator=(list_view* list);
+        list_view* operator->() const noexcept;
+
+        list_view* list;
+        int selected;
+        std::vector<sort_order> order;
+    };
+
     item_provider* _get_provider(const std::wstring& path, bool return_on_error = false);
 
     // Fill view with items from the specified path
-    void _fill();
+    void _fill(sorted_list_view& list,
+        item_provider* provider = nullptr);
 
     // Thread locking, stop if false
     bool _lock();
@@ -108,8 +120,10 @@ class data_model {
     // Build provider queue for the current path
     void _build();
 
-    // Use the provider as a preview
-    void _preview(item_provider* p);
+    void _opened(int index);
+    void _move(const std::wstring& path);
+    void _selected(POINT pt);
+    void _sort(sorted_list_view& list, int col) const;
 
     // Function used for sorting
     static int CALLBACK _sort_impl(LPARAM lparam1, LPARAM lparam2, LPARAM info);
@@ -122,16 +136,12 @@ class data_model {
     
     main_window* _m_window;
     right_window* _m_right;
-    list_view* _m_listview;
     line_edit* _m_path_edit;
     push_button* _m_up_button;
 
     // Sorting
-    int _m_selected_col;
-    std::vector<sort_order> _m_sort_order;
-
-    int _m_preview_selected;
-    std::vector<sort_order> _m_preview_order;
+    sorted_list_view _m_list_view;
+    sorted_list_view _m_preview_list;
 
     // Menus
     item_data* _m_menu_item;
@@ -143,7 +153,8 @@ class data_model {
 
     // Event handler worker (pool)
     thread_pool _m_worker;
-    std::mutex _m_mutex;
+    std::mutex _m_message_mutex;
+    std::mutex _m_preview_mutex;
     std::condition_variable _m_cond;
 };
 
