@@ -29,7 +29,8 @@ data_model::data_model(std::wstring initial_path)
     , _m_menu_item_index { -1 }
     , _m_preview_data { }
     , _m_preview_provider { }
-    , _m_worker(1) {
+    , _m_worker(1)
+    , _m_main_thread { std::this_thread::get_id() } {
     
 }
 
@@ -336,7 +337,7 @@ item_provider* data_model::_get_provider(const std::wstring& path, bool return_o
     item_provider* p = nullptr;
 
     if (GetFileAttributesW(path.c_str()) & FILE_ATTRIBUTE_DIRECTORY) {
-        // "\" is also regarded a directory
+        // "\" is also treated as a directory
         std::stringstream null;
         p = item_provider_factory::create(null, utils::utf8(path), *this);
     }
@@ -349,6 +350,19 @@ item_provider* data_model::_get_provider(const std::wstring& path, bool return_o
 
     return p;
 }
+
+void data_model::_clear_preview() {
+    ASSERT(std::this_thread::get_id() != _m_main_thread);
+
+    delete _m_preview_provider;
+    _m_preview_provider = nullptr;
+    PostMessageW(handle(), ClearPreviewElement, 0, 0);
+
+    std::unique_lock lock(_m_message_mutex);
+    _m_cond.wait(lock, [this] { return !_m_right->preview(); });
+}
+
+
 
 void data_model::_fill(sorted_list_view& list, item_provider* provider) {
     list->clear([](void* data) { delete reinterpret_cast<item_data*>(data); });
@@ -459,15 +473,7 @@ void data_model::_opened(int index) {
 
 
 void data_model::_move(const std::wstring& path) {
-    {
-        std::unique_lock preview_lock(_m_preview_mutex);
-        delete _m_preview_provider;
-        _m_preview_provider = nullptr;
-        PostMessageW(handle(), ClearPreviewElement, 0, 0);
-
-        std::unique_lock lock(_m_message_mutex);
-        _m_cond.wait(lock, [this] { return !_m_right->preview(); });
-    }
+    _clear_preview();
 
     std::wstring old_path = _m_path;
 
@@ -496,16 +502,7 @@ void data_model::_selected(POINT pt) {
     if (_m_preview_data != data) {
         _m_preview_data = data;
 
-        // Clear old preview
-        std::unique_lock preview_lock(_m_preview_mutex);
-        delete _m_preview_provider;
-        _m_preview_provider = nullptr;
-        PostMessageW(handle(), ClearPreviewElement, 0, 0);
-
-        {
-            std::unique_lock lock(_m_message_mutex);
-            _m_cond.wait(lock, [this] { return !_m_right->preview(); });
-        }
+        _clear_preview();
 
         // First-time setup
         if (!_m_preview_list) {

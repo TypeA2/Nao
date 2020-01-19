@@ -108,6 +108,7 @@ class data_model {
     };
 
     item_provider* _get_provider(const std::wstring& path, bool return_on_error = false);
+    void _clear_preview();
 
     // Fill view with items from the specified path
     void _fill(sorted_list_view& list,
@@ -154,7 +155,8 @@ class data_model {
     // Event handler worker (pool)
     thread_pool _m_worker;
     std::mutex _m_message_mutex;
-    std::mutex _m_preview_mutex;
     std::condition_variable _m_cond;
+
+    const std::thread::id _m_main_thread;
 };
 
