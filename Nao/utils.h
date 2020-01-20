@@ -18,11 +18,15 @@
 #endif
 
 namespace utils {
-    void cout(LPCSTR str);
-    void cout(LPCWSTR wstr);
+    void cout(const char* str);
+    void cout(const wchar_t* wstr);
 
-    void coutln(LPCSTR str);
-    void coutln(LPCWSTR wstr);
+    template <typename T>
+    void cout(std::basic_string<T, std::char_traits<T>, std::allocator<T>> str) {
+        std::basic_stringstream<T, std::char_traits<T>, std::allocator<T>> ss;
+        ss << str;
+        cout(ss.str().c_str());
+    }
 
     template <typename T>
     void cout(T&& v) {
@@ -32,15 +36,8 @@ namespace utils {
     }
 
     template <typename T>
-    void cout(const std::basic_string<T>& str) {
-        std::basic_stringstream<T> ss;
-        ss << str;
-        cout(ss.str().c_str());
-    }
-
-    template <typename T>
-    void coutln(const T& v) {
-        cout(v);
+    void coutln(T&& v) {
+        cout(std::forward<T>(v));
         cout("\n");
     }
 
@@ -48,7 +45,10 @@ namespace utils {
     void cout(T&& v, Args&&... args) {
         cout(std::forward<T>(v));
         cout(" ");
-        cout(std::forward<Args>(args)...);
+
+        if constexpr (sizeof...(Args) > 0) {
+            cout(std::forward<Args>(args)...);
+        }
     }
 
     template <typename... Args>

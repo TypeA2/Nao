@@ -18,7 +18,6 @@
 
 data_model::data_model(std::wstring initial_path)
     : _m_path { std::move(initial_path) }
-    , _m_locked { false } 
     , _m_window { }
     , _m_right { }
     , _m_path_edit { }
@@ -283,12 +282,14 @@ void data_model::show_in_explorer(int index) const {
 
 
 void data_model::handle_message(messages msg, WPARAM wparam, LPARAM lparam) {
+    DWORD loword = LOWORD(wparam);
+
     switch (msg) {
         case CreatePreviewElement: {
             auto creator = reinterpret_cast<std::function<ui_element*()>*>(lparam);
             _m_right->set_preview((*creator)());
 
-            if (wparam == 0) {
+            if (loword == 0) {
                 delete creator;
             }
             break;
@@ -298,10 +299,24 @@ void data_model::handle_message(messages msg, WPARAM wparam, LPARAM lparam) {
             _m_right->clear_preview();
             break;
         }
+
+        case InsertElementAsync: {
+            insert_element_async* item = reinterpret_cast<insert_element_async*>(lparam);
+
+            item->list->add_item(
+                item->elements, item->icon, LPARAM(item->data));
+
+            if (loword == 0) {
+                delete item;
+            }
+            break;
+        }
     }
 
-    std::unique_lock lock(_m_message_mutex);
-    _m_cond.notify_all();
+    if (HIWORD(wparam) == 0) {
+        std::unique_lock lock(_m_message_mutex);
+        _m_cond.notify_all();
+    }
 }
 
 
@@ -322,7 +337,8 @@ list_view* data_model::sorted_list_view::operator->() const noexcept {
 
 
 item_provider* data_model::_get_provider(const std::wstring& path, bool return_on_error) {
-    if (!return_on_error && !_m_providers.empty()) {
+    // When only moving up 1 level 
+    if (!_m_providers.empty()) {
         std::wstring name = utils::utf16(_m_providers.back()->get_name());
 
         if (path.size() > 1 && name.back() == L'\\' && path.back() != L'\\') {
@@ -332,6 +348,10 @@ item_provider* data_model::_get_provider(const std::wstring& path, bool return_o
         if (name == path) {
             return _m_providers.back();
         }
+    }
+
+    if (_m_preview_provider && _m_preview_provider->get_name() == utils::utf8(path)) {
+        return _m_preview_provider;
     }
 
     item_provider* p = nullptr;
@@ -356,8 +376,9 @@ void data_model::_clear_preview() {
 
     delete _m_preview_provider;
     _m_preview_provider = nullptr;
-    PostMessageW(handle(), ClearPreviewElement, 0, 0);
+    _m_preview_data = nullptr;
 
+    PostMessageW(handle(), ClearPreviewElement, 0, 0);
     std::unique_lock lock(_m_message_mutex);
     _m_cond.wait(lock, [this] { return !_m_right->preview(); });
 }
@@ -382,7 +403,9 @@ void data_model::_fill(sorted_list_view& list, item_provider* provider) {
 
     // Add items
     for (item_data* data : items) {
-        list->add_item(
+        PostMessageW(handle(), InsertElementAsync, MAKEWPARAM(0, 1),
+            LPARAM(new insert_element_async {
+            list,
             { data->name, data->type,
                 (data->size == 0)
                     ? std::wstring()
@@ -390,7 +413,9 @@ void data_model::_fill(sorted_list_view& list, item_provider* provider) {
                 (data->compression == 0.)
                     ? std::wstring()
                     : (std::to_wstring(int64_t(data->compression / 100.)) + L'%') },
-            data->icon, LPARAM(data));
+            data->icon,
+            data
+                }));
     }
 
     // Fit columns
@@ -410,20 +435,8 @@ void data_model::_fill(sorted_list_view& list, item_provider* provider) {
     // Items already sorted, we're done
 }
 
-bool data_model::_lock() {
-    if (_m_locked) {
-        return false;
-    }
-
-    _m_locked = true;
-    return true;
-}
-
-void data_model::_unlock() {
-    _m_locked = false;
-}
-
 void data_model::_build() {
+    // Need root element
     if (_m_path.size() > 1 && _m_path.back() != L'\\') {
         _m_path.push_back(L'\\');
     }
@@ -473,12 +486,8 @@ void data_model::_opened(int index) {
 
 
 void data_model::_move(const std::wstring& path) {
-    _clear_preview();
-
     std::wstring old_path = _m_path;
-
     _m_path = path;
-
     utils::coutln("from", old_path, "to", _m_path);
 
     _build();
@@ -487,8 +496,12 @@ void data_model::_move(const std::wstring& path) {
 
     _fill(_m_list_view);
 
+    if (_m_providers.back() == _m_preview_provider) {
+        _m_preview_provider = nullptr;
+        _clear_preview();
+    }
+
     _m_up_button->set_enabled(_m_path != L"\\");
-    _unlock();
 }
 
 void data_model::_selected(POINT pt) {
@@ -500,9 +513,9 @@ void data_model::_selected(POINT pt) {
 
     // If the selected item changed
     if (_m_preview_data != data) {
-        _m_preview_data = data;
-
         _clear_preview();
+
+        _m_preview_data = data;
 
         // First-time setup
         if (!_m_preview_list) {
@@ -511,7 +524,7 @@ void data_model::_selected(POINT pt) {
         }
 
         if (data->dir || data->drive) {
-            std::wstring path = _m_path + data->name;
+            std::wstring path = _m_path + data->name + L'\\';
 
             if (data->drive) {
                 path = { data->drive_letter, L':', L'\\' };

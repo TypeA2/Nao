@@ -72,6 +72,14 @@ void ui_element::set_enabled(bool enabled) {
     EnableWindow(handle(), enabled);
 }
 
+LRESULT ui_element::send_message(UINT msg, WPARAM wparam, LPARAM lparam) const {
+    return SendMessageW(handle(), msg, wparam, lparam);
+}
+
+bool ui_element::post_message(UINT msg, WPARAM wparam, LPARAM lparam) const {
+    return PostMessageW(handle(), msg, wparam, lparam);
+}
+
 
 
 void ui_element::set_handle(HWND handle) {

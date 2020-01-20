@@ -3,22 +3,12 @@
 #include <iomanip>
 
 namespace utils {
-    void cout(LPCSTR str) {
+    void cout(const char* str) {
         OutputDebugStringA(str);
     }
 
-    void cout(LPCWSTR wstr) {
+    void cout(const wchar_t* wstr) {
         OutputDebugStringW(wstr);
-    }
-
-    void coutln(LPCSTR str) {
-        cout(str);
-        OutputDebugStringW(L"\n");
-    }
-
-    void coutln(LPCWSTR wstr) {
-        cout(wstr);
-        OutputDebugStringW(L"\n");
     }
 
     std::string bytes(int64_t n) {

@@ -33,6 +33,10 @@ class ui_element {
     // Specifically enable or disable
     virtual void set_enabled(bool enabled = true);
 
+    // Manually send or post messages
+    virtual LRESULT send_message(UINT msg, WPARAM wparam, LPARAM lparam) const;
+    virtual bool post_message(UINT msg, WPARAM wparam, LPARAM lparam) const;
+
     protected:
     void set_handle(HWND handle);
 

@@ -6,7 +6,6 @@
 #include "thread_pool.h"
 
 #include <deque>
-#include <stdexcept>
 
 class main_window;
 class right_window;
@@ -25,7 +24,12 @@ class data_model {
     // LPARAM for list items
     using item_data = item_provider::item_data;
 
-    // Messages
+    /*
+     * Messages,
+     *
+     * WPARAM values are LOWORD, HIWORD is zero if
+     *  the condition variable should be notified
+     */
     enum messages : UINT {
         First = WM_USER,
 
@@ -44,7 +48,23 @@ class data_model {
          */
         ClearPreviewElement,
 
+        /*
+         * Insert an item into the specified list_view
+         *
+         * WPARAM: 0 if LPARAM should be `delete`ed, nonzero if not
+         *     
+         * LPARAM: Pointer to an insert_element_async struct
+         */
+        InsertElementAsync,
+
         Last
+    };
+
+    struct insert_element_async {
+        list_view* list;
+        std::vector<std::wstring> elements;
+        int icon;
+        item_data* data;
     };
 
     data_model() = delete;
@@ -114,10 +134,6 @@ class data_model {
     void _fill(sorted_list_view& list,
         item_provider* provider = nullptr);
 
-    // Thread locking, stop if false
-    bool _lock();
-    void _unlock();
-
     // Build provider queue for the current path
     void _build();
 
@@ -131,8 +147,6 @@ class data_model {
 
     std::wstring _m_path;
 
-    // Only allow 1 async operation at a time
-    std::atomic<bool> _m_locked;
     std::deque<item_provider*> _m_providers;
     
     main_window* _m_window;

@@ -266,7 +266,6 @@ LRESULT left_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
                 }
             }
 
-
             break;
         }
 
