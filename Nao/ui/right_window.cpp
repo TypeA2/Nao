@@ -23,18 +23,25 @@ right_window::~right_window() {
 
 
 
-void right_window::set_preview(ui_element* element) {
+void right_window::set_preview(ui_element* element, preview_type type) {
     ASSERT(element);
     _m_preview = element;
+
+    _m_type = type;
 }
 
 void right_window::clear_preview() {
     delete _m_preview;
     _m_preview = nullptr;
+    _m_type = preview_type::PreviewNone;
 }
 
 ui_element* right_window::preview() const {
     return _m_preview;
+}
+
+right_window::preview_type right_window::type() const {
+    return _m_type;
 }
 
 
@@ -88,5 +95,33 @@ void right_window::_init() {
 }
 
 LRESULT right_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
+    switch (_m_type) {
+        case preview_type::PreviewListView:
+            return _wnd_proc_list_view(msg, wparam, lparam);
+
+        default: break;
+    }
+
     return DefWindowProcW(hwnd, msg, wparam, lparam);
 }
+
+LRESULT right_window::_wnd_proc_list_view(UINT msg, WPARAM wparam, LPARAM lparam) {
+    ASSERT(_m_type == preview_type::PreviewListView);
+
+    switch (msg) {
+        case WM_NOTIFY: {
+            NMHDR* nm = LPNMHDR(lparam);
+
+            if (nm->hwndFrom == _m_preview->handle()) {
+                switch (nm->code) {
+                    case LVN_COLUMNCLICK: {
+                        _m_model.sort_preview(LPNMLISTVIEW(nm)->iSubItem);
+                    }
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+

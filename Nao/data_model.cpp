@@ -110,7 +110,7 @@ std::vector<std::string> data_model::listview_header() {
 }
 
 std::vector<data_model::sort_order> data_model::listview_default_sort() {
-    return { Normal, Normal, Reverse, Reverse };
+    return { SortOrderNormal, SortOrderNormal, SortOrderReverse, SortOrderReverse };
 }
 
 IImageList* data_model::shell_image_list() {
@@ -147,13 +147,20 @@ void data_model::startup() {
     move(_m_path);
 
     // Default sort
-    _m_list_view.order[0] = Reverse;
+    _m_list_view.order[0] = SortOrderReverse;
     sort_list(0);
 }
 
 void data_model::sort_list(int col) {
     _sort(_m_list_view, col);
 }
+
+void data_model::sort_preview(int col) {
+    if (_m_right->type() == PreviewListView) {
+        _sort(_m_preview_list, col);
+    }
+}
+
 
 void data_model::move_relative(const std::wstring& rel) {
     _m_worker.push_detached(com_thread::bind([this, rel] {
@@ -282,15 +289,28 @@ void data_model::show_in_explorer(int index) const {
 
 
 void data_model::handle_message(messages msg, WPARAM wparam, LPARAM lparam) {
-    DWORD loword = LOWORD(wparam);
+    bool _delete = LOWORD(wparam);
+    bool _notify = HIWORD(wparam);
 
     switch (msg) {
-        case CreatePreviewElement: {
-            auto creator = reinterpret_cast<std::function<ui_element*()>*>(lparam);
-            _m_right->set_preview((*creator)());
+        case ExecuteFunction: {
+            auto func = reinterpret_cast<std::function<void()>*>(lparam);
 
-            if (loword == 0) {
-                delete creator;
+            (*func)();
+
+            if (_delete) {
+                delete func;
+            }
+            break;
+        }
+
+        case CreatePreviewElement: {
+            auto cpa = reinterpret_cast<create_preview_async*>(lparam);
+
+            _m_right->set_preview(cpa->creator(), cpa->type);
+
+            if (_delete) {
+                delete cpa;
             }
             break;
         }
@@ -301,19 +321,21 @@ void data_model::handle_message(messages msg, WPARAM wparam, LPARAM lparam) {
         }
 
         case InsertElementAsync: {
-            insert_element_async* item = reinterpret_cast<insert_element_async*>(lparam);
+            auto item = reinterpret_cast<insert_element_async*>(lparam);
 
             item->list->add_item(
                 item->elements, item->icon, LPARAM(item->data));
 
-            if (loword == 0) {
+            if (_delete) {
                 delete item;
             }
             break;
         }
+
+        default: break;
     }
 
-    if (HIWORD(wparam) == 0) {
+    if (_notify) {
         std::unique_lock lock(_m_message_mutex);
         _m_cond.notify_all();
     }
@@ -378,7 +400,7 @@ void data_model::_clear_preview() {
     _m_preview_provider = nullptr;
     _m_preview_data = nullptr;
 
-    PostMessageW(handle(), ClearPreviewElement, 0, 0);
+    PostMessageW(handle(), ClearPreviewElement, MAKEWPARAM(false, true), 0);
     std::unique_lock lock(_m_message_mutex);
     _m_cond.wait(lock, [this] { return !_m_right->preview(); });
 }
@@ -401,9 +423,11 @@ void data_model::_fill(sorted_list_view& list, item_provider* provider) {
             MAKELPARAM(list.selected, list.order[list.selected])) == -1;
         });
 
+    // TODO maybe go on main thread from here on?
+
     // Add items
     for (item_data* data : items) {
-        PostMessageW(handle(), InsertElementAsync, MAKEWPARAM(0, 1),
+        PostMessageW(handle(), InsertElementAsync, MAKEWPARAM(true, false),
             LPARAM(new insert_element_async {
             list,
             { data->name, data->type,
@@ -517,12 +541,6 @@ void data_model::_selected(POINT pt) {
 
         _m_preview_data = data;
 
-        // First-time setup
-        if (!_m_preview_list) {
-            _m_preview_list.selected = _m_list_view.selected;
-            _m_preview_list.order = _m_list_view.order;
-        }
-
         if (data->dir || data->drive) {
             std::wstring path = _m_path + data->name + L'\\';
 
@@ -532,10 +550,21 @@ void data_model::_selected(POINT pt) {
 
             // Get preview provider
             if (item_provider* p = _get_provider(path, true); p && p->count()) {
-                std::function<ui_element * ()> creator([this] {
-                    return new list_view(_m_right, listview_header(), shell_image_list());
-                    });
-                PostMessageW(handle(), CreatePreviewElement, 1, LPARAM(&creator));
+                bool first_time = !_m_preview_list;
+
+                if (first_time) {
+                    _m_preview_list.selected = _m_list_view.selected;
+                    _m_preview_list.order = _m_list_view.order;
+                }
+
+                create_preview_async preview {
+                    [this] {
+                        return new list_view(_m_right, listview_header(), shell_image_list());
+                    },
+                    PreviewListView
+                };
+ 
+                PostMessageW(handle(), CreatePreviewElement, MAKEWPARAM(false, true), LPARAM(&preview));
 
                 std::unique_lock lock(_m_message_mutex);
                 _m_cond.wait(lock, [this] { return !!_m_right->preview(); });
@@ -543,6 +572,19 @@ void data_model::_selected(POINT pt) {
                 _m_preview_list = dynamic_cast<list_view*>(_m_right->preview());
                 _m_preview_provider = p;
                 _fill(_m_preview_list, p);
+
+                _m_preview_list->set_sort_arrow(_m_preview_list.selected,
+                    (_m_preview_list.order[_m_preview_list.selected] == SortOrderReverse)
+                    ? list_view::DownArrow : list_view::UpArrow);
+
+                if (first_time) {
+                    PostMessageW(handle(), ExecuteFunction,
+                        MAKEWPARAM(true, false),
+                        LPARAM(new std::function<void()>([this] {
+                            _m_preview_list.order[0] = SortOrderReverse;
+                            _sort(_m_preview_list, 0);
+                            })));
+                }
             }
 
         }
@@ -557,7 +599,7 @@ void data_model::_sort(sorted_list_view& list, int col) const {
         list.order[col] = default_order[col];
     } else {
         list.order[list.selected]
-            = (list.order[col] == Reverse) ? Normal : Reverse;
+            = (list.order[col] == SortOrderReverse) ? SortOrderNormal : SortOrderReverse;
     }
 
     list.selected = col;
@@ -565,7 +607,7 @@ void data_model::_sort(sorted_list_view& list, int col) const {
     for (int i = 0; i < int(std::size(list.order)); ++i) {
         if (i == col) {
             list->set_sort_arrow(i,
-                (list.order[i] == Reverse) ? list_view::DownArrow : list_view::UpArrow);
+                (list.order[i] == SortOrderReverse) ? list_view::DownArrow : list_view::UpArrow);
         } else {
             list->set_sort_arrow(i, list_view::NoArrow);
         }
@@ -588,12 +630,12 @@ int data_model::_sort_impl(LPARAM lparam1, LPARAM lparam2, LPARAM info) {
     int first2 = 0;
 
     switch (order) {
-        case Normal:
+        case SortOrderNormal:
             first1 = -1;
             first2 = 1;
             break;
 
-        case Reverse:
+        case SortOrderReverse:
             first1 = 1;
             first2 = -1;
             break;

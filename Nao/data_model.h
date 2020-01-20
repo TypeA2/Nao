@@ -12,13 +12,14 @@ class right_window;
 class list_view;
 class line_edit;
 class push_button;
+class ui_element;
 
 class data_model {
     public:
     enum sort_order : int8_t {
-        None,
-        Normal,
-        Reverse
+        SortOrderNone,
+        SortOrderNormal,
+        SortOrderReverse
     };
 
     // LPARAM for list items
@@ -27,17 +28,24 @@ class data_model {
     /*
      * Messages,
      *
-     * WPARAM values are LOWORD, HIWORD is zero if
-     *  the condition variable should be notified
+     * WPARAM:
+     *   LOWORD: true if LPARAM should be freed, false if not
+     *   HIWORD: true if condition variable should be notified, false if not
      */
     enum messages : UINT {
         First = WM_USER,
 
         /*
+         * Simply execute a function on the main thread
+         *
+         * LPARAM pointer to a std::function<void()>;
+         */
+        ExecuteFunction,
+
+        /*
          * Set the preview element in _m_right
          *
-         * WPARAM: 0 if LPARAM should be `delete`ed, nonzero if not
-         * LPARAM: pointer to a std::function<ui_element*()>
+         * LPARAM: pointer to a create_preview_async struct
          */
         CreatePreviewElement,
 
@@ -51,13 +59,21 @@ class data_model {
         /*
          * Insert an item into the specified list_view
          *
-         * WPARAM: 0 if LPARAM should be `delete`ed, nonzero if not
-         *     
          * LPARAM: Pointer to an insert_element_async struct
          */
         InsertElementAsync,
 
         Last
+    };
+
+    enum preview_type {
+        PreviewNone,
+        PreviewListView
+    };
+
+    struct create_preview_async {
+        std::function<ui_element * ()> creator;
+        preview_type type;
     };
 
     struct insert_element_async {
@@ -95,6 +111,7 @@ class data_model {
     void startup();
 
     void sort_list(int col);
+    void sort_preview(int col);
 
     void move_relative(const std::wstring& rel);
     void move(const std::wstring& path);
