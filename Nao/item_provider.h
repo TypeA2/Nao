@@ -1,18 +1,24 @@
 #pragma once
 
+#include "item_provider_factory.h"
+
 #include <string>
+#include <variant>
+#include <memory>
 
 class data_model;
 
 class item_provider {
     public:
+    using stream = item_provider_factory::stream;
+
     // Returned item data
     struct item_data {
-        std::wstring name;
-        std::wstring type;
+        std::string name;
+        std::string type;
 
         int64_t size {};
-        std::wstring size_str;
+        std::string size_str;
 
         double compression {};
 
@@ -21,10 +27,14 @@ class item_provider {
         bool dir {};
         bool drive {};
 
-        wchar_t drive_letter {};
+        char drive_letter {};
+
+        stream stream;
+
+        std::shared_ptr<void> data;
     };
 
-    item_provider(std::string name, data_model& model);
+    item_provider(stream file, std::string name, data_model& model);
     
     virtual ~item_provider() = default;
 
@@ -36,6 +46,7 @@ class item_provider {
     const std::string& get_name() const;
 
     protected:
+    stream file;
     std::string name;
     data_model& model;
 };

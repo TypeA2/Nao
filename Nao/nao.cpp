@@ -24,7 +24,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     InitCommonControlsEx(&picce);
 
-    data_model model(steam_utils::game_path(L"NieRAutomata", L"data"));
+    data_model model(utils::utf8(steam_utils::game_path(L"NieRAutomata", L"data")));
     
     main_window nao(hInstance, nShowCmd, model);
 

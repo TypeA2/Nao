@@ -16,7 +16,7 @@
 #include <thread>
 #include <future>
 
-data_model::data_model(std::wstring initial_path)
+data_model::data_model(std::string initial_path)
     : _m_path { std::move(initial_path) }
     , _m_window { }
     , _m_right { }
@@ -95,7 +95,7 @@ HWND data_model::handle() const {
     return _m_window->handle();
 }
 
-const std::wstring& data_model::path() const {
+const std::string& data_model::path() const {
     return _m_path;
 }
 
@@ -136,10 +136,10 @@ void data_model::startup() {
     _m_list_view->set_column_alignment(2, list_view::Right);
 
     if (_m_path.empty()) {
-        _m_path = L"\\";
+        _m_path = "\\";
     }
 
-    _m_providers.push_back(_get_provider(L"\\"));
+    _m_providers.push_back(_get_provider("\\"));
     move(_m_path);
 
     // Default sort
@@ -158,27 +158,27 @@ void data_model::sort_preview(int col) {
 }
 
 
-void data_model::move_relative(const std::wstring& rel) {
+void data_model::move_relative(const std::string& rel) {
     _m_worker.push_detached(com_thread::bind([this, rel] {
-        if (rel == L"..") {
+        if (rel == "..") {
             delete _m_providers.back();
             _m_providers.pop_back();
 
             // Current directory is a drive (C:\)
             if (_m_path.size() == 3 &&
-                _m_path[0] >= L'A' &&
-                _m_path[0] <= L'Z' &&
-                _m_path.substr(1, 2) == L":\\") {
-                _move(L"\\");
+                _m_path[0] >= 'A' &&
+                _m_path[0] <= 'Z' &&
+                _m_path.substr(1, 2) == ":\\") {
+                _move("\\");
                 return;
             }
         }
 
-        _move(std::filesystem::absolute(_m_path + L'\\' + rel));
+        _move(std::filesystem::absolute(_m_path + '\\' + rel).string());
         }));
 }
 
-void data_model::move(const std::wstring& path) {
+void data_model::move(const std::string& path) {
     _m_worker.push_detached(com_thread::bind(std::bind(&data_model::_move, this, path)));
 }
 
@@ -308,12 +308,12 @@ item_provider* data_model::preview_state::operator->() const noexcept {
 
 
 
-item_provider* data_model::_get_provider(const std::wstring& path, bool return_on_error) {
+item_provider* data_model::_get_provider(const std::string& path, bool return_on_error) {
     // When only moving up 1 level 
     if (!_m_providers.empty()) {
-        std::wstring name = utils::utf16(_m_providers.back()->get_name());
+        std::string name = _m_providers.back()->get_name();
 
-        if (path.size() > 1 && name.back() == L'\\' && path.back() != L'\\') {
+        if (path.size() > 1 && name.back() == '\\' && path.back() != '\\') {
             name.pop_back();
         }
 
@@ -322,20 +322,19 @@ item_provider* data_model::_get_provider(const std::wstring& path, bool return_o
         }
     }
 
-    if (_m_preview.is_shown && _m_preview->get_name() == utils::utf8(path)) {
+    if (_m_preview.is_shown && _m_preview->get_name() == path) {
         return _m_preview.provider;
     }
 
     item_provider* p = nullptr;
 
-    if (GetFileAttributesW(path.c_str()) & FILE_ATTRIBUTE_DIRECTORY) {
+    if (GetFileAttributesW(utils::utf16(path).c_str()) & FILE_ATTRIBUTE_DIRECTORY) {
         // "\" is also treated as a directory
-        std::stringstream null;
-        p = item_provider_factory::create(null, utils::utf8(path), *this);
+        p = item_provider_factory::create(nullptr, path, *this);
     }
 
     if (!return_on_error && !p) {
-        MessageBoxW(handle(), (L"Could not open " + path).c_str(),
+        MessageBoxW(handle(), utils::utf16("Could not open " + path).c_str(),
             L"Error", MB_OK | MB_ICONEXCLAMATION);
         return nullptr;
     }
@@ -383,11 +382,11 @@ void data_model::_fill(sorted_list_view& list, item_provider* provider) {
             list,
             { data->name, data->type,
                 (data->size == 0)
-                    ? std::wstring()
+                    ? std::string()
                     : data->size_str,
                 (data->compression == 0.)
-                    ? std::wstring()
-                    : (std::to_wstring(int64_t(data->compression / 100.)) + L'%') },
+                    ? std::string()
+                    : (std::to_string(int64_t(data->compression / 100.)) + '%') },
             data->icon,
             data
                 }));
@@ -412,15 +411,15 @@ void data_model::_fill(sorted_list_view& list, item_provider* provider) {
 
 void data_model::_build() {
     // Need root element
-    if (_m_path.size() > 1 && _m_path.back() != L'\\') {
-        _m_path.push_back(L'\\');
+    if (_m_path.size() > 1 && _m_path.back() != '\\') {
+        _m_path.push_back('\\');
     }
 
-    std::wstring current;
+    std::string current;
     // Never remove root
     while (_m_providers.size() > 1) {
         item_provider* p = _m_providers.back();
-        std::wstring name = utils::utf16(p->get_name());
+        std::string name = p->get_name();
 
         // Stop if this provider is part of the current path
         if (name.size() <= _m_path.size() && // Equal or smaller (this should be a substring)
@@ -434,14 +433,14 @@ void data_model::_build() {
     }
 
     // Root-only base case
-    if (_m_providers.size() == 1 && _m_path == L"\\") {
+    if (_m_providers.size() == 1 && _m_path == "\\") {
         return;
     }
 
     // Build path
     while (current != _m_path) {
         current = _m_path.substr(0,
-            _m_path.find_first_of(L'\\', current.size() + 1) + 1);
+            _m_path.find_first_of('\\', current.size() + 1) + 1);
 
         _m_providers.push_back(_get_provider(current));
     }
@@ -456,26 +455,26 @@ void data_model::_opened(sorted_list_view& list, int index) {
         if (list.list == _m_preview.list.list) {
             // Preview list is selected
             _move(std::filesystem::absolute(
-                _m_path + _m_preview.data->name + L'\\' + data->name));
+                _m_path + _m_preview.data->name + '\\' + data->name).string());
         } else {
             // Normal list is clicked
-            _move(std::filesystem::absolute(_m_path + data->name));
+            _move(std::filesystem::absolute(_m_path + data->name).string());
         }
     } else if (data->drive) {
-        _move({ data->drive_letter, L':', L'\\' });
+        _move({ data->drive_letter, ':', '\\' });
     }
 }
 
-void data_model::_move(const std::wstring& path) {
-    std::wstring old_path = _m_path;
+void data_model::_move(const std::string& path) {
+    std::string old_path = _m_path;
     _m_path = path;
-    if (_m_path.back() != L'\\') {
-        _m_path.push_back(L'\\');
+    if (_m_path.back() != '\\') {
+        _m_path.push_back('\\');
     }
 
     utils::coutln("from", old_path, "to", _m_path);
 
-    _m_path_edit->set_text(_m_path);
+    _m_path_edit->set_text(utils::utf16(_m_path));
 
     if (
         // Went deeper
@@ -505,7 +504,7 @@ void data_model::_move(const std::wstring& path) {
 
     _fill(_m_list_view);
 
-    _m_up_button->set_enabled(_m_path != L"\\");
+    _m_up_button->set_enabled(_m_path != "\\");
 }
 
 void data_model::_context_menu(sorted_list_view& list, POINT pt, bool preview) {
@@ -519,7 +518,7 @@ void data_model::_context_menu(sorted_list_view& list, POINT pt, bool preview) {
     item_data* data = list->get_item_data<item_data>(index);
     _m_menu.data = data;
     _m_menu.index = index;
-    _m_menu.path = preview ? utils::utf16(_m_preview->get_name()) : _m_path;
+    _m_menu.path = preview ? _m_preview->get_name() : _m_path;
 
     HMENU popup = CreatePopupMenu();
 
@@ -528,11 +527,11 @@ void data_model::_context_menu(sorted_list_view& list, POINT pt, bool preview) {
     // Could have clicked outside items
     if (data) {
         if (!data->drive) {
-            if (GetFileAttributesW((_m_menu.path + data->name).c_str()) != INVALID_FILE_ATTRIBUTES) {
+            if (GetFileAttributesW(utils::utf16(_m_menu.path + data->name).c_str()) != INVALID_FILE_ATTRIBUTES) {
                 insert = true;
             }
         } else {
-            if ((GetLogicalDrives() >> (data->drive - L'A')) & 1) {
+            if ((GetLogicalDrives() >> (data->drive - 'A')) & 1) {
                 insert = true;
             }
         }
@@ -571,10 +570,10 @@ void data_model::_selected(POINT pt) {
         _m_preview.data = data;
 
         if (data->dir || data->drive) {
-            std::wstring path = _m_path + data->name + L'\\';
+            std::string path = _m_path + data->name + '\\';
 
             if (data->drive) {
-                path = { data->drive_letter, L':', L'\\' };
+                path = { data->drive_letter, ':', '\\' };
             }
 
             // Get preview provider
@@ -680,12 +679,12 @@ int data_model::_sort_impl(LPARAM lparam1, LPARAM lparam2, LPARAM info) {
         return item1->dir ? -1 : 1;
     }
 
-    const auto& f = std::use_facet<std::ctype<std::wstring::value_type>>(std::locale());
+    const auto& f = std::use_facet<std::ctype<std::string::value_type>>(std::locale());
 
-    auto cmp = [&](const std::wstring& left, const std::wstring& right) -> int {
+    auto cmp = [&](const std::string& left, const std::string& right) -> int {
         return std::lexicographical_compare(
             left.begin(), left.end(), right.begin(), right.end(),
-            [&f](std::wstring::value_type a, std::wstring::value_type b) {
+            [&f](std::string::value_type a, std::string::value_type b) {
                 return f.tolower(a) < f.tolower(b);
             }) ? first1 : first2;
     };
@@ -733,9 +732,9 @@ void data_model::_show_in_explorer(menu_state& state) const {
     LPITEMIDLIST idl;
     if (state.index >= 0) {
         item_data* data = list->get_item_data<item_data>(state.index);
-        idl = ILCreateFromPathW((_m_menu.path + data->name).c_str());
+        idl = ILCreateFromPathW(utils::utf16(_m_menu.path + data->name).c_str());
     } else {
-        idl = ILCreateFromPathW(_m_menu.path.c_str());
+        idl = ILCreateFromPathW(utils::utf16(_m_menu.path).c_str());
     }
 
     if (idl) {

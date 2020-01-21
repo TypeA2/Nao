@@ -5,11 +5,10 @@
 #include "data_model.h"
 
 #include <shellapi.h>
-#include <thread>
 #include <filesystem>
 
 filesystem_provider::filesystem_provider(const std::string& path, data_model& model)
-    : item_provider(path, model)
+    : item_provider(nullptr, path, model)
     , _m_path { utils::utf16(path) } {
     utils::coutln("creating for", path);
     _populate();
@@ -51,22 +50,24 @@ void filesystem_provider::_populate() {
 
                     int64_t cluster_size = int64_t(sectors_per_cluster) * bytes_per_sector;
 
-                    std::wstringstream ss;
-                    ss << utils::wbytes(cluster_size * total_clusters)
+                    std::stringstream ss;
+                    ss << utils::bytes(cluster_size * total_clusters)
                         << " ("
-                        << utils::wbytes(cluster_size * free_clusters)
+                        << utils::bytes(cluster_size * free_clusters)
                         << " free)";
 
                     _m_contents.push_back({
-                        finfo.szDisplayName,
-                        finfo.szTypeName,
+                        utils::utf8(finfo.szDisplayName),
+                        utils::utf8(finfo.szTypeName),
                         cluster_size * free_clusters,
                         ss.str(),
                         0,
                         finfo.iIcon,
                         false,
                         true,
-                        *s
+                        utils::utf8(s).front(),
+                        nullptr,
+                        nullptr
                         });
                 }
 
@@ -127,14 +128,16 @@ void filesystem_provider::_populate() {
         int64_t size = (int64_t(data.nFileSizeHigh) << 32) | data.nFileSizeLow;
 
         _m_contents.push_back({
-            data.cFileName,
-            finfo.szTypeName,
+            utils::utf8(data.cFileName),
+            utils::utf8(finfo.szTypeName),
             size,
-            utils::wbytes(size),
+            utils::bytes(size),
             0,
             finfo.iIcon,
             !!(data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY),
-            !!(data.dwFileAttributes & FILE_ATTRIBUTE_DEVICE)
+            !!(data.dwFileAttributes & FILE_ATTRIBUTE_DEVICE),
+            '\0',
+            nullptr, nullptr
             });
     } while (FindNextFileW(f, &data) != 0);
 
@@ -147,7 +150,7 @@ void filesystem_provider::_populate() {
     FindClose(f);
 }
 
-item_provider* filesystem_provider::_create(std::istream& file,
+item_provider* filesystem_provider::_create(const stream& /* file */,
     const std::string& name, data_model& model) {
     
 

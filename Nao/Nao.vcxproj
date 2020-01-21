@@ -194,6 +194,7 @@
     <ClInclude Include="item_provider.h" />
     <ClInclude Include="item_provider_factory.h" />
     <ClInclude Include="providers\filesystem_provider.h" />
+    <ClInclude Include="providers\wsp_provider.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="steam_utils.h" />
     <ClInclude Include="thread_pool.h" />
@@ -215,6 +216,7 @@
     <ClCompile Include="item_provider_factory.cpp" />
     <ClCompile Include="nao.cpp" />
     <ClCompile Include="providers\filesystem_provider.cpp" />
+    <ClCompile Include="providers\wsp_provider.cpp" />
     <ClCompile Include="steam_utils.cpp" />
     <ClCompile Include="thread_pool.cpp" />
     <ClCompile Include="ui\left_window.cpp" />

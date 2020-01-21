@@ -173,35 +173,6 @@ void left_window::_open_folder() {
     dialog->Release();
 }
 
-/*
-void left_window::_move_to(std::wstring path) {
-    // Only move to an existing path
-
-    if (path.find(L'\\') != std::wstring::npos) {
-        bool success = true;
-
-        std::wstring next_path;
-
-        while (!(GetFileAttributesW(path.data()) & FILE_ATTRIBUTE_DIRECTORY)) {
-            next_path = path.substr(0, path.find_last_of(L'\\'));
-            if (path == next_path) {
-                success = false;
-                break;
-            }
-
-            path = next_path;
-        }
-
-        if (success) {
-            _m_current_path = path;
-            //_update_view();
-        } else {
-            MessageBoxW(handle(), L"Failed to find existing folder in path", L"Error",
-                MB_OK | MB_ICONEXCLAMATION);
-        }
-    }
-} */
-
 void left_window::_sort(NMLISTVIEW* view) const{
     _m_model.sort_list(view->iSubItem);
 }
@@ -258,7 +229,7 @@ LRESULT left_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
             if (target == _m_browse->handle()) {
                 _open_folder();
             } else if (target == _m_up->handle()) {
-                _m_model.move_relative(L"..");
+                _m_model.move_relative("..");
             } else if (!target) {
                 if (HIWORD(wparam) == 0) {
                     // Menu

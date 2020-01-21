@@ -1,7 +1,8 @@
 #include "item_provider.h"
 
-item_provider::item_provider(std::string name, data_model& model)
-    : name { std::move(name) }
+item_provider::item_provider(stream file, std::string name, data_model& model)
+    : file { std::move(file) }
+    , name { std::move(name) }
     , model { model } {
     
 }

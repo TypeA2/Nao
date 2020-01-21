@@ -72,19 +72,19 @@ class data_model {
     };
 
     struct create_preview_async {
-        std::function<ui_element * ()> creator;
+        std::function<ui_element*()> creator;
         preview_type type;
     };
 
     struct insert_element_async {
         list_view* list;
-        std::vector<std::wstring> elements;
+        std::vector<std::string> elements;
         int icon;
         item_data* data;
     };
 
     data_model() = delete;
-    explicit data_model(std::wstring initial_path);
+    explicit data_model(std::string initial_path);
     ~data_model();
 
     void set_window(main_window* window);
@@ -101,7 +101,7 @@ class data_model {
 
     HWND handle() const;
 
-    const std::wstring& path() const;
+    const std::string& path() const;
 
     static std::vector<std::string> listview_header();
     static std::vector<sort_order> listview_default_sort();
@@ -113,8 +113,8 @@ class data_model {
     void sort_list(int col);
     void sort_preview(int col);
 
-    void move_relative(const std::wstring& rel);
-    void move(const std::wstring& path);
+    void move_relative(const std::string& rel);
+    void move(const std::string& path);
 
     void opened(int index);
     void opened_preview(int index);
@@ -149,7 +149,7 @@ class data_model {
         bool is_preview {};
         item_data* data {};
         int index {};
-        std::wstring path;
+        std::string path;
     };
 
     // Data needed for a preview
@@ -162,7 +162,7 @@ class data_model {
         sorted_list_view list;
     };
 
-    item_provider* _get_provider(const std::wstring& path, bool return_on_error = false);
+    item_provider* _get_provider(const std::string& path, bool return_on_error = false);
     void _clear_preview();
 
     // Fill view with items from the specified path
@@ -173,7 +173,7 @@ class data_model {
     void _build();
 
     void _opened(sorted_list_view& list, int index);
-    void _move(const std::wstring& path);
+    void _move(const std::string& path);
     void _context_menu(sorted_list_view& list, POINT pt, bool preview);
     void _selected(POINT pt);
     void _sort(sorted_list_view& list, int col) const;
@@ -183,7 +183,7 @@ class data_model {
 
     void _show_in_explorer(menu_state& state) const;
 
-    std::wstring _m_path;
+    std::string _m_path;
 
     std::deque<item_provider*> _m_providers;
     

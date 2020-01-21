@@ -16,7 +16,7 @@ size_t item_provider_factory::register_class(create_func creator) {
     return _next_id++;
 }
 
-item_provider* item_provider_factory::create(std::istream& file,
+item_provider* item_provider_factory::create(const stream& file,
     const std::string& name, data_model& model) {
     item_provider* p;
 
@@ -32,7 +32,8 @@ item_provider* item_provider_factory::create(std::istream& file,
 }
 
 
-item_provider* item_provider_factory::create(size_t id, std::istream& file,
+item_provider* item_provider_factory::create(size_t id, const stream& file,
     const std::string& name, data_model& model) {
+
     return _registered_classes[id](file, name, model);
 }

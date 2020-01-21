@@ -97,6 +97,9 @@
     <ClInclude Include="com_thread.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="providers\wsp_provider.h">
+      <Filter>Header Files\providers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="nao.cpp">
@@ -146,6 +149,9 @@
     </ClCompile>
     <ClCompile Include="com_thread.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="providers\wsp_provider.cpp">
+      <Filter>Source Files\providers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
