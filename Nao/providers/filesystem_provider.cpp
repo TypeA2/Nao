@@ -83,7 +83,8 @@ void filesystem_provider::_populate() {
     HANDLE f = FindFirstFileW((_m_path + L"\\*").c_str(), &data);
 
     if (f == INVALID_HANDLE_VALUE) {
-        MessageBoxW(model.handle(), L"Failed to get directory contents", L"Error",
+        MessageBoxW(model.handle(),
+            utils::utf16("Failed to get directory contents for " + name).c_str(), L"Error",
             MB_OK | MB_ICONWARNING);
         return;
     }

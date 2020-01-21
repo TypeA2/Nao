@@ -97,7 +97,7 @@ void right_window::_init() {
 LRESULT right_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
     switch (_m_type) {
         case preview_type::PreviewListView:
-            return _wnd_proc_list_view(msg, wparam, lparam);
+            return _wnd_proc_list_view(hwnd, msg, wparam, lparam);
 
         default: break;
     }
@@ -105,7 +105,7 @@ LRESULT right_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpara
     return DefWindowProcW(hwnd, msg, wparam, lparam);
 }
 
-LRESULT right_window::_wnd_proc_list_view(UINT msg, WPARAM wparam, LPARAM lparam) {
+LRESULT right_window::_wnd_proc_list_view(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
     ASSERT(_m_type == preview_type::PreviewListView);
 
     switch (msg) {
@@ -116,12 +116,29 @@ LRESULT right_window::_wnd_proc_list_view(UINT msg, WPARAM wparam, LPARAM lparam
                 switch (nm->code) {
                     case LVN_COLUMNCLICK: {
                         _m_model.sort_preview(LPNMLISTVIEW(nm)->iSubItem);
+                        break;
+                    }
+
+                    case NM_RCLICK: {
+                        _m_model.context_menu_preview(LPNMITEMACTIVATE(nm)->ptAction);
+
                     }
                 }
             }
         }
-    }
 
-    return 0;
+        case WM_COMMAND: {
+            HWND target = HWND(lparam);
+
+            if (!target) {
+                if (HIWORD(wparam) == 0) {
+                    _m_model.menu_clicked(LOWORD(wparam));
+                }
+            }
+        }
+
+        default:
+            return DefWindowProcW(hwnd, msg, wparam, lparam);
+    }
 }
 

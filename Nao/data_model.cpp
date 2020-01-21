@@ -23,11 +23,7 @@ data_model::data_model(std::wstring initial_path)
     , _m_path_edit { }
     , _m_up_button { }
     , _m_list_view { }
-    , _m_preview_list { }
-    , _m_menu_item { }
-    , _m_menu_item_index { -1 }
-    , _m_preview_data { }
-    , _m_preview_provider { }
+    , _m_preview { }
     , _m_worker(1)
     , _m_main_thread { std::this_thread::get_id() } {
     
@@ -157,7 +153,7 @@ void data_model::sort_list(int col) {
 
 void data_model::sort_preview(int col) {
     if (_m_right->type() == PreviewListView) {
-        _sort(_m_preview_list, col);
+        _sort(_m_preview.list, col);
     }
 }
 
@@ -194,51 +190,11 @@ void data_model::opened(int index) {
 }
 
 void data_model::context_menu(POINT pt) {
-    (void) this;
-    int index = _m_list_view->item_at(pt);
-    ASSERT(index < _m_list_view->item_count());
+    _context_menu(_m_list_view, pt, false);
+}
 
-    ClientToScreen(_m_list_view->handle(), &pt);
-
-    item_data* data = _m_list_view->get_item_data<item_data>(index);
-    _m_menu_item = data;
-    _m_menu_item_index = index;
-
-    HMENU popup = CreatePopupMenu();
-
-    // Should the "Show in explorer" entry be appended
-    bool insert = false;
-    // Could have clicked outside items
-    if (data) {
-        if (!data->drive) {
-            if (GetFileAttributesW((_m_path + data->name).c_str()) != INVALID_FILE_ATTRIBUTES) {
-                insert = true;
-            }
-        } else {
-            if ((GetLogicalDrives() >> (data->drive - L'A')) & 1) {
-                insert = true;
-            }
-        }
-
-        if (data->dir || data->drive) {
-            InsertMenuW(popup, -1, MF_BYPOSITION | MF_STRING, CtxOpen, L"Open");
-
-            // Separator if there's another item that follows
-            if (insert) {
-                InsertMenuW(popup, -1, MF_BYPOSITION | MF_SEPARATOR, 0, nullptr);
-            }
-        }
-    }
-
-    if (insert || index < 0) {
-        InsertMenuW(popup, -1, MF_BYPOSITION | MF_STRING, CtxShowInExplorer, L"Show in explorer");
-    }
-
-    
-    TrackPopupMenuEx(popup, TPM_TOPALIGN | TPM_LEFTALIGN | TPM_VERPOSANIMATION,
-        pt.x, pt.y, _m_list_view->parent()->handle(), nullptr);
-
-    DestroyMenu(popup);
+void data_model::context_menu_preview(POINT pt) {
+    _context_menu(_m_preview.list, pt, true);
 }
 
 void data_model::selected(POINT pt) {
@@ -249,44 +205,25 @@ void data_model::selected(POINT pt) {
 }
 
 void data_model::menu_clicked(short id) {
-    item_data* data = _m_menu_item;
+    item_data* data = _m_menu.data;
     switch (id) {
         case CtxOpen: {
             if (data->dir || data->drive) {
-                opened(_m_menu_item_index);
+                move(_m_menu.path + _m_menu.data->name);
             }
             break;
         }
 
         case CtxShowInExplorer: {
-            show_in_explorer(_m_menu_item_index);
+            _show_in_explorer(_m_menu);
             break;
         }
 
         default: return;
     }
     
-    _m_menu_item = nullptr;
-    _m_menu_item_index = -1;
+    _m_menu = { };
 }
-
-void data_model::show_in_explorer(int index) const {
-    LPITEMIDLIST idl;
-    if (index >= 0) {
-        item_data* data = _m_list_view->get_item_data<item_data>(index);
-        idl = ILCreateFromPathW((_m_path + data->name).c_str());
-    } else {
-        idl = ILCreateFromPathW(_m_path.c_str());
-    }
-
-    if (idl) {
-        SHOpenFolderAndSelectItems(idl, 0, nullptr, 0);
-
-        ILFree(idl);
-    }
-}
-
-
 
 void data_model::handle_message(messages msg, WPARAM wparam, LPARAM lparam) {
     bool _delete = LOWORD(wparam);
@@ -356,6 +293,10 @@ list_view* data_model::sorted_list_view::operator->() const noexcept {
     return list;
 }
 
+item_provider* data_model::preview_state::operator->() const noexcept {
+    return provider;
+}
+
 
 
 item_provider* data_model::_get_provider(const std::wstring& path, bool return_on_error) {
@@ -372,8 +313,8 @@ item_provider* data_model::_get_provider(const std::wstring& path, bool return_o
         }
     }
 
-    if (_m_preview_provider && _m_preview_provider->get_name() == utils::utf8(path)) {
-        return _m_preview_provider;
+    if (_m_preview.is_shown && _m_preview->get_name() == utils::utf8(path)) {
+        return _m_preview.provider;
     }
 
     item_provider* p = nullptr;
@@ -396,9 +337,9 @@ item_provider* data_model::_get_provider(const std::wstring& path, bool return_o
 void data_model::_clear_preview() {
     ASSERT(std::this_thread::get_id() != _m_main_thread);
 
-    delete _m_preview_provider;
-    _m_preview_provider = nullptr;
-    _m_preview_data = nullptr;
+    delete _m_preview.provider;
+    _m_preview.provider = nullptr;
+    _m_preview.is_shown = false;
 
     PostMessageW(handle(), ClearPreviewElement, MAKEWPARAM(false, true), 0);
     std::unique_lock lock(_m_message_mutex);
@@ -508,24 +449,105 @@ void data_model::_opened(int index) {
     }
 }
 
-
 void data_model::_move(const std::wstring& path) {
     std::wstring old_path = _m_path;
     _m_path = path;
-    utils::coutln("from", old_path, "to", _m_path);
+    if (_m_path.back() != L'\\') {
+        _m_path.push_back(L'\\');
+    }
 
-    _build();
+    utils::coutln("from", old_path, "to", _m_path);
 
     _m_path_edit->set_text(_m_path);
 
-    _fill(_m_list_view);
+    if (
+        // Went deeper
+        _m_path.size() > old_path.size()
 
-    if (_m_providers.back() == _m_preview_provider) {
-        _m_preview_provider = nullptr;
+        // Same tree
+        && _m_path.substr(0, old_path.size()) == old_path
+
+        // Only 1 level deeper
+        //&& _m_path.substr(old_path.size()).find(L'\\') == std::wstring::npos
+
+        // Preview currently shown
+        && _m_preview.is_shown) {
+
+        item_provider* p = _m_preview.provider;
+        _m_preview.provider = nullptr;
+
         _clear_preview();
+
+        _m_providers.push_back(p);
+    } else {
+        // Went up
+        if (old_path.size() > _m_path.size()
+            && old_path.substr(0, _m_path.size()) == _m_path) {
+            _clear_preview();
+        }
+
+        _build();
     }
 
+    
+
+    
+    _fill(_m_list_view);
+    /*if (_m_preview.is_shown) {
+        _m_preview.is_shown = false;
+        _clear_preview();
+    }*/
+
     _m_up_button->set_enabled(_m_path != L"\\");
+}
+
+void data_model::_context_menu(sorted_list_view& list, POINT pt, bool preview) {
+    int index = list->item_at(pt);
+    ASSERT(index < list->item_count());
+
+    ClientToScreen(list->handle(), &pt);
+
+    _m_menu.is_preview = preview;
+
+    item_data* data = list->get_item_data<item_data>(index);
+    _m_menu.data = data;
+    _m_menu.index = index;
+    _m_menu.path = preview ? utils::utf16(_m_preview->get_name()) : _m_path;
+
+    HMENU popup = CreatePopupMenu();
+
+    // Should the "Show in explorer" entry be appended
+    bool insert = false;
+    // Could have clicked outside items
+    if (data) {
+        if (!data->drive) {
+            if (GetFileAttributesW((_m_menu.path + data->name).c_str()) != INVALID_FILE_ATTRIBUTES) {
+                insert = true;
+            }
+        } else {
+            if ((GetLogicalDrives() >> (data->drive - L'A')) & 1) {
+                insert = true;
+            }
+        }
+
+        if (data->dir || data->drive) {
+            InsertMenuW(popup, -1, MF_BYPOSITION | MF_STRING, CtxOpen, L"Open");
+
+            // Separator if there's another item that follows
+            if (insert) {
+                InsertMenuW(popup, -1, MF_BYPOSITION | MF_SEPARATOR, 0, nullptr);
+            }
+        }
+    }
+
+    if (insert || index < 0) {
+        InsertMenuW(popup, -1, MF_BYPOSITION | MF_STRING, CtxShowInExplorer, L"Show in explorer");
+    }
+
+    TrackPopupMenuEx(popup, TPM_TOPALIGN | TPM_LEFTALIGN | TPM_VERPOSANIMATION,
+        pt.x, pt.y, list->parent()->handle(), nullptr);
+
+    DestroyMenu(popup);
 }
 
 void data_model::_selected(POINT pt) {
@@ -536,10 +558,10 @@ void data_model::_selected(POINT pt) {
     item_data* data = _m_list_view->get_item_data<item_data>(index);
 
     // If the selected item changed
-    if (_m_preview_data != data) {
+    if (_m_preview.data != data) {
         _clear_preview();
 
-        _m_preview_data = data;
+        _m_preview.data = data;
 
         if (data->dir || data->drive) {
             std::wstring path = _m_path + data->name + L'\\';
@@ -550,11 +572,11 @@ void data_model::_selected(POINT pt) {
 
             // Get preview provider
             if (item_provider* p = _get_provider(path, true); p && p->count()) {
-                bool first_time = !_m_preview_list;
-
+                bool first_time = !_m_preview.list.list;
+                
                 if (first_time) {
-                    _m_preview_list.selected = _m_list_view.selected;
-                    _m_preview_list.order = _m_list_view.order;
+                    _m_preview.list.selected = _m_list_view.selected;
+                    _m_preview.list.order = _m_list_view.order;
                 }
 
                 create_preview_async preview {
@@ -569,20 +591,22 @@ void data_model::_selected(POINT pt) {
                 std::unique_lock lock(_m_message_mutex);
                 _m_cond.wait(lock, [this] { return !!_m_right->preview(); });
 
-                _m_preview_list = dynamic_cast<list_view*>(_m_right->preview());
-                _m_preview_provider = p;
-                _fill(_m_preview_list, p);
+                _m_preview.is_shown = true;
+                _m_preview.list = dynamic_cast<list_view*>(_m_right->preview());
+                _m_preview.provider = p;
+                _fill(_m_preview.list, p);
 
-                _m_preview_list->set_sort_arrow(_m_preview_list.selected,
-                    (_m_preview_list.order[_m_preview_list.selected] == SortOrderReverse)
+                _m_preview.list->set_sort_arrow(_m_preview.list.selected,
+                    (_m_preview.list.order[_m_preview.list.selected] == SortOrderReverse)
                     ? list_view::DownArrow : list_view::UpArrow);
 
+                // Sort by name first
                 if (first_time) {
                     PostMessageW(handle(), ExecuteFunction,
                         MAKEWPARAM(true, false),
                         LPARAM(new std::function<void()>([this] {
-                            _m_preview_list.order[0] = SortOrderReverse;
-                            _sort(_m_preview_list, 0);
+                            _m_preview.list.order[0] = SortOrderReverse;
+                            _sort(_m_preview.list, 0);
                             })));
                 }
             }
@@ -689,5 +713,27 @@ int data_model::_sort_impl(LPARAM lparam1, LPARAM lparam2, LPARAM info) {
             return (item1->compression < item2->compression) ? first1 : first2;
 
         default: return 0;
+    }
+}
+
+
+
+void data_model::_show_in_explorer(menu_state& state) const {
+    (void) this;
+
+    const sorted_list_view& list = state.is_preview ? _m_preview.list : _m_list_view;
+
+    LPITEMIDLIST idl;
+    if (state.index >= 0) {
+        item_data* data = list->get_item_data<item_data>(state.index);
+        idl = ILCreateFromPathW((_m_menu.path + data->name).c_str());
+    } else {
+        idl = ILCreateFromPathW(_m_menu.path.c_str());
+    }
+
+    if (idl) {
+        SHOpenFolderAndSelectItems(idl, 0, nullptr, 0);
+
+        ILFree(idl);
     }
 }

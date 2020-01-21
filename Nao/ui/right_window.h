@@ -23,7 +23,7 @@ class right_window : public ui_element {
     void _init();
 
     LRESULT _wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
-    LRESULT _wnd_proc_list_view(UINT msg, WPARAM wparam, LPARAM lparam);
+    LRESULT _wnd_proc_list_view(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
     data_model& _m_model;
 

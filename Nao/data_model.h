@@ -118,10 +118,9 @@ class data_model {
 
     void opened(int index);
     void context_menu(POINT pt);
+    void context_menu_preview(POINT pt);
     void selected(POINT pt);
     void menu_clicked(short id);
-
-    void show_in_explorer(int index) const;
 
     void handle_message(messages msg, WPARAM wparam, LPARAM lparam);
 
@@ -144,6 +143,24 @@ class data_model {
         std::vector<sort_order> order;
     };
 
+    // Data needed for an open menu
+    struct menu_state {
+        bool is_preview {};
+        item_data* data {};
+        int index {};
+        std::wstring path;
+    };
+
+    // Data needed for a preview
+    struct preview_state {
+        item_provider* operator->() const noexcept;
+
+        bool is_shown;
+        item_provider* provider;
+        item_data* data;
+        sorted_list_view list;
+    };
+
     item_provider* _get_provider(const std::wstring& path, bool return_on_error = false);
     void _clear_preview();
 
@@ -156,11 +173,14 @@ class data_model {
 
     void _opened(int index);
     void _move(const std::wstring& path);
+    void _context_menu(sorted_list_view& list, POINT pt, bool preview);
     void _selected(POINT pt);
     void _sort(sorted_list_view& list, int col) const;
 
     // Function used for sorting
     static int CALLBACK _sort_impl(LPARAM lparam1, LPARAM lparam2, LPARAM info);
+
+    void _show_in_explorer(menu_state& state) const;
 
     std::wstring _m_path;
 
@@ -171,17 +191,14 @@ class data_model {
     line_edit* _m_path_edit;
     push_button* _m_up_button;
 
-    // Sorting
+    // Main list
     sorted_list_view _m_list_view;
-    sorted_list_view _m_preview_list;
 
     // Menus
-    item_data* _m_menu_item;
-    int _m_menu_item_index;
+    menu_state _m_menu;
 
     // Preview
-    item_data* _m_preview_data;
-    item_provider* _m_preview_provider;
+    preview_state _m_preview;
 
     // Event handler worker (pool)
     thread_pool _m_worker;
