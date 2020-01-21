@@ -117,6 +117,7 @@ class data_model {
     void move(const std::wstring& path);
 
     void opened(int index);
+    void opened_preview(int index);
     void context_menu(POINT pt);
     void context_menu_preview(POINT pt);
     void selected(POINT pt);
@@ -171,7 +172,7 @@ class data_model {
     // Build provider queue for the current path
     void _build();
 
-    void _opened(int index);
+    void _opened(sorted_list_view& list, int index);
     void _move(const std::wstring& path);
     void _context_menu(sorted_list_view& list, POINT pt, bool preview);
     void _selected(POINT pt);

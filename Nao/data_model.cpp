@@ -186,7 +186,14 @@ void data_model::opened(int index) {
     _m_worker.push_detached(
         com_thread::bind_cond(
             [index] { return index >= 0; },
-            std::bind(&data_model::_opened, this, index)));
+            std::bind(&data_model::_opened, this, std::ref(_m_list_view), index)));
+}
+
+void data_model::opened_preview(int index) {
+    _m_worker.push_detached(
+        com_thread::bind_cond(
+            [index] { return index >= 0; },
+            std::bind(&data_model::_opened, this, std::ref(_m_preview.list), index)));
 }
 
 void data_model::context_menu(POINT pt) {
@@ -224,6 +231,8 @@ void data_model::menu_clicked(short id) {
     
     _m_menu = { };
 }
+
+
 
 void data_model::handle_message(messages msg, WPARAM wparam, LPARAM lparam) {
     bool _delete = LOWORD(wparam);
@@ -339,6 +348,7 @@ void data_model::_clear_preview() {
 
     delete _m_preview.provider;
     _m_preview.provider = nullptr;
+
     _m_preview.is_shown = false;
 
     PostMessageW(handle(), ClearPreviewElement, MAKEWPARAM(false, true), 0);
@@ -437,13 +447,20 @@ void data_model::_build() {
     }
 }
 
-void data_model::_opened(int index) {
-    ASSERT(index < _m_list_view->item_count());
+void data_model::_opened(sorted_list_view& list, int index) {
+    ASSERT(index < list->item_count());
 
-    item_data* data = _m_list_view->get_item_data<item_data>(index);
+    item_data* data = list->get_item_data<item_data>(index);
 
     if (data->dir) {
-        _move(std::filesystem::absolute(_m_path + L'\\' + data->name));
+        if (list.list == _m_preview.list.list) {
+            // Preview list is selected
+            _move(std::filesystem::absolute(
+                _m_path + _m_preview.data->name + L'\\' + data->name));
+        } else {
+            // Normal list is clicked
+            _move(std::filesystem::absolute(_m_path + data->name));
+        }
     } else if (data->drive) {
         _move({ data->drive_letter, L':', L'\\' });
     }
@@ -467,9 +484,6 @@ void data_model::_move(const std::wstring& path) {
         // Same tree
         && _m_path.substr(0, old_path.size()) == old_path
 
-        // Only 1 level deeper
-        //&& _m_path.substr(old_path.size()).find(L'\\') == std::wstring::npos
-
         // Preview currently shown
         && _m_preview.is_shown) {
 
@@ -489,14 +503,7 @@ void data_model::_move(const std::wstring& path) {
         _build();
     }
 
-    
-
-    
     _fill(_m_list_view);
-    /*if (_m_preview.is_shown) {
-        _m_preview.is_shown = false;
-        _clear_preview();
-    }*/
 
     _m_up_button->set_enabled(_m_path != L"\\");
 }

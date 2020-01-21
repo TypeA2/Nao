@@ -119,9 +119,14 @@ LRESULT right_window::_wnd_proc_list_view(HWND hwnd, UINT msg, WPARAM wparam, LP
                         break;
                     }
 
+                    case NM_DBLCLK: {
+                        _m_model.opened_preview(LPNMITEMACTIVATE(nm)->iItem);
+                        break;
+                    }
+
                     case NM_RCLICK: {
                         _m_model.context_menu_preview(LPNMITEMACTIVATE(nm)->ptAction);
-
+                        break;
                     }
                 }
             }
