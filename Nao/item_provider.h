@@ -10,8 +10,9 @@
 
 class data_model;
 
-class item_provider : protected binary_stream {
+class item_provider {
     public:
+
     using stream = item_provider_factory::stream;
 
     // Returned item data
@@ -48,7 +49,7 @@ class item_provider : protected binary_stream {
     const std::string& get_name() const;
 
     protected:
-    binary_stream& file;
+    stream file;
     std::string name;
     data_model& model;
 };

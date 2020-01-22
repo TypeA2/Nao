@@ -159,13 +159,15 @@ class data_model {
     struct preview_state {
         item_provider* operator->() const noexcept;
 
+        bool first_time { true };
         bool is_shown;
         item_provider* provider;
         item_data* data;
         sorted_list_view list;
+        preview_type type;
     };
 
-    item_provider* _get_provider(const std::string& path, bool return_on_error = false);
+    item_provider* _get_provider(std::string path, bool return_on_error = false);
     void _clear_preview();
 
     // Fill view with items from the specified path

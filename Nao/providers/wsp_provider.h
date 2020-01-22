@@ -9,7 +9,7 @@ class wsp_provider : public item_provider {
     wsp_provider(const stream& stream,
         const std::string& path, data_model& model);
 
-    ~wsp_provider() override = default;
+    ~wsp_provider() override;
 
     size_t count() const override;
     item_data& data(size_t index) override;

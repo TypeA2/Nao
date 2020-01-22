@@ -216,8 +216,10 @@ void data_model::menu_clicked(short id) {
     item_data* data = _m_menu.data;
     switch (id) {
         case CtxOpen: {
-            if (data->dir || data->drive) {
-                move(_m_menu.path + _m_menu.data->name);
+            if (data->dir || !data->drive) {
+                move(_m_menu.path + data->name);
+            } else if (data->drive) {
+                move({ data->drive_letter, ':', '\\' });
             }
             break;
         }
@@ -309,7 +311,7 @@ item_provider* data_model::preview_state::operator->() const noexcept {
 
 
 
-item_provider* data_model::_get_provider(const std::string& path, bool return_on_error) {
+item_provider* data_model::_get_provider(std::string path, bool return_on_error) {
     // When only moving up 1 level 
     if (!_m_providers.empty()) {
         std::string name = _m_providers.back()->get_name();
@@ -323,21 +325,39 @@ item_provider* data_model::_get_provider(const std::string& path, bool return_on
         }
     }
 
-    if (_m_preview.is_shown && _m_preview->get_name() == path) {
-        return _m_preview.provider;
+    if (_m_preview.is_shown) {
+        const std::string& name = _m_preview->get_name();
+        
+        if (name == path || name == path.substr(0, path.size() - 1)) {
+            return _m_preview.provider;
+        }
     }
 
     item_provider* p = nullptr;
 
     DWORD attribs = GetFileAttributesW(utils::utf16(path).c_str());
-    //utils::coutln("Get", path);
-    if (attribs & FILE_ATTRIBUTE_DIRECTORY) {
-        // "\" is also treated as a directory
-        p = item_provider_factory::create(nullptr, path, *this);
-    } else if (attribs != INVALID_FILE_ATTRIBUTES) {
-        stream s = std::make_unique<std::ifstream>(path, std::ios::in | std::ios::binary);
-        if (s->good()) {
-            p = item_provider_factory::create(s, path, *this);
+
+    if (attribs == INVALID_FILE_ATTRIBUTES) {
+        if (path.back() == '\\') {
+            path.pop_back();
+        }
+
+        attribs = GetFileAttributesW(utils::utf16(path).c_str());
+    }
+
+    
+
+    if (attribs != INVALID_FILE_ATTRIBUTES) {
+        if (attribs & FILE_ATTRIBUTE_DIRECTORY) {
+            // "\" is also treated as a directory
+            p = item_provider_factory::create(nullptr, path, *this);
+
+        } else {
+            stream s = std::make_unique<binary_stream>(path);
+
+            if (s->good()) {
+                p = item_provider_factory::create(s, path, *this);
+            }
         }
     }
 
@@ -355,7 +375,7 @@ void data_model::_clear_preview() {
 
     delete _m_preview.provider;
     _m_preview.provider = nullptr;
-
+    _m_preview.type = PreviewNone;
     _m_preview.is_shown = false;
 
     PostMessageW(handle(), ClearPreviewElement, MAKEWPARAM(false, true), 0);
@@ -369,6 +389,9 @@ void data_model::_fill(sorted_list_view& list, item_provider* provider) {
     list->clear([](void* data) { delete reinterpret_cast<item_data*>(data); });
     
     item_provider* p = provider ? provider : _get_provider(_m_path);
+    if (!p) {
+        return;
+    }
     // Sort columns
     std::vector<item_data*> items(p->count());
     for (size_t i = 0; i < p->count(); ++i) {
@@ -436,6 +459,8 @@ void data_model::_build() {
             break;
         }
 
+        utils::coutln("removing", name);
+
         delete p;
         _m_providers.pop_back();
     }
@@ -445,6 +470,7 @@ void data_model::_build() {
         return;
     }
 
+    utils::coutln("current, path", current, _m_path);
     // Build path
     while (current != _m_path) {
         current = _m_path.substr(0,
@@ -470,6 +496,10 @@ void data_model::_opened(sorted_list_view& list, int index) {
         }
     } else if (data->drive) {
         _move({ data->drive_letter, ':', '\\' });
+    } else if (_m_preview.is_shown) {
+        if (_m_preview.type == PreviewListView) {
+            _move(_m_path + data->name + '\\');
+        }
     }
 }
 
@@ -489,7 +519,7 @@ void data_model::_move(const std::string& path) {
         _m_path.size() > old_path.size()
 
         // Same tree
-        && _m_path.substr(0, old_path.size()) == old_path
+        && (old_path == "\\" || _m_path.substr(0, old_path.size()) == old_path)
 
         // Preview currently shown
         && _m_preview.is_shown) {
@@ -544,7 +574,15 @@ void data_model::_context_menu(sorted_list_view& list, POINT pt, bool preview) {
             }
         }
 
+        bool open = false;
         if (data->dir || data->drive) {
+            open = true;
+        } else if (item_provider* p = _get_provider(_m_menu.path + data->name, true); p && p->count() > 0) {
+            delete p;
+            open = true;
+        }
+
+        if (open) {
             InsertMenuW(popup, -1, MF_BYPOSITION | MF_STRING, CtxOpen, L"Open");
 
             // Separator if there's another item that follows
@@ -606,7 +644,6 @@ void data_model::_selected_item(item_data* data) {
     std::string path = _m_path + data->name;
 
     if (item_provider* p = _get_provider(path, true); p) {
-        utils::coutln(p, p->get_name(), p->count());
         if (p->count() > 0) {
             _preview_item_list(p);
         } else {
@@ -719,9 +756,7 @@ int data_model::_sort_impl(LPARAM lparam1, LPARAM lparam2, LPARAM info) {
 
 
 void data_model::_preview_item_list(item_provider* p) {
-    bool first_time = !_m_preview.list.list;
-
-    if (first_time) {
+    if (_m_preview.first_time) {
         _m_preview.list.selected = _m_list_view.selected;
         _m_preview.list.order = _m_list_view.order;
     }
@@ -738,6 +773,7 @@ void data_model::_preview_item_list(item_provider* p) {
     std::unique_lock lock(_m_message_mutex);
     _m_cond.wait(lock, [this] { return !!_m_right->preview(); });
 
+    _m_preview.type = PreviewListView;
     _m_preview.is_shown = true;
     _m_preview.list = dynamic_cast<list_view*>(_m_right->preview());
     _m_preview.provider = p;
@@ -748,7 +784,9 @@ void data_model::_preview_item_list(item_provider* p) {
         ? list_view::DownArrow : list_view::UpArrow);
 
     // Sort by name first
-    if (first_time) {
+    if (_m_preview.first_time) {
+        _m_preview.first_time = false;
+
         PostMessageW(handle(), ExecuteFunction,
             MAKEWPARAM(true, false),
             LPARAM(new std::function<void()>([this] {

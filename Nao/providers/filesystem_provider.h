@@ -7,7 +7,7 @@
 class filesystem_provider : public item_provider {
     public:
     filesystem_provider(const std::string& path, data_model& model);
-    ~filesystem_provider() override = default;
+    ~filesystem_provider() override;
     
     size_t count() const override;
     

@@ -1,8 +1,7 @@
 #include "item_provider.h"
 
 item_provider::item_provider(stream file, std::string name, data_model& model)
-    : binary_stream(std::move(file))
-    , file { *static_cast<binary_stream*>(this) }
+    : file { std::move(file) }
     , name { std::move(name) }
     , model { model } {
 

@@ -9,7 +9,7 @@ class data_model;
 
 class item_provider_factory {
     public:
-    using stream = binary_stream::stream;
+    using stream = std::shared_ptr<binary_stream>;
 
     using create_func = item_provider* (*)(const stream&,
         const std::string& name, data_model&);

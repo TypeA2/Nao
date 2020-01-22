@@ -6,21 +6,26 @@ class binary_stream {
     public:
     static_assert(std::endian::native == std::endian::little);
 
-    using stream = std::shared_ptr<std::istream>;
-
     using pos_type = std::istream::pos_type;
 
     using seekdir = std::istream::seekdir;
 
-    explicit binary_stream(stream s);
+    explicit binary_stream(const std::string& path,
+        std::ios::openmode mode = std::ios::in | std::ios::binary);
+
+    explicit binary_stream(binary_stream&& other) noexcept;
+    explicit binary_stream(const binary_stream& other) = delete;
 
     virtual ~binary_stream() = default;
 
     virtual std::streampos tellg() const;
+    virtual binary_stream& seekg(pos_type pos);
     virtual binary_stream& seekg(pos_type pos, seekdir dir);
     virtual bool eof() const;
     virtual binary_stream& ignore(std::streamsize max,
         std::istream::int_type delim = std::istream::traits_type::eof());
+
+    virtual bool good() const;
 
     // Seek with std::ios::cur
     binary_stream& rseek(pos_type pos);
@@ -59,6 +64,6 @@ class binary_stream {
     }
 
     protected:
-    stream file;
+    std::unique_ptr<std::istream> file;
 };
 

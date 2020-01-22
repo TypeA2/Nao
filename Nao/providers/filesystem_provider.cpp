@@ -10,9 +10,14 @@
 filesystem_provider::filesystem_provider(const std::string& path, data_model& model)
     : item_provider(nullptr, path, model)
     , _m_path { utils::utf16(path) } {
-    utils::coutln("creating for", path);
+    utils::coutln("[FILESYSTEM] creating for", path);
     _populate();
 }
+
+filesystem_provider::~filesystem_provider() {
+    utils::coutln("[FILESYSTEM] deleting for", name);
+}
+
 
 size_t filesystem_provider::count() const {
     return _m_contents.size();
@@ -152,9 +157,9 @@ void filesystem_provider::_populate() {
 
 item_provider* filesystem_provider::_create(const stream& /* file */,
     const std::string& name, data_model& model) {
+    DWORD attrs = GetFileAttributesW(utils::utf16(name).c_str());
     
-
-    if (GetFileAttributesW(utils::utf16(name).c_str()) & FILE_ATTRIBUTE_DIRECTORY) {
+    if (attrs != INVALID_FILE_ATTRIBUTES && attrs & FILE_ATTRIBUTE_DIRECTORY) {
         return new filesystem_provider(name, model);
     }
 
