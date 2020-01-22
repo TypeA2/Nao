@@ -15,6 +15,7 @@
 #include <filesystem>
 #include <thread>
 #include <future>
+#include <fstream>
 
 data_model::data_model(std::string initial_path)
     : _m_path { std::move(initial_path) }
@@ -328,9 +329,16 @@ item_provider* data_model::_get_provider(const std::string& path, bool return_on
 
     item_provider* p = nullptr;
 
-    if (GetFileAttributesW(utils::utf16(path).c_str()) & FILE_ATTRIBUTE_DIRECTORY) {
+    DWORD attribs = GetFileAttributesW(utils::utf16(path).c_str());
+    //utils::coutln("Get", path);
+    if (attribs & FILE_ATTRIBUTE_DIRECTORY) {
         // "\" is also treated as a directory
         p = item_provider_factory::create(nullptr, path, *this);
+    } else if (attribs != INVALID_FILE_ATTRIBUTES) {
+        stream s = std::make_unique<std::ifstream>(path, std::ios::in | std::ios::binary);
+        if (s->good()) {
+            p = item_provider_factory::create(s, path, *this);
+        }
     }
 
     if (!return_on_error && !p) {
@@ -570,53 +578,39 @@ void data_model::_selected(POINT pt) {
         _m_preview.data = data;
 
         if (data->dir || data->drive) {
-            std::string path = _m_path + data->name + '\\';
+            _selected_dir(data);
+        } else {
+            _selected_item(data);
+        }
+    }
+}
 
-            if (data->drive) {
-                path = { data->drive_letter, ':', '\\' };
-            }
+void data_model::_selected_dir(item_data* data) {
+    std::string path = _m_path + data->name + '\\';
 
-            // Get preview provider
-            if (item_provider* p = _get_provider(path, true); p && p->count()) {
-                bool first_time = !_m_preview.list.list;
-                
-                if (first_time) {
-                    _m_preview.list.selected = _m_list_view.selected;
-                    _m_preview.list.order = _m_list_view.order;
-                }
+    if (data->drive) {
+        path = { data->drive_letter, ':', '\\' };
+    }
 
-                create_preview_async preview {
-                    [this] {
-                        return new list_view(_m_right, listview_header(), shell_image_list());
-                    },
-                    PreviewListView
-                };
- 
-                PostMessageW(handle(), CreatePreviewElement, MAKEWPARAM(false, true), LPARAM(&preview));
+    // Get preview provider
+    if (item_provider* p = _get_provider(path, true); p) {
+        if (p->count() > 0) {
+            _preview_item_list(p);
+        } else {
+            delete p;
+        }
+    }
+}
 
-                std::unique_lock lock(_m_message_mutex);
-                _m_cond.wait(lock, [this] { return !!_m_right->preview(); });
+void data_model::_selected_item(item_data* data) {
+    std::string path = _m_path + data->name;
 
-                _m_preview.is_shown = true;
-                _m_preview.list = dynamic_cast<list_view*>(_m_right->preview());
-                _m_preview.provider = p;
-                _fill(_m_preview.list, p);
-
-                _m_preview.list->set_sort_arrow(_m_preview.list.selected,
-                    (_m_preview.list.order[_m_preview.list.selected] == SortOrderReverse)
-                    ? list_view::DownArrow : list_view::UpArrow);
-
-                // Sort by name first
-                if (first_time) {
-                    PostMessageW(handle(), ExecuteFunction,
-                        MAKEWPARAM(true, false),
-                        LPARAM(new std::function<void()>([this] {
-                            _m_preview.list.order[0] = SortOrderReverse;
-                            _sort(_m_preview.list, 0);
-                            })));
-                }
-            }
-
+    if (item_provider* p = _get_provider(path, true); p) {
+        utils::coutln(p, p->get_name(), p->count());
+        if (p->count() > 0) {
+            _preview_item_list(p);
+        } else {
+            delete p;
         }
     }
 }
@@ -719,6 +713,48 @@ int data_model::_sort_impl(LPARAM lparam1, LPARAM lparam2, LPARAM info) {
             return (item1->compression < item2->compression) ? first1 : first2;
 
         default: return 0;
+    }
+}
+
+
+
+void data_model::_preview_item_list(item_provider* p) {
+    bool first_time = !_m_preview.list.list;
+
+    if (first_time) {
+        _m_preview.list.selected = _m_list_view.selected;
+        _m_preview.list.order = _m_list_view.order;
+    }
+
+    create_preview_async preview {
+        [this] {
+            return new list_view(_m_right, listview_header(), shell_image_list());
+        },
+        PreviewListView
+    };
+
+    PostMessageW(handle(), CreatePreviewElement, MAKEWPARAM(false, true), LPARAM(&preview));
+
+    std::unique_lock lock(_m_message_mutex);
+    _m_cond.wait(lock, [this] { return !!_m_right->preview(); });
+
+    _m_preview.is_shown = true;
+    _m_preview.list = dynamic_cast<list_view*>(_m_right->preview());
+    _m_preview.provider = p;
+    _fill(_m_preview.list, p);
+
+    _m_preview.list->set_sort_arrow(_m_preview.list.selected,
+        (_m_preview.list.order[_m_preview.list.selected] == SortOrderReverse)
+        ? list_view::DownArrow : list_view::UpArrow);
+
+    // Sort by name first
+    if (first_time) {
+        PostMessageW(handle(), ExecuteFunction,
+            MAKEWPARAM(true, false),
+            LPARAM(new std::function<void()>([this] {
+                _m_preview.list.order[0] = SortOrderReverse;
+                _sort(_m_preview.list, 0);
+                })));
     }
 }
 

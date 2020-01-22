@@ -100,6 +100,9 @@
     <ClInclude Include="providers\wsp_provider.h">
       <Filter>Header Files\providers</Filter>
     </ClInclude>
+    <ClInclude Include="binary_stream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="nao.cpp">
@@ -152,6 +155,9 @@
     </ClCompile>
     <ClCompile Include="providers\wsp_provider.cpp">
       <Filter>Source Files\providers</Filter>
+    </ClCompile>
+    <ClCompile Include="binary_stream.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

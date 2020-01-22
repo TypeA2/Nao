@@ -1,10 +1,11 @@
 #include "item_provider.h"
 
 item_provider::item_provider(stream file, std::string name, data_model& model)
-    : file { std::move(file) }
+    : binary_stream(std::move(file))
+    , file { *static_cast<binary_stream*>(this) }
     , name { std::move(name) }
     , model { model } {
-    
+
 }
 
 const item_provider::item_data& item_provider::data(size_t index) const {

@@ -2,13 +2,15 @@
 
 #include "item_provider_factory.h"
 
+#include "binary_stream.h"
+
 #include <string>
 #include <variant>
 #include <memory>
 
 class data_model;
 
-class item_provider {
+class item_provider : protected binary_stream {
     public:
     using stream = item_provider_factory::stream;
 
@@ -46,7 +48,7 @@ class item_provider {
     const std::string& get_name() const;
 
     protected:
-    stream file;
+    binary_stream& file;
     std::string name;
     data_model& model;
 };

@@ -1,14 +1,15 @@
 #pragma once
 
+#include "binary_stream.h"
+
 #include <vector>
-#include <istream>
 
 class item_provider;
 class data_model;
 
 class item_provider_factory {
     public:
-    using stream = std::shared_ptr<std::istream>;
+    using stream = binary_stream::stream;
 
     using create_func = item_provider* (*)(const stream&,
         const std::string& name, data_model&);

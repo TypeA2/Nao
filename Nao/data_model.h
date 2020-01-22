@@ -25,6 +25,9 @@ class data_model {
     // LPARAM for list items
     using item_data = item_provider::item_data;
 
+    // item_provider stream
+    using stream = item_provider::stream;
+
     /*
      * Messages,
      *
@@ -176,7 +179,11 @@ class data_model {
     void _move(const std::string& path);
     void _context_menu(sorted_list_view& list, POINT pt, bool preview);
     void _selected(POINT pt);
+    void _selected_dir(item_data* data);
+    void _selected_item(item_data* data);
     void _sort(sorted_list_view& list, int col) const;
+
+    void _preview_item_list(item_provider* p);
 
     // Function used for sorting
     static int CALLBACK _sort_impl(LPARAM lparam1, LPARAM lparam2, LPARAM info);
