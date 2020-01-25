@@ -2,7 +2,7 @@
 
 #include "frameworks.h"
 
-#include "item_provider.h"
+#include "item_data.h"
 #include "thread_pool.h"
 
 #include <deque>
@@ -13,6 +13,7 @@ class list_view;
 class line_edit;
 class push_button;
 class ui_element;
+class audio_player;
 
 class data_model {
     public:
@@ -22,11 +23,8 @@ class data_model {
         SortOrderReverse
     };
 
-    // LPARAM for list items
-    using item_data = item_provider::item_data;
-
     // item_provider stream
-    using stream = item_provider::stream;
+    using stream = item_provider_factory::stream;
 
     /*
      * Messages,
@@ -69,9 +67,10 @@ class data_model {
         Last
     };
 
-    enum preview_type {
+    enum preview_type : int {
         PreviewNone,
-        PreviewListView
+        PreviewListView,
+        PreviewAudioPlayer
     };
 
     struct create_preview_async {
@@ -163,7 +162,10 @@ class data_model {
         bool is_shown;
         item_provider* provider;
         item_data* data;
+
         sorted_list_view list;
+        audio_player* player;
+
         preview_type type;
     };
 
@@ -183,9 +185,11 @@ class data_model {
     void _selected(POINT pt);
     void _selected_dir(item_data* data);
     void _selected_item(item_data* data);
+    void _apply_preview(item_provider* p);
     void _sort(sorted_list_view& list, int col) const;
 
     void _preview_item_list(item_provider* p);
+    void _preview_audio_player(item_provider* p);
 
     // Function used for sorting
     static int CALLBACK _sort_impl(LPARAM lparam1, LPARAM lparam2, LPARAM info);

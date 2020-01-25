@@ -10,6 +10,7 @@
 #define IDS_LEFT_WINDOW                 104
 #define IDM_EXIT                        105
 #define IDS_RIGHT_WINDOW                105
+#define IDS_AUDIO_PLAYER                106
 #define IDI_NAO                         107
 #define IDI_SMALL                       108
 #define IDC_NAO                         109

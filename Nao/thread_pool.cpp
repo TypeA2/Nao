@@ -1,4 +1,5 @@
 #include "thread_pool.h"
+#include "utils.h"
 
 size_t thread_pool::pool_size() {
     return std::thread::hardware_concurrency();
@@ -50,8 +51,12 @@ thread_pool::thread_pool(size_t n_threads)
                     _m_queue.pop();
                 }
 
-                (*func)();
-
+                try {
+                    (*func)();
+                } catch (const std::exception& e) {
+                    utils::coutln("exception in thread", std::this_thread::get_id(), ":", e.what());
+                    throw;
+                }
                 // Stop if a kill is requested
                 if (_m_stop) {
                     return;

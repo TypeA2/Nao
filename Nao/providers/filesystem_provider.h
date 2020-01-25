@@ -12,6 +12,8 @@ class filesystem_provider : public item_provider {
     size_t count() const override;
     
     item_data& data(size_t index) override;
+
+    preview_type preview() const override;
     
     private:
     void _populate();
@@ -22,7 +24,7 @@ class filesystem_provider : public item_provider {
     std::wstring _m_path;
     
     // Factory registration
-    static item_provider* _create(const stream& file,
+    static item_provider* _create(const file_stream& file,
         const std::string& name, data_model& model);
     static size_t _id;
 };

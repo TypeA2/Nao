@@ -9,6 +9,7 @@
 #include "push_button.h"
 #include "right_window.h"
 #include "com_thread.h"
+#include "audio_player.h"
 
 #include <ShlObj_core.h>
 
@@ -375,7 +376,20 @@ void data_model::_clear_preview() {
 
     delete _m_preview.provider;
     _m_preview.provider = nullptr;
+
+    switch (_m_preview.type) {
+        case PreviewListView:
+            _m_preview.list = nullptr;
+            break;
+        case PreviewAudioPlayer:
+            _m_preview.player = nullptr;
+            break;
+
+        default: break;
+    }
+
     _m_preview.type = PreviewNone;
+
     _m_preview.is_shown = false;
 
     PostMessageW(handle(), ClearPreviewElement, MAKEWPARAM(false, true), 0);
@@ -632,11 +646,7 @@ void data_model::_selected_dir(item_data* data) {
 
     // Get preview provider
     if (item_provider* p = _get_provider(path, true); p) {
-        if (p->count() > 0) {
-            _preview_item_list(p);
-        } else {
-            delete p;
-        }
+        _apply_preview(p);
     }
 }
 
@@ -644,11 +654,23 @@ void data_model::_selected_item(item_data* data) {
     std::string path = _m_path + data->name;
 
     if (item_provider* p = _get_provider(path, true); p) {
-        if (p->count() > 0) {
+        _apply_preview(p);
+    }
+}
+
+void data_model::_apply_preview(item_provider* p) {
+    switch (p->preview()) {
+        case PreviewListView:
             _preview_item_list(p);
-        } else {
+            break;
+
+        case PreviewAudioPlayer:
+            _preview_audio_player(p);
+            break;
+
+        default:
+            _m_preview.type = PreviewNone;
             delete p;
-        }
     }
 }
 
@@ -795,6 +817,28 @@ void data_model::_preview_item_list(item_provider* p) {
                 })));
     }
 }
+
+void data_model::_preview_audio_player(item_provider* p) {
+    create_preview_async preview {
+        .creator = [this, p] { return p->preview_element(_m_right); },
+        .type    = PreviewAudioPlayer
+    };
+
+    PostMessageW(handle(), CreatePreviewElement, MAKEWPARAM(false, true), LPARAM(&preview));
+
+    std::unique_lock lock(_m_message_mutex);
+    _m_cond.wait(lock, [this] { return !!_m_right->preview(); });
+
+    _m_preview.type = PreviewAudioPlayer;
+    _m_preview.is_shown = true;
+    _m_preview.provider = p;
+
+    audio_player* player = dynamic_cast<audio_player*>(_m_right->preview());
+    _m_preview.player = player;
+
+    
+}
+
 
 
 

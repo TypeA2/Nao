@@ -1,55 +1,44 @@
 #pragma once
 
 #include "item_provider_factory.h"
-
-#include "binary_stream.h"
+#include "item_data.h"
+#include "data_model.h"
 
 #include <string>
-#include <variant>
 #include <memory>
-
-class data_model;
 
 class item_provider {
     public:
 
-    using stream = item_provider_factory::stream;
+    using file_stream = item_provider_factory::stream;
+    using preview_type = data_model::preview_type;
 
-    // Returned item data
-    struct item_data {
-        std::string name;
-        std::string type;
-
-        int64_t size {};
-        std::string size_str;
-
-        double compression {};
-
-        int icon {};
-
-        bool dir {};
-        bool drive {};
-
-        char drive_letter {};
-
-        stream stream;
-
-        std::shared_ptr<void> data;
-    };
-
-    item_provider(stream file, std::string name, data_model& model);
-    
     virtual ~item_provider() = default;
 
-    virtual size_t count() const = 0;
+    virtual size_t count() const;
     
-    virtual item_data& data(size_t index) = 0;
+    virtual item_data& data(size_t index);
     virtual const item_data& data(size_t index) const;
 
     const std::string& get_name() const;
+    const file_stream& get_stream() const;
+
+    virtual preview_type preview() const;
+
+    virtual ui_element* preview_element(ui_element* parent) const;
+
+    template <typename T>
+    std::enable_if_t<std::is_base_of_v<ui_element, T>, T*>
+        preview_element(ui_element* parent) const {
+        return dynamic_cast<T*>(preview_element(parent));
+    }
+
+    virtual file_stream stream() const;
 
     protected:
-    stream file;
+    item_provider(file_stream file, std::string name, data_model& model);
+
+    file_stream file;
     std::string name;
     data_model& model;
 };

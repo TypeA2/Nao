@@ -9,8 +9,10 @@
 #define FILE_AT __FILE__ ":" LINE_STRINGIFY(__LINE__)
 
 #ifdef NDEBUG
-#define ASSERT(cond) do { if (!(cond)) { throw std::runtime_error( \
-    "assertion failed in " FILE_AT " -> " #cond); }} while (0)
+#define ASSERT(cond) do { if (!(cond)) { \
+    constexpr const char* str = "assertion failed in " FILE_AT " -> " #cond; \
+    utils::coutln(str); \
+    throw std::runtime_error(str); }} while (0)
 
 #else
 #include <cassert>

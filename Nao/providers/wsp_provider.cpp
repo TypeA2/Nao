@@ -5,7 +5,7 @@
 
 #include <iomanip>
 
-wsp_provider::wsp_provider(const stream& stream,
+wsp_provider::wsp_provider(const file_stream& stream,
     const std::string& path, data_model& model)
     : item_provider(stream, path + '\\', model) {
     utils::coutln("[WSP] creating for", path);
@@ -20,8 +20,12 @@ size_t wsp_provider::count() const {
     return _m_contents.size();
 }
 
-item_provider::item_data& wsp_provider::data(size_t index) {
+item_data& wsp_provider::data(size_t index) {
     return _m_contents[index];
+}
+
+item_provider::preview_type wsp_provider::preview() const {
+    return preview_type::PreviewListView;
 }
 
 void wsp_provider::_populate() {
@@ -85,7 +89,7 @@ void wsp_provider::_populate() {
     }
 }
 
-item_provider* wsp_provider::_create(const stream& file, const std::string& name, data_model& model) {
+item_provider* wsp_provider::_create(const file_stream& file, const std::string& name, data_model& model) {
     if (name.substr(name.size() - 4) == ".wsp") {
         
         std::string fcc(4, '\0');

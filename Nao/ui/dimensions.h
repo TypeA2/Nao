@@ -8,4 +8,6 @@ namespace dims {
 
     static constexpr int path_x_offset =
         control_button_width * 2 + gutter_size * 3;
+
+    static constexpr int play_button_size = 32;
 }

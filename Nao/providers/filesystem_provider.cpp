@@ -23,8 +23,12 @@ size_t filesystem_provider::count() const {
     return _m_contents.size();
 }
 
-item_provider::item_data& filesystem_provider::data(size_t index) {
+item_data& filesystem_provider::data(size_t index) {
     return _m_contents[index];
+}
+
+item_provider::preview_type filesystem_provider::preview() const {
+    return preview_type::PreviewListView;
 }
 
 void filesystem_provider::_populate() {
@@ -155,7 +159,7 @@ void filesystem_provider::_populate() {
     FindClose(f);
 }
 
-item_provider* filesystem_provider::_create(const stream& /* file */,
+item_provider* filesystem_provider::_create(const file_stream& /* file */,
     const std::string& name, data_model& model) {
     DWORD attrs = GetFileAttributesW(utils::utf16(name).c_str());
     

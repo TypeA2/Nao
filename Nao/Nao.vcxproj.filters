@@ -103,6 +103,15 @@
     <ClInclude Include="binary_stream.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="item_data.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="providers\wav_provider.h">
+      <Filter>Header Files\providers</Filter>
+    </ClInclude>
+    <ClInclude Include="ui\audio_player.h">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="nao.cpp">
@@ -158,6 +167,12 @@
     </ClCompile>
     <ClCompile Include="binary_stream.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="providers\wav_provider.cpp">
+      <Filter>Source Files\providers</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\audio_player.cpp">
+      <Filter>Source Files\ui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
