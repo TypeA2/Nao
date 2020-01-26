@@ -9,8 +9,8 @@ class wav_provider : public item_provider {
 
     ~wav_provider() override;
 
-    preview_type preview() const override;
-    ui_element* preview_element(ui_element* parent) const override;
+    //preview_type preview() const override;
+    std::shared_ptr<ui_element> preview_element(const std::shared_ptr<ui_element>& parent) const override;
 
     private:
 

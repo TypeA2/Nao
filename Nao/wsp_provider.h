@@ -14,7 +14,7 @@ class wsp_provider : public item_provider {
     size_t count() const override;
     item_data& data(size_t index) override;
 
-    preview_type preview() const override;
+    //preview_type preview() const override;
 
     private:
     // Represents a sequenced file

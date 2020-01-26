@@ -1,34 +1,32 @@
-#include "main_window.h"
+#include "nao_model.h"
+#include "nao_controller.h"
+#include "nao_view.h"
 
-#include <CommCtrl.h>
+#include "auto_wrapper.h"
 
 #include "utils.h"
-#include "data_model.h"
-#include "steam_utils.h"
+
+#include <CommCtrl.h>
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     _In_opt_ HINSTANCE hPrevInstance,
     _In_ LPWSTR lpCmdLine,
     _In_ int nShowCmd) {
+    (void) hInstance;
     (void) hPrevInstance;
     (void) lpCmdLine;
+    (void) nShowCmd;
 
-    INITCOMMONCONTROLSEX picce {
-        sizeof(INITCOMMONCONTROLSEX),
-        ICC_ANIMATE_CLASS | ICC_BAR_CLASSES | ICC_COOL_CLASSES |
-        ICC_DATE_CLASSES | ICC_HOTKEY_CLASS | ICC_LINK_CLASS |
-        ICC_LISTVIEW_CLASSES | ICC_NATIVEFNTCTL_CLASS | ICC_PAGESCROLLER_CLASS |
-        ICC_PROGRESS_CLASS | ICC_STANDARD_CLASSES | ICC_TAB_CLASSES |
-        ICC_UPDOWN_CLASS | ICC_USEREX_CLASSES | ICC_WIN95_CLASSES
-    };
+    com_wrapper com;
+    comm_ctrl_wrapper comm_ctrl;
 
-    InitCommonControlsEx(&picce);
+    nao_controller controller;
+    // Event loop
+    MSG msg;
+    while (GetMessageW(&msg, nullptr, 0, 0)) {
+        TranslateMessage(&msg);
+        DispatchMessageW(&msg);
+    }
 
-    data_model model("C:\\Users\\Nuan\\Downloads"/*utils::utf8(steam_utils::game_path(L"NieRAutomata", L"data"))*/);
-    
-    main_window nao(hInstance, nShowCmd, model);
-
-    model.startup();
-
-    return nao.run();
+    return static_cast<int>(msg.wParam);
 }

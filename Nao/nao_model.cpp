@@ -1,5 +1,12 @@
-#include "data_model.h"
+#include "nao_model.h"
 
+nao_model::nao_model(nao_view& view)
+    : view(view) {
+    
+}
+
+
+/*
 #include "utils.h"
 #include "item_provider.h"
 #include "item_provider_factory.h"
@@ -11,131 +18,69 @@
 #include "com_thread.h"
 #include "audio_player.h"
 
+#include "controller.h"
+
 #include <ShlObj_core.h>
 
 #include <filesystem>
 #include <thread>
-#include <future>
 #include <fstream>
 
-data_model::data_model(std::string initial_path)
-    : _m_path { std::move(initial_path) }
-    , _m_window { }
-    , _m_right { }
-    , _m_path_edit { }
-    , _m_up_button { }
-    , _m_list_view { }
-    , _m_preview { }
-    , _m_worker(1)
-    , _m_main_thread { std::this_thread::get_id() } {
+data_model::data_model(controller& controller, std::string initial_path)
+    : _m_controller{ controller }
+    , _m_path { std::move(initial_path) }
+    , _m_worker(1), _m_main_thread { std::this_thread::get_id() } {
     
 }
 
-data_model::~data_model() {
-    while (!_m_providers.empty()) {
-        item_provider* p = _m_providers.back();
-        delete p;
-        _m_providers.pop_back();
-    }
+void data_model::set_window(const std::weak_ptr<ui_element>& window) {
+    auto temp = std::dynamic_pointer_cast<main_window>(window.lock());
+
+    ASSERT(temp.get());
+    _m_window = temp;
 }
 
+void data_model::set_right(const std::weak_ptr<ui_element>& right) {
+    auto temp = std::dynamic_pointer_cast<right_window>(right.lock());
 
-void data_model::set_window(main_window* window) {
-    ASSERT(!_m_window && window);
-    _m_window = window;
+    ASSERT(temp.get());
+    _m_right = temp;
 }
 
-void data_model::set_right(right_window* right) {
-    ASSERT(!_m_right && right);
-    _m_right = right;
+void data_model::set_list_view(const std::weak_ptr<ui_element>& list_view) {
+    auto temp = std::dynamic_pointer_cast<::list_view>(list_view.lock());
+
+    ASSERT(temp.get());
+    _m_list_view.list = temp;
+
+    _m_list_view.order.resize(_m_list_view.list.lock()->column_count());
 }
 
-void data_model::set_list_view(list_view* list_view) {
-    ASSERT(!_m_list_view && list_view);
+void data_model::set_path_edit(const std::weak_ptr<ui_element>& path_edit) {
+    auto temp = std::dynamic_pointer_cast<line_edit>(path_edit.lock());
 
-    _m_list_view = list_view;
-
-    _m_list_view.order.resize(list_view->column_count());
+    ASSERT(temp.get());
+    _m_path_edit = temp;
 }
 
-void data_model::set_path_edit(line_edit* path_edit) {
-    ASSERT(!_m_path_edit && path_edit);
-    _m_path_edit = path_edit;
-}
+void data_model::set_up_button(const std::weak_ptr<ui_element>& up) {
+    auto temp = std::dynamic_pointer_cast<push_button>(up.lock());
 
-void data_model::set_up_button(push_button* up) {
-    ASSERT(!_m_up_button && up);
-    _m_up_button = up;
-}
-
-main_window* data_model::get_window() const {
-    ASSERT(_m_window);
-    return _m_window;
-}
-
-right_window* data_model::get_right() const {
-    ASSERT(_m_right);
-    return _m_right;
-}
-
-list_view* data_model::get_list_view() const {
-    ASSERT(_m_list_view);
-    return _m_list_view;
-}
-
-line_edit* data_model::get_path_edit() const {
-    ASSERT(_m_path_edit);
-    return _m_path_edit;
-}
-
-push_button* data_model::get_up_button() const {
-    return _m_up_button;
+    ASSERT(temp.get());
+    _m_up_button = temp;
 }
 
 HWND data_model::handle() const {
-    ASSERT(_m_window);
-    return _m_window->handle();
+    return _m_window.lock()->handle();
 }
 
 const std::string& data_model::path() const {
     return _m_path;
 }
 
-
-
-std::vector<std::string> data_model::listview_header() {
-    return { "Name", "Type", "Size", "Compressed" };
-}
-
-std::vector<data_model::sort_order> data_model::listview_default_sort() {
-    return { SortOrderNormal, SortOrderNormal, SortOrderReverse, SortOrderReverse };
-}
-
-IImageList* data_model::shell_image_list() {
-    static IImageList* imglist = nullptr;
-
-    if (!imglist) {
-        if (FAILED(SHGetImageList(SHIL_SMALL, IID_PPV_ARGS(&imglist)))) {
-            utils::coutln("failed to retrieve main image list");
-            return nullptr;
-        }
-
-        return imglist;
-    }
-
-    // Increment ref count if already initialised
-    imglist->AddRef();
-
-    return imglist;
-}
-
-
-
 void data_model::startup() {
-    ASSERT(_m_window && _m_right && _m_list_view && _m_path_edit && _m_up_button);
-
     // "Size" alignment
-    _m_list_view->set_column_alignment(2, list_view::Right);
+    _m_list_view.list.lock()->set_column_alignment(2, list_view::Right);
 
     if (_m_path.empty()) {
         _m_path = "\\";
@@ -154,7 +99,7 @@ void data_model::sort_list(int col) {
 }
 
 void data_model::sort_preview(int col) {
-    if (_m_right->type() == PreviewListView) {
+    if (_m_right.lock()->type() == PreviewListView) {
         _sort(_m_preview.list, col);
     }
 }
@@ -209,7 +154,7 @@ void data_model::context_menu_preview(POINT pt) {
 void data_model::selected(POINT pt) {
     _m_worker.push_detached(
         com_thread::bind_cond(
-            [this, pt] { return _m_list_view->item_at(pt) >= 0; },
+            [this, pt] { return _m_list_view.list.lock()->item_at(pt) >= 0; },
             std::bind(&data_model::_selected, this, pt)));
 }
 
@@ -257,7 +202,7 @@ void data_model::handle_message(messages msg, WPARAM wparam, LPARAM lparam) {
         case CreatePreviewElement: {
             auto cpa = reinterpret_cast<create_preview_async*>(lparam);
 
-            _m_right->set_preview(cpa->creator(), cpa->type);
+            _m_right.lock()->set_preview(cpa->creator(), cpa->type);
 
             if (_delete) {
                 delete cpa;
@@ -266,14 +211,14 @@ void data_model::handle_message(messages msg, WPARAM wparam, LPARAM lparam) {
         }
 
         case ClearPreviewElement: {
-            _m_right->clear_preview();
+            _m_right.lock()->clear_preview();
             break;
         }
 
         case InsertElementAsync: {
             auto item = reinterpret_cast<insert_element_async*>(lparam);
 
-            item->list->add_item(
+            item->list.lock()->add_item(
                 item->elements, item->icon, LPARAM(item->data));
 
             if (_delete) {
@@ -292,19 +237,6 @@ void data_model::handle_message(messages msg, WPARAM wparam, LPARAM lparam) {
 }
 
 
-
-data_model::sorted_list_view::operator list_view*() const {
-    return list;
-}
-
-data_model::sorted_list_view& data_model::sorted_list_view::operator=(list_view* list) {
-    this->list = list;
-    return *this;
-}
-
-list_view* data_model::sorted_list_view::operator->() const noexcept {
-    return list;
-}
 
 item_provider* data_model::preview_state::operator->() const noexcept {
     return provider;
@@ -379,10 +311,10 @@ void data_model::_clear_preview() {
 
     switch (_m_preview.type) {
         case PreviewListView:
-            _m_preview.list = nullptr;
+            _m_preview.list.list.reset();
             break;
         case PreviewAudioPlayer:
-            _m_preview.player = nullptr;
+            _m_preview.player.reset();
             break;
 
         default: break;
@@ -394,13 +326,14 @@ void data_model::_clear_preview() {
 
     PostMessageW(handle(), ClearPreviewElement, MAKEWPARAM(false, true), 0);
     std::unique_lock lock(_m_message_mutex);
-    _m_cond.wait(lock, [this] { return !_m_right->preview(); });
+    _m_cond.wait(lock, [this] { return !_m_right.lock()->preview().lock().get(); });
 }
 
 
 
 void data_model::_fill(sorted_list_view& list, item_provider* provider) {
-    list->clear([](void* data) { delete reinterpret_cast<item_data*>(data); });
+    auto list_view = list.list.lock();
+    list_view->clear([](void* data) { delete reinterpret_cast<item_data*>(data); });
     
     item_provider* p = provider ? provider : _get_provider(_m_path);
     if (!p) {
@@ -424,32 +357,31 @@ void data_model::_fill(sorted_list_view& list, item_provider* provider) {
     for (item_data* data : items) {
         PostMessageW(handle(), InsertElementAsync, MAKEWPARAM(true, false),
             LPARAM(new insert_element_async {
-            list,
-            { data->name, data->type,
-                (data->size == 0)
-                    ? std::string()
-                    : data->size_str,
-                (data->compression == 0.)
-                    ? std::string()
-                    : (std::to_string(int64_t(data->compression / 100.)) + '%') },
-            data->icon,
-            data
+            .list     = list_view,
+            .elements = {
+                data->name,
+                data->type,
+                (data->size == 0) ? std::string() : data->size_str,
+                (data->compression == 0.) ? std::string() : (std::to_string(int64_t(data->compression / 100.)) + '%')
+            },
+            .icon = data->icon,
+            .data = data
                 }));
     }
 
     // Fit columns
-    for (int i = 0; i < list->column_count() - 1; ++i) {
+    for (int i = 0; i < list_view->column_count() - 1; ++i) {
         int min = 0;
 
         if (i == 0) {
-            min = list->width() / list->column_count();
+            min = list_view->width() / list_view->column_count();
         }
 
-        list->set_column_width(i, LVSCW_AUTOSIZE, min);
+        list_view->set_column_width(i, LVSCW_AUTOSIZE, min);
     }
 
     // Fill remainder with last column
-    list->set_column_width(list->column_count() - 1, LVSCW_AUTOSIZE_USEHEADER);
+    list_view->set_column_width(list_view->column_count() - 1, LVSCW_AUTOSIZE_USEHEADER);
 
     // Items already sorted, we're done
 }
@@ -495,12 +427,13 @@ void data_model::_build() {
 }
 
 void data_model::_opened(sorted_list_view& list, int index) {
-    ASSERT(index < list->item_count());
+    auto list_view = list.list.lock();
+    ASSERT(index < list_view->item_count());
 
-    item_data* data = list->get_item_data<item_data>(index);
+    item_data* data = list_view->get_item_data<item_data>(index);
 
     if (data->dir) {
-        if (list.list == _m_preview.list.list) {
+        if (list_view.get() == _m_preview.list.list.lock().get()) {
             // Preview list is selected
             _move(std::filesystem::absolute(
                 _m_path + _m_preview.data->name + '\\' + data->name).string());
@@ -526,7 +459,7 @@ void data_model::_move(const std::string& path) {
 
     utils::coutln("from", old_path, "to", _m_path);
 
-    _m_path_edit->set_text(utils::utf16(_m_path));
+    _m_path_edit.lock()->set_text(utils::utf16(_m_path));
 
     if (
         // Went deeper
@@ -556,18 +489,19 @@ void data_model::_move(const std::string& path) {
 
     _fill(_m_list_view);
 
-    _m_up_button->set_enabled(_m_path != "\\");
+    _m_up_button.lock()->set_enabled(_m_path != "\\");
 }
 
 void data_model::_context_menu(sorted_list_view& list, POINT pt, bool preview) {
-    int index = list->item_at(pt);
-    ASSERT(index < list->item_count());
+    auto list_view = list.list.lock();
+    int index = list_view->item_at(pt);
+    ASSERT(index < list_view->item_count());
 
-    ClientToScreen(list->handle(), &pt);
+    ClientToScreen(list_view->handle(), &pt);
 
     _m_menu.is_preview = preview;
 
-    item_data* data = list->get_item_data<item_data>(index);
+    item_data* data = list_view->get_item_data<item_data>(index);
     _m_menu.data = data;
     _m_menu.index = index;
     _m_menu.path = preview ? _m_preview->get_name() : _m_path;
@@ -611,17 +545,18 @@ void data_model::_context_menu(sorted_list_view& list, POINT pt, bool preview) {
     }
 
     TrackPopupMenuEx(popup, TPM_TOPALIGN | TPM_LEFTALIGN | TPM_VERPOSANIMATION,
-        pt.x, pt.y, list->parent()->handle(), nullptr);
+        pt.x, pt.y, list_view->parent()->handle(), nullptr);
 
     DestroyMenu(popup);
 }
 
 void data_model::_selected(POINT pt) {
-    int index = _m_list_view->item_at(pt);
+    auto list_view = _m_list_view.list.lock();
+    int index = list_view->item_at(pt);
 
-    ASSERT(index < _m_list_view->item_count());
+    ASSERT(index < list_view->item_count());
 
-    item_data* data = _m_list_view->get_item_data<item_data>(index);
+    item_data* data = list_view->get_item_data<item_data>(index);
 
     // If the selected item changed
     if (_m_preview.data != data) {
@@ -687,16 +622,17 @@ void data_model::_sort(sorted_list_view& list, int col) const {
 
     list.selected = col;
 
+    auto list_view = list.list.lock();
     for (int i = 0; i < int(std::size(list.order)); ++i) {
         if (i == col) {
-            list->set_sort_arrow(i,
+            list_view->set_sort_arrow(i,
                 (list.order[i] == SortOrderReverse) ? list_view::DownArrow : list_view::UpArrow);
         } else {
-            list->set_sort_arrow(i, list_view::NoArrow);
+            list_view->set_sort_arrow(i, list_view::NoArrow);
         }
     }
 
-    ListView_SortItems(list->handle(), &data_model::_sort_impl, MAKELPARAM(col, list.order[col]));
+    ListView_SortItems(list_view->handle(), &data_model::_sort_impl, MAKELPARAM(col, list.order[col]));
 }
 
 int data_model::_sort_impl(LPARAM lparam1, LPARAM lparam2, LPARAM info) {
@@ -784,24 +720,29 @@ void data_model::_preview_item_list(item_provider* p) {
     }
 
     create_preview_async preview {
-        [this] {
-            return new list_view(_m_right, listview_header(), shell_image_list());
+        .creator = [this] {
+            auto ptr = std::make_shared<list_view>(_m_right);
+            ptr->init();
+            ptr->set_columns(listview_header());
+            ptr->set_image_list(shell_image_list());
+            return ptr;
         },
-        PreviewListView
+        .type    = PreviewListView
     };
 
     PostMessageW(handle(), CreatePreviewElement, MAKEWPARAM(false, true), LPARAM(&preview));
 
+    auto right = _m_right.lock();
     std::unique_lock lock(_m_message_mutex);
-    _m_cond.wait(lock, [this] { return !!_m_right->preview(); });
+    _m_cond.wait(lock, [right] { return !!right->preview().lock(); });
 
     _m_preview.type = PreviewListView;
     _m_preview.is_shown = true;
-    _m_preview.list = dynamic_cast<list_view*>(_m_right->preview());
+    _m_preview.list.list = std::dynamic_pointer_cast<list_view>(right->preview().lock());
     _m_preview.provider = p;
     _fill(_m_preview.list, p);
 
-    _m_preview.list->set_sort_arrow(_m_preview.list.selected,
+    _m_preview.list.list.lock()->set_sort_arrow(_m_preview.list.selected,
         (_m_preview.list.order[_m_preview.list.selected] == SortOrderReverse)
         ? list_view::DownArrow : list_view::UpArrow);
 
@@ -820,23 +761,21 @@ void data_model::_preview_item_list(item_provider* p) {
 
 void data_model::_preview_audio_player(item_provider* p) {
     create_preview_async preview {
-        .creator = [this, p] { return p->preview_element(_m_right); },
+        .creator = [this, p] { return p->preview_element(_m_right.lock()); },
         .type    = PreviewAudioPlayer
     };
 
     PostMessageW(handle(), CreatePreviewElement, MAKEWPARAM(false, true), LPARAM(&preview));
 
     std::unique_lock lock(_m_message_mutex);
-    _m_cond.wait(lock, [this] { return !!_m_right->preview(); });
+    _m_cond.wait(lock, [this] { return !!_m_right.lock()->preview().lock().get(); });
 
     _m_preview.type = PreviewAudioPlayer;
     _m_preview.is_shown = true;
     _m_preview.provider = p;
 
-    audio_player* player = dynamic_cast<audio_player*>(_m_right->preview());
-    _m_preview.player = player;
+    _m_preview.player = std::dynamic_pointer_cast<audio_player>(_m_right.lock()->preview().lock());
 
-    
 }
 
 
@@ -849,7 +788,7 @@ void data_model::_show_in_explorer(menu_state& state) const {
 
     LPITEMIDLIST idl;
     if (state.index >= 0) {
-        item_data* data = list->get_item_data<item_data>(state.index);
+        item_data* data = list.list.lock()->get_item_data<item_data>(state.index);
         idl = ILCreateFromPathW(utils::utf16(_m_menu.path + data->name).c_str());
     } else {
         idl = ILCreateFromPathW(utils::utf16(_m_menu.path).c_str());
@@ -861,3 +800,5 @@ void data_model::_show_in_explorer(menu_state& state) const {
         ILFree(idl);
     }
 }
+
+*/

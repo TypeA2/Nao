@@ -25,11 +25,11 @@ const item_provider::file_stream& item_provider::get_stream() const {
     return file;
 }
 
-item_provider::preview_type item_provider::preview() const {
-    return preview_type::PreviewNone;
-}
+//item_provider::preview_type item_provider::preview() const {
+//    return preview_type::PreviewNone;
+//}
 
-ui_element* item_provider::preview_element(ui_element* parent) const {
+std::shared_ptr<ui_element> item_provider::preview_element(const std::shared_ptr<ui_element>& parent) const {
     return nullptr;
 }
 

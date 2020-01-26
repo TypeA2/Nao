@@ -13,17 +13,41 @@
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="Header Files\providers">
-      <UniqueIdentifier>{95b82214-85e9-4b06-8a41-c20073b67c70}</UniqueIdentifier>
+    <Filter Include="Source Files\MVC">
+      <UniqueIdentifier>{2ad79b26-96a0-486d-b792-a3d402196ee5}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\providers">
+    <Filter Include="Header Files\MVC">
+      <UniqueIdentifier>{f252b3c8-f375-4b08-9943-da99b89365ce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Utils">
+      <UniqueIdentifier>{c3a0f6fc-7f31-4972-9f64-782a1c2706a3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Providers">
       <UniqueIdentifier>{4376c9b5-a2e0-4813-81c6-719d0637ad89}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\ui">
+    <Filter Include="Source Files\UI">
+      <UniqueIdentifier>{89003a4a-5248-4616-9afa-fb65b4280843}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\UI">
       <UniqueIdentifier>{6db671ff-731c-47aa-b4ab-45f6e107a01d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\ui">
-      <UniqueIdentifier>{89003a4a-5248-4616-9afa-fb65b4280843}</UniqueIdentifier>
+    <Filter Include="Header Files\Providers">
+      <UniqueIdentifier>{95b82214-85e9-4b06-8a41-c20073b67c70}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Utils">
+      <UniqueIdentifier>{c2161910-7b5b-4cd3-992e-ec6429a9a945}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\UI\Generic">
+      <UniqueIdentifier>{4e2c6c3c-f63e-4061-9802-c7244f89021a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\UI\Generic">
+      <UniqueIdentifier>{efaeaabb-91b7-44fe-9e04-c91d6a202d74}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Win32">
+      <UniqueIdentifier>{6cd5ce9c-f9f3-48c5-ae34-4114ebe74c90}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Win32">
+      <UniqueIdentifier>{54b97e0b-875d-4ad2-855a-538aeb08c40e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -32,147 +56,174 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="small.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
     <Image Include="Nao.ico">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Resource.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="nao_view.h">
+      <Filter>Header Files\MVC</Filter>
     </ClInclude>
-    <ClInclude Include="frameworks.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="nao_model.h">
+      <Filter>Header Files\MVC</Filter>
     </ClInclude>
-    <ClInclude Include="utils.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="item_provider.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="item_provider_factory.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="providers\filesystem_provider.h">
-      <Filter>Header Files\providers</Filter>
-    </ClInclude>
-    <ClInclude Include="ui\list_view.h">
-      <Filter>Header Files\ui</Filter>
-    </ClInclude>
-    <ClInclude Include="ui\main_window.h">
-      <Filter>Header Files\ui</Filter>
-    </ClInclude>
-    <ClInclude Include="ui\ui_element.h">
-      <Filter>Header Files\ui</Filter>
-    </ClInclude>
-    <ClInclude Include="ui\left_window.h">
-      <Filter>Header Files\ui</Filter>
-    </ClInclude>
-    <ClInclude Include="ui\dimensions.h">
-      <Filter>Header Files\ui</Filter>
-    </ClInclude>
-    <ClInclude Include="data_model.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ui\line_edit.h">
-      <Filter>Header Files\ui</Filter>
-    </ClInclude>
-    <ClInclude Include="ui\push_button.h">
-      <Filter>Header Files\ui</Filter>
+    <ClInclude Include="nao_controller.h">
+      <Filter>Header Files\MVC</Filter>
     </ClInclude>
     <ClInclude Include="steam_utils.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="vdf_parser.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ui\right_window.h">
-      <Filter>Header Files\ui</Filter>
+    <ClInclude Include="utils.h">
+      <Filter>Header Files\Utils</Filter>
     </ClInclude>
     <ClInclude Include="thread_pool.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="com_thread.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="vdf_parser.h">
+      <Filter>Header Files\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="providers\wsp_provider.h">
-      <Filter>Header Files\providers</Filter>
+    <ClInclude Include="filesystem_provider.h">
+      <Filter>Header Files\Providers</Filter>
+    </ClInclude>
+    <ClInclude Include="wav_provider.h">
+      <Filter>Header Files\Providers</Filter>
+    </ClInclude>
+    <ClInclude Include="wsp_provider.h">
+      <Filter>Header Files\Providers</Filter>
+    </ClInclude>
+    <ClInclude Include="left_window.h">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="main_window.h">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="right_window.h">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="item_provider.h">
+      <Filter>Header Files\Providers</Filter>
     </ClInclude>
     <ClInclude Include="binary_stream.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="com_thread.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="item_provider_factory.h">
+      <Filter>Header Files\Utils</Filter>
     </ClInclude>
     <ClInclude Include="item_data.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="providers\wav_provider.h">
-      <Filter>Header Files\providers</Filter>
+    <ClInclude Include="auto_wrapper.h">
+      <Filter>Header Files\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="ui\audio_player.h">
-      <Filter>Header Files\ui</Filter>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="frameworks.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="dimensions.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="push_button.h">
+      <Filter>Header Files\UI\Generic</Filter>
+    </ClInclude>
+    <ClInclude Include="list_view.h">
+      <Filter>Header Files\UI\Generic</Filter>
+    </ClInclude>
+    <ClInclude Include="line_edit.h">
+      <Filter>Header Files\UI\Generic</Filter>
+    </ClInclude>
+    <ClInclude Include="audio_player.h">
+      <Filter>Header Files\UI\Generic</Filter>
+    </ClInclude>
+    <ClInclude Include="ui_element.h">
+      <Filter>Header Files\UI\Generic</Filter>
+    </ClInclude>
+    <ClInclude Include="dynamic_library.h">
+      <Filter>Header Files\Win32</Filter>
+    </ClInclude>
+    <ClInclude Include="icon.h">
+      <Filter>Header Files\Win32</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="nao.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="utils.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="nao_controller.cpp">
+      <Filter>Source Files\MVC</Filter>
+    </ClCompile>
+    <ClCompile Include="nao_model.cpp">
+      <Filter>Source Files\MVC</Filter>
+    </ClCompile>
+    <ClCompile Include="nao_view.cpp">
+      <Filter>Source Files\MVC</Filter>
+    </ClCompile>
+    <ClCompile Include="left_window.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="main_window.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="right_window.cpp">
+      <Filter>Source Files\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="filesystem_provider.cpp">
+      <Filter>Source Files\Providers</Filter>
+    </ClCompile>
+    <ClCompile Include="wav_provider.cpp">
+      <Filter>Source Files\Providers</Filter>
+    </ClCompile>
+    <ClCompile Include="wsp_provider.cpp">
+      <Filter>Source Files\Providers</Filter>
     </ClCompile>
     <ClCompile Include="item_provider.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Providers</Filter>
     </ClCompile>
-    <ClCompile Include="item_provider_factory.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="providers\filesystem_provider.cpp">
-      <Filter>Source Files\providers</Filter>
-    </ClCompile>
-    <ClCompile Include="ui\list_view.cpp">
-      <Filter>Source Files\ui</Filter>
-    </ClCompile>
-    <ClCompile Include="ui\main_window.cpp">
-      <Filter>Source Files\ui</Filter>
-    </ClCompile>
-    <ClCompile Include="ui\ui_element.cpp">
-      <Filter>Source Files\ui</Filter>
-    </ClCompile>
-    <ClCompile Include="ui\left_window.cpp">
-      <Filter>Source Files\ui</Filter>
-    </ClCompile>
-    <ClCompile Include="data_model.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ui\line_edit.cpp">
-      <Filter>Source Files\ui</Filter>
-    </ClCompile>
-    <ClCompile Include="ui\push_button.cpp">
-      <Filter>Source Files\ui</Filter>
-    </ClCompile>
-    <ClCompile Include="steam_utils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ui\right_window.cpp">
-      <Filter>Source Files\ui</Filter>
+    <ClCompile Include="utils.cpp">
+      <Filter>Source Files\Utils</Filter>
     </ClCompile>
     <ClCompile Include="thread_pool.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="steam_utils.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="item_provider_factory.cpp">
+      <Filter>Source Files\Utils</Filter>
     </ClCompile>
     <ClCompile Include="com_thread.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="providers\wsp_provider.cpp">
-      <Filter>Source Files\providers</Filter>
+      <Filter>Source Files\Utils</Filter>
     </ClCompile>
     <ClCompile Include="binary_stream.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Utils</Filter>
     </ClCompile>
-    <ClCompile Include="providers\wav_provider.cpp">
-      <Filter>Source Files\providers</Filter>
+    <ClCompile Include="auto_wrapper.cpp">
+      <Filter>Source Files\Utils</Filter>
     </ClCompile>
-    <ClCompile Include="ui\audio_player.cpp">
-      <Filter>Source Files\ui</Filter>
+    <ClCompile Include="push_button.cpp">
+      <Filter>Source Files\UI\Generic</Filter>
+    </ClCompile>
+    <ClCompile Include="list_view.cpp">
+      <Filter>Source Files\UI\Generic</Filter>
+    </ClCompile>
+    <ClCompile Include="line_edit.cpp">
+      <Filter>Source Files\UI\Generic</Filter>
+    </ClCompile>
+    <ClCompile Include="audio_player.cpp">
+      <Filter>Source Files\UI\Generic</Filter>
+    </ClCompile>
+    <ClCompile Include="ui_element.cpp">
+      <Filter>Source Files\UI\Generic</Filter>
+    </ClCompile>
+    <ClCompile Include="dynamic_library.cpp">
+      <Filter>Source Files\Win32</Filter>
+    </ClCompile>
+    <ClCompile Include="icon.cpp">
+      <Filter>Source Files\Win32</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

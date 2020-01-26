@@ -2,7 +2,7 @@
 
 #include "item_provider_factory.h"
 #include "utils.h"
-#include "data_model.h"
+//#include "data_model.h"
 
 #include <shellapi.h>
 #include <filesystem>
@@ -27,9 +27,9 @@ item_data& filesystem_provider::data(size_t index) {
     return _m_contents[index];
 }
 
-item_provider::preview_type filesystem_provider::preview() const {
-    return preview_type::PreviewListView;
-}
+//item_provider::preview_type filesystem_provider::preview() const {
+//    return preview_type::PreviewListView;
+//}
 
 void filesystem_provider::_populate() {
     // List devices
@@ -51,8 +51,8 @@ void filesystem_provider::_populate() {
                     SHGFI_DISPLAYNAME | SHGFI_TYPENAME | SHGFI_ICON | SHGFI_ICONLOCATION | SHGFI_ADDOVERLAYS);
 
                 if (hr == 0) {
-                    MessageBoxW(model.handle(),
-                        L"Failed to get drive name", L"Error", MB_OK | MB_ICONEXCLAMATION);
+                   // MessageBoxW(model.handle(),
+                    //    L"Failed to get drive name", L"Error", MB_OK | MB_ICONEXCLAMATION);
                 } else {
                     DWORD sectors_per_cluster, bytes_per_sector, free_clusters, total_clusters;
                     GetDiskFreeSpaceW(s, &sectors_per_cluster, &bytes_per_sector, &free_clusters, &total_clusters);
@@ -93,9 +93,9 @@ void filesystem_provider::_populate() {
     HANDLE f = FindFirstFileW((_m_path + L"\\*").c_str(), &data);
 
     if (f == INVALID_HANDLE_VALUE) {
-        MessageBoxW(model.handle(),
-            utils::utf16("Failed to get directory contents for " + name).c_str(), L"Error",
-            MB_OK | MB_ICONWARNING);
+        //MessageBoxW(model.handle(),
+        //    utils::utf16("Failed to get directory contents for " + name).c_str(), L"Error",
+        //    MB_OK | MB_ICONWARNING);
         return;
     }
 
@@ -129,8 +129,8 @@ void filesystem_provider::_populate() {
         if (hr == 0) {
             std::wstringstream ss;
             ss << L"Failed to get icon for " << file_path << ", error code " << GetLastError();
-            MessageBoxW(model.handle(), ss.str().c_str(), L"Error",
-                MB_OK | MB_ICONEXCLAMATION);
+            //MessageBoxW(model.handle(), ss.str().c_str(), L"Error",
+            //    MB_OK | MB_ICONEXCLAMATION);
             continue;
         }
 
@@ -151,8 +151,8 @@ void filesystem_provider::_populate() {
     } while (FindNextFileW(f, &data) != 0);
 
     if (GetLastError() != ERROR_NO_MORE_FILES) {
-        MessageBoxW(model.handle(), L"Unexpected error", L"Error",
-            MB_OK | MB_ICONWARNING);
+        //MessageBoxW(model.handle(), L"Unexpected error", L"Error",
+        //    MB_OK | MB_ICONWARNING);
         utils::coutln("Error:", GetLastError());
     }
 

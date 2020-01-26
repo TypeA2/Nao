@@ -13,7 +13,7 @@ class filesystem_provider : public item_provider {
     
     item_data& data(size_t index) override;
 
-    preview_type preview() const override;
+    //preview_type preview() const override;
     
     private:
     void _populate();

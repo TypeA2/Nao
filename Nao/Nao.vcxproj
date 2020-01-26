@@ -114,7 +114,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)ui;$(ProjectDir)providers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>6388;6387;26712;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -161,7 +161,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)ui;$(ProjectDir)providers;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <DisableSpecificWarnings>6388;6387;26712;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -185,55 +185,64 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="Nao.ico" />
-    <Image Include="small.ico" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="audio_player.h" />
+    <ClInclude Include="auto_wrapper.h" />
     <ClInclude Include="binary_stream.h" />
     <ClInclude Include="com_thread.h" />
-    <ClInclude Include="data_model.h" />
+    <ClInclude Include="dimensions.h" />
+    <ClInclude Include="dynamic_library.h" />
+    <ClInclude Include="filesystem_provider.h" />
+    <ClInclude Include="icon.h" />
+    <ClInclude Include="left_window.h" />
+    <ClInclude Include="line_edit.h" />
+    <ClInclude Include="list_view.h" />
+    <ClInclude Include="main_window.h" />
+    <ClInclude Include="nao_controller.h" />
+    <ClInclude Include="nao_model.h" />
     <ClInclude Include="frameworks.h" />
     <ClInclude Include="item_data.h" />
     <ClInclude Include="item_provider.h" />
     <ClInclude Include="item_provider_factory.h" />
-    <ClInclude Include="providers\filesystem_provider.h" />
-    <ClInclude Include="providers\wav_provider.h" />
-    <ClInclude Include="providers\wsp_provider.h" />
-    <ClInclude Include="Resource.h" />
+    <ClInclude Include="nao_view.h" />
+    <ClInclude Include="push_button.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="right_window.h" />
     <ClInclude Include="steam_utils.h" />
     <ClInclude Include="thread_pool.h" />
-    <ClInclude Include="ui\audio_player.h" />
-    <ClInclude Include="ui\dimensions.h" />
-    <ClInclude Include="ui\left_window.h" />
-    <ClInclude Include="ui\line_edit.h" />
-    <ClInclude Include="ui\list_view.h" />
-    <ClInclude Include="ui\main_window.h" />
-    <ClInclude Include="ui\push_button.h" />
-    <ClInclude Include="ui\right_window.h" />
-    <ClInclude Include="ui\ui_element.h" />
+    <ClInclude Include="ui_element.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="vdf_parser.h" />
+    <ClInclude Include="wav_provider.h" />
+    <ClInclude Include="wsp_provider.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="audio_player.cpp" />
+    <ClCompile Include="auto_wrapper.cpp" />
     <ClCompile Include="binary_stream.cpp" />
     <ClCompile Include="com_thread.cpp" />
-    <ClCompile Include="data_model.cpp" />
+    <ClCompile Include="dynamic_library.cpp" />
+    <ClCompile Include="filesystem_provider.cpp" />
+    <ClCompile Include="icon.cpp" />
+    <ClCompile Include="left_window.cpp" />
+    <ClCompile Include="line_edit.cpp" />
+    <ClCompile Include="list_view.cpp" />
+    <ClCompile Include="main_window.cpp" />
+    <ClCompile Include="nao_controller.cpp" />
+    <ClCompile Include="nao_model.cpp" />
     <ClCompile Include="item_provider.cpp" />
     <ClCompile Include="item_provider_factory.cpp" />
     <ClCompile Include="nao.cpp" />
-    <ClCompile Include="providers\filesystem_provider.cpp" />
-    <ClCompile Include="providers\wav_provider.cpp" />
-    <ClCompile Include="providers\wsp_provider.cpp" />
+    <ClCompile Include="nao_view.cpp" />
+    <ClCompile Include="push_button.cpp" />
+    <ClCompile Include="right_window.cpp" />
     <ClCompile Include="steam_utils.cpp" />
     <ClCompile Include="thread_pool.cpp" />
-    <ClCompile Include="ui\audio_player.cpp" />
-    <ClCompile Include="ui\left_window.cpp" />
-    <ClCompile Include="ui\line_edit.cpp" />
-    <ClCompile Include="ui\list_view.cpp" />
-    <ClCompile Include="ui\main_window.cpp" />
-    <ClCompile Include="ui\push_button.cpp" />
-    <ClCompile Include="ui\right_window.cpp" />
-    <ClCompile Include="ui\ui_element.cpp" />
+    <ClCompile Include="ui_element.cpp" />
     <ClCompile Include="utils.cpp" />
+    <ClCompile Include="wav_provider.cpp" />
+    <ClCompile Include="wsp_provider.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="Nao.exe.manifest" />

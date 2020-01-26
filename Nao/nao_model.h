@@ -1,5 +1,17 @@
 #pragma once
 
+class nao_view;
+
+class nao_model {
+    public:
+    explicit nao_model(nao_view& view);
+    nao_model() = delete;
+
+    protected:
+    nao_view& view;
+};
+
+/*
 #include "frameworks.h"
 
 #include "item_data.h"
@@ -15,8 +27,14 @@ class push_button;
 class ui_element;
 class audio_player;
 
+class controller;
+
 class data_model {
     public:
+    data_model() = delete;
+    explicit data_model(controller& controller, std::string initial_path);
+    ~data_model() = default;
+
     enum sort_order : int8_t {
         SortOrderNone,
         SortOrderNormal,
@@ -26,42 +44,42 @@ class data_model {
     // item_provider stream
     using stream = item_provider_factory::stream;
 
-    /*
+    
      * Messages,
      *
      * WPARAM:
      *   LOWORD: true if LPARAM should be freed, false if not
      *   HIWORD: true if condition variable should be notified, false if not
-     */
+     
     enum messages : UINT {
         First = WM_USER,
 
-        /*
+        *
          * Simply execute a function on the main thread
          *
          * LPARAM pointer to a std::function<void()>;
-         */
+         *
         ExecuteFunction,
 
-        /*
+        *
          * Set the preview element in _m_right
          *
          * LPARAM: pointer to a create_preview_async struct
-         */
+         *
         CreatePreviewElement,
 
-        /*
+        *
          * Delete the current preview element
          *
          * No parameters
-         */
+         *
         ClearPreviewElement,
 
-        /*
+        *
          * Insert an item into the specified list_view
          *
          * LPARAM: Pointer to an insert_element_async struct
-         */
+         *
         InsertElementAsync,
 
         Last
@@ -74,32 +92,22 @@ class data_model {
     };
 
     struct create_preview_async {
-        std::function<ui_element*()> creator;
+        std::function<std::shared_ptr<ui_element>()> creator;
         preview_type type;
     };
 
     struct insert_element_async {
-        list_view* list;
+        std::weak_ptr<list_view> list;
         std::vector<std::string> elements;
         int icon;
         item_data* data;
     };
 
-    data_model() = delete;
-    explicit data_model(std::string initial_path);
-    ~data_model();
-
-    void set_window(main_window* window);
-    void set_right(right_window* right);
-    void set_list_view(list_view* list_view);
-    void set_path_edit(line_edit* path_edit);
-    void set_up_button(push_button* up);
-
-    main_window* get_window() const;
-    right_window* get_right() const;
-    list_view* get_list_view() const;
-    line_edit* get_path_edit() const;
-    push_button* get_up_button() const;
+    void set_window(const std::weak_ptr<ui_element>& window);
+    void set_right(const std::weak_ptr<ui_element>& right);
+    void set_list_view(const std::weak_ptr<ui_element>& list_view);
+    void set_path_edit(const std::weak_ptr<ui_element>& path_edit);
+    void set_up_button(const std::weak_ptr<ui_element>& up);
 
     HWND handle() const;
 
@@ -137,11 +145,7 @@ class data_model {
 
     // Encapsulate a list_view and it's sorting information
     struct sorted_list_view {
-        operator list_view* () const;
-        sorted_list_view& operator=(list_view* list);
-        list_view* operator->() const noexcept;
-
-        list_view* list;
+        std::weak_ptr<list_view> list;
         int selected;
         std::vector<sort_order> order;
     };
@@ -164,7 +168,7 @@ class data_model {
         item_data* data;
 
         sorted_list_view list;
-        audio_player* player;
+        std::weak_ptr<audio_player> player;
 
         preview_type type;
     };
@@ -196,14 +200,17 @@ class data_model {
 
     void _show_in_explorer(menu_state& state) const;
 
+    // UI controller
+    controller& _m_controller;
+
     std::string _m_path;
 
-    std::deque<item_provider*> _m_providers;
+    std::deque<std::unique_ptr<item_provider>> _m_providers;
     
-    main_window* _m_window;
-    right_window* _m_right;
-    line_edit* _m_path_edit;
-    push_button* _m_up_button;
+    std::weak_ptr<main_window> _m_window;
+    std::weak_ptr<right_window> _m_right;
+    std::weak_ptr<line_edit> _m_path_edit;
+    std::weak_ptr<push_button> _m_up_button;
 
     // Main list
     sorted_list_view _m_list_view;
@@ -222,3 +229,4 @@ class data_model {
     const std::thread::id _m_main_thread;
 };
 
+*/

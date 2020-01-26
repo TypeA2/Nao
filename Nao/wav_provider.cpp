@@ -12,18 +12,17 @@ wav_provider::~wav_provider() {
     utils::coutln("[WAV] deleting for", name);
 }
 
-item_provider::preview_type wav_provider::preview() const {
-    return preview_type::PreviewAudioPlayer;
-}
+//item_provider::preview_type wav_provider::preview() const {
+//    return preview_type::PreviewAudioPlayer;
+//}
 
-ui_element* wav_provider::preview_element(ui_element* parent) const {
-    auto player = new audio_player(parent, model);
+std::shared_ptr<ui_element> wav_provider::preview_element(const std::shared_ptr<ui_element>& parent) const {
+    auto player = std::make_shared<audio_player>(parent.get());
 
     player->set_audio(name, file);
 
     return player;
 }
-
 
 item_provider* wav_provider::_create(const file_stream& file, const std::string& name, data_model& model) {
     if (name.substr(name.size() - 4) == ".wav") {

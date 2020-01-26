@@ -1,6 +1,9 @@
 #pragma once
 
 namespace dims {
+    static constexpr int base_window_width = 1280;
+    static constexpr int base_window_height = 800;
+
     static constexpr int gutter_size = 2;
     static constexpr int control_height = 22;
     static constexpr int control_button_width = 26;

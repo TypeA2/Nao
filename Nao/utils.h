@@ -1,7 +1,5 @@
 #pragma once
 
-#include "frameworks.h"
-
 #include <sstream>
 
 #define LINE_STRINGIFY(x) LINE_STRINGIFY2(x)
@@ -18,6 +16,8 @@
 #include <cassert>
 #define ASSERT(cond) assert(cond);
 #endif
+
+#define HASSERT(hr) ASSERT(SUCCEEDED(hr))
 
 namespace utils {
     void cout(const char* str);

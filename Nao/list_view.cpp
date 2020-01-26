@@ -2,16 +2,30 @@
 
 #include "utils.h"
 
+#include "frameworks.h"
+
 #include <algorithm>
 
-list_view::list_view(ui_element* parent) : ui_element(parent) {
-    // This element can only be a child
-    ASSERT(parent && parent->handle());
-    _init();
+list_view::list_view(ui_element* parent) : ui_element(parent), _m_image_list(nullptr) {
+    HWND handle = CreateWindowExW(0,
+        WC_LISTVIEWW, L"",
+        WS_CHILD | WS_VISIBLE |
+        LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS,
+        0, 0, parent->width(), parent->height(),
+        parent->handle(), nullptr, instance(),
+        nullptr);
+
+    ASSERT(handle);
+
+    SetWindowTheme(handle, L"Explorer", nullptr);
+    ListView_SetExtendedListViewStyle(handle, LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
+
+    set_handle(handle);
 }
 
-list_view::list_view(ui_element* parent,
-    const std::vector<std::string>& hdr, IImageList* list) : list_view(parent) {
+list_view::list_view(ui_element* parent, const std::vector<std::string>& hdr,
+    IImageList* list) : list_view(parent) {
+
     set_columns(hdr);
 
     if (list) {
@@ -20,7 +34,9 @@ list_view::list_view(ui_element* parent,
 }
 
 list_view::~list_view() {
-    _m_image_list->Release();
+    if (_m_image_list) {
+        _m_image_list->Release();
+    }
 }
 
 void list_view::set_columns(const std::vector<std::string>& hdr) const {
@@ -193,28 +209,6 @@ void list_view::clear(const std::function<void(void*)>& deleter) const {
             deleter(reinterpret_cast<void*>(item.lParam));
         }
     }
-    
 
     ListView_DeleteAllItems(handle());
-}
-
-
-
-void list_view::_init() {
-    HINSTANCE inst = GetModuleHandleW(nullptr);
-    
-    HWND handle = CreateWindowExW(0,
-        WC_LISTVIEWW, L"",
-        WS_CHILD | WS_VISIBLE |
-        LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS,
-        0, 0, parent()->width(), parent()->height(),
-        parent()->handle(), nullptr, inst,
-        nullptr);
-
-    ASSERT(handle);
-
-    SetWindowTheme(handle, L"Explorer", nullptr);
-    ListView_SetExtendedListViewStyle(handle, LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
-    
-    set_handle(handle);
 }

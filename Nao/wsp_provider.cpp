@@ -1,7 +1,8 @@
 #include "wsp_provider.h"
 #include "item_provider_factory.h"
 #include "utils.h"
-#include "data_model.h"
+//#include "data_model.h"
+#include "frameworks.h"
 
 #include <iomanip>
 
@@ -24,9 +25,9 @@ item_data& wsp_provider::data(size_t index) {
     return _m_contents[index];
 }
 
-item_provider::preview_type wsp_provider::preview() const {
-    return preview_type::PreviewListView;
-}
+//item_provider::preview_type wsp_provider::preview() const {
+//    return preview_type::PreviewListView;
+//}
 
 void wsp_provider::_populate() {
     while (!file->eof()) {
@@ -38,8 +39,8 @@ void wsp_provider::_populate() {
 
         if (fcc != "RIFF") {
             utils::coutln(file->tellg(), fcc);
-            MessageBoxW(model.handle(), L"Invalid RIFF signature",
-                L"Error", MB_ICONEXCLAMATION | MB_OK);
+           // MessageBoxW(model.handle(), L"Invalid RIFF signature",
+            //    L"Error", MB_ICONEXCLAMATION | MB_OK);
             return;
         }
 
@@ -68,8 +69,8 @@ void wsp_provider::_populate() {
             SHGFI_TYPENAME | SHGFI_ICON | SHGFI_ICONLOCATION | SHGFI_ADDOVERLAYS | SHGFI_USEFILEATTRIBUTES);
 
         if (hr == 0) {
-            MessageBoxW(model.handle(),
-                L"Failed to get file info", L"Error", MB_OK | MB_ICONEXCLAMATION);
+            //MessageBoxW(model.handle(),
+            //    L"Failed to get file info", L"Error", MB_OK | MB_ICONEXCLAMATION);
             continue;
         }
 

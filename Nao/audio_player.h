@@ -33,7 +33,7 @@ class audio_player : public ui_element, IMFAsyncCallback {
 
 #pragma endregion
     public:
-    audio_player(ui_element* parent, data_model& model);
+    audio_player(ui_element* parent);
     ~audio_player();
 
     void set_audio(const std::string& name,
@@ -74,9 +74,7 @@ class audio_player : public ui_element, IMFAsyncCallback {
     LRESULT _wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
     LRESULT _player_event(WPARAM wparam, LPARAM lparam);
 
-    data_model& _m_model;
-
-    push_button* _m_toggle;
+    std::unique_ptr<push_button> _m_toggle;
 
     HICON _m_play_icon;
     HICON _m_pause_icon;

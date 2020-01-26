@@ -64,12 +64,10 @@ HRESULT audio_player::Invoke(IMFAsyncResult* pAsyncResult) {
     return S_OK;
 }
 
-audio_player::audio_player(ui_element* parent, data_model& model)
+audio_player::audio_player(ui_element* parent)
     : ui_element(parent)
     , _m_refcount { 1 }
-    , _m_model { model } 
     , _m_is_playing { false } {
-    ASSERT(parent);
     _init();
 }
 
@@ -150,7 +148,7 @@ bool audio_player::wm_create(CREATESTRUCTW* create) {
 
     RECT rect;
     GetWindowRect(handle(), &rect);
-    _m_toggle = new push_button(this, _m_play_icon);
+    _m_toggle = std::make_unique<push_button>(this, icon(_m_play_icon, false));
 
     return true;
 }
@@ -211,7 +209,7 @@ void audio_player::_init() {
 void audio_player::_toggle_pause_play() {
     _m_is_playing = !_m_is_playing;
 
-    _m_toggle->set_icon(_m_is_playing ? _m_pause_icon : _m_play_icon);
+    _m_toggle->set_icon(icon(_m_is_playing ? _m_pause_icon : _m_play_icon, false));
 
     ASSERT(SUCCEEDED(_m_is_playing ? play() : pause()));
 }

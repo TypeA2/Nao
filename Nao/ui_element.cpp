@@ -2,13 +2,54 @@
 
 #include "utils.h"
 
-#include <cassert>
-#include <functional>
+HINSTANCE ui_element::_instance = nullptr;
+
+std::wstring ui_element::load_wstring(int resource) {
+    union {
+        LPCWSTR str;
+        WCHAR buf[sizeof(str) / sizeof(WCHAR)];
+    } pun { };
+
+    int length = LoadStringW(GetModuleHandleW(nullptr), resource, pun.buf, 0) + 1;
+    std::wstring str(length, L'\0');
+    wcsncpy_s(str.data(), length, pun.str, length - 1i64);
+
+    return str;
+}
+
+icon ui_element::load_icon(int resource) {
+    return icon(LoadIconW(instance(), MAKEINTRESOURCEW(resource)), true);
+}
+
+HGDIOBJ ui_element::stock_object(int obj) {
+    return GetStockObject(obj);
+}
+
+void ui_element::set_instance(HINSTANCE instance) {
+    _instance = instance;
+}
+
+HINSTANCE ui_element::instance() {
+    if (!_instance) {
+        _instance = GetModuleHandleW(nullptr);
+    }
+
+    return _instance;
+}
+
+HWND ui_element::create_window(const std::wstring& class_name, const std::wstring& window_name, DWORD style, const ::dimensions& at, ui_element* parent, void* param) {
+    return create_window_ex(class_name, window_name, style, at, parent, 0, param);
+}
+
+HWND ui_element::create_window_ex(const std::wstring& class_name, const std::wstring& window_name, DWORD style, const ::dimensions& at, ui_element* parent, DWORD ex_style, void* param) {
+    return CreateWindowExW(ex_style, class_name.c_str(), window_name.c_str(), style,
+        at.x, at.y, at.width, at.height, parent ? parent->handle() : nullptr, nullptr, instance(), param);
+}
+
 
 ui_element::ui_element(ui_element* parent)
     : _m_parent { parent }
     , _m_handle { }
-    , _m_mem_wnd_proc { }
     , _m_created { } {
 
 }
@@ -20,6 +61,7 @@ ui_element::~ui_element() {
 bool ui_element::destroy() {
     HWND handle = _m_handle;
     _m_handle = nullptr;
+    _m_created = false;
     return DestroyWindow(handle);
 }
 
@@ -34,7 +76,7 @@ HWND ui_element::handle() const {
 long ui_element::width() const {
     RECT rect;
     bool res = GetWindowRect(handle(), &rect);
-    assert(res);
+    ASSERT(res);
 
     return rect.right - rect.left;
 }
@@ -42,9 +84,27 @@ long ui_element::width() const {
 long ui_element::height() const {
     RECT rect;
     bool res = GetWindowRect(handle(), &rect);
-    assert(res);
+    ASSERT(res);
 
     return rect.bottom - rect.top;
+}
+
+coords ui_element::position() const {
+    auto [x, y, w, h] = dimensions();
+
+    return { .x = x, .y = y };
+}
+
+dimensions ui_element::dimensions() const {
+    RECT rect;
+    GetClientRect(handle(), &rect);
+
+    return {
+        .x = rect.left,
+        .y = rect.top,
+        .width = rect.right,
+        .height = rect.bottom
+    };
 }
 
 void ui_element::move(int x, int y, int width, int height) {
@@ -76,23 +136,27 @@ LRESULT ui_element::send_message(UINT msg, WPARAM wparam, LPARAM lparam) const {
     return SendMessageW(handle(), msg, wparam, lparam);
 }
 
+LRESULT ui_element::send_message(UINT msg, WPARAM wparam, const void* lparam) const {
+    return SendMessageW(handle(), msg, wparam, reinterpret_cast<LPARAM>(lparam));
+}
+
 bool ui_element::post_message(UINT msg, WPARAM wparam, LPARAM lparam) const {
     return PostMessageW(handle(), msg, wparam, lparam);
 }
 
-
+bool ui_element::post_message(UINT msg, WPARAM wparam, const void* lparam) const {
+    return PostMessageW(handle(), msg, wparam, reinterpret_cast<LPARAM>(lparam));
+}
 
 void ui_element::set_handle(HWND handle) {
-    assert(!_m_handle && handle);
+    ASSERT(!_m_handle && handle);
 
     _m_handle = handle;
 }
 
-
-
 bool ui_element::wm_create(CREATESTRUCTW* create) {
-    if (_m_mem_wnd_proc) {
-        return (this->*_m_mem_wnd_proc)(handle(), WM_CREATE, 0, LPARAM(create)) == 0;
+    if (_m_wnd_proc) {
+        return _m_wnd_proc(handle(), WM_CREATE, 0, LPARAM(create)) == 0;
     }
 
     return DefWindowProcW(handle(), WM_CREATE, 0, LPARAM(create)) == 0;
@@ -103,8 +167,8 @@ void ui_element::wm_destroy() {
 }
 
 void ui_element::wm_size(int type, int width, int height) {
-    if (_m_mem_wnd_proc) {
-        (this->*_m_mem_wnd_proc)(handle(), WM_SIZE, type, MAKELPARAM(width, height));
+    if (_m_wnd_proc) {
+        _m_wnd_proc(handle(), WM_SIZE, type, MAKELPARAM(width, height));
     } else {
         DefWindowProcW(handle(), WM_SIZE, type, MAKELPARAM(width, height));
     }
@@ -119,26 +183,17 @@ void ui_element::wm_paint() {
 }
 
 void ui_element::wm_command(WPARAM wparam, LPARAM lparam) {
-    if (_m_mem_wnd_proc) {
-        (this->*_m_mem_wnd_proc)(handle(), WM_COMMAND, wparam, lparam);
+    if (_m_wnd_proc) {
+        _m_wnd_proc(handle(), WM_COMMAND, wparam, lparam);
     } else {
         DefWindowProcW(handle(), WM_COMMAND, wparam, lparam);
     }
 }
 
+ui_element::wnd_init::wnd_init(ui_element* element, const wnd_proc_func& proc, void* replacement)
+    : element(element), proc(proc), replacement(replacement){
 
-
-
-ui_element::wnd_init::wnd_init(ui_element* element, member_wnd_proc<> proc) {
-    this->element = element;
-    this->proc = proc;
 }
-
-void ui_element::use_wnd_proc(member_wnd_proc<> new_proc) {
-    assert(new_proc);
-    _m_mem_wnd_proc = new_proc;
-}
-
 LRESULT ui_element::wnd_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
     // Retrieve instance
     ui_element* _this = reinterpret_cast<ui_element*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
@@ -166,8 +221,8 @@ LRESULT ui_element::wnd_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
         }
         
         // Custom callback is set
-        if (_this->_m_mem_wnd_proc) {
-            return (_this->*(_this->_m_mem_wnd_proc))(hwnd, msg, wparam, lparam);
+        if (_this->_m_wnd_proc) {
+            return _this->_m_wnd_proc(hwnd, msg, wparam, lparam);
         }
     }
 
@@ -187,15 +242,15 @@ LRESULT ui_element::wnd_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
 
                     // Set custom callback
                     if (init->proc) {
-                        element->use_wnd_proc(init->proc);
+                        element->_m_wnd_proc = init->proc;
                     }
 
                     element->_m_created = true;
                 }
 
-                delete init;
+                create->lpCreateParams = init->replacement;
 
-                create->lpCreateParams = nullptr;
+                delete init;
 
                 if (element) {
                     // Should automatically forward
