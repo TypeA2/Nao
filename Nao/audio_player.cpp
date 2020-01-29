@@ -87,7 +87,7 @@ audio_player::~audio_player() {
 }
 
 void audio_player::set_audio(const std::string& name,
-    const std::shared_ptr<binary_stream>& stream) {
+    const std::shared_ptr<binary_istream>& stream) {
     int i = 1;
     _create_session();
     _create_source(name, stream);
@@ -278,7 +278,7 @@ void audio_player::_close_session() {
 
 
 void audio_player::_create_source(const std::string& name,
-    const std::shared_ptr<binary_stream>& stream) {
+    const std::shared_ptr<binary_istream>& stream) {
     
 
     IMFSourceResolver* resolver = nullptr;

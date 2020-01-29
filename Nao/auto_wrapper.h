@@ -13,7 +13,37 @@ struct auto_wrapper {
     public:
     explicit auto_wrapper(const std::function<void()>& before, const std::function<void()>& after = {})
          : _after(after) {
-        before();
+        if (before) {
+            before();
+        }
+    }
+
+    // Bind a function and run it in with the specified wrapper active
+    template <typename Wrapper, typename Func, typename... Args>
+    static auto bind(Func&& func, Args... args) {
+        return [func, args...] {
+            Wrapper _wrapper;
+            return func(std::forward<Args>(args)...);
+        };
+    }
+
+    template <template<auto...> typename Wrapper, typename Func, typename... Args>
+    static auto bind(Func&& func, Args... args) {
+        return [func, args...] {
+            Wrapper _wrapper;
+            return func(std::forward<Args>(args)...);
+        };
+    }
+
+    // Same, but for member functions
+    template <typename Wrapper, typename Ret, typename T, typename... Args>
+    static auto bind(Ret(T::* mem)(Args...), T* obj, Args&&... args) {
+        return bind(std::bind(mem, obj, std::forward<Args>(args)...));
+    }
+
+    template <template<auto...> typename Wrapper, typename Ret, typename T, typename... Args>
+    static auto bind(Ret(T::* mem)(Args...), T& obj, Args&&... args) {
+        return bind(std::bind(mem, &obj, std::forward<Args>(args)...));
     }
 
     ~auto_wrapper() {
@@ -26,6 +56,9 @@ struct auto_wrapper {
 
 template <DWORD _Init = COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE>
 struct com_wrapper : auto_wrapper {
+
+    static constexpr DWORD flags = _Init;
+
     explicit com_wrapper()
         : auto_wrapper(
             [] { ASSERT(CoInitializeEx(nullptr, _Init) == S_OK); },

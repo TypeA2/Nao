@@ -2,29 +2,12 @@
 
 #include "item_provider.h"
 
-#include <vector>
-
 class filesystem_provider : public item_provider {
     public:
-    filesystem_provider(const std::string& path, data_model& model);
-    ~filesystem_provider() override;
-    
-    size_t count() const override;
-    
-    item_data& data(size_t index) override;
+    explicit filesystem_provider(const std::string& path);
 
-    //preview_type preview() const override;
-    
     private:
-    void _populate();
-
-    // Current filesystem files and folders
-    std::vector<item_data> _m_contents;
-    
-    std::wstring _m_path;
-    
-    // Factory registration
-    static item_provider* _create(const file_stream& file,
-        const std::string& name, data_model& model);
+    static item_provider_ptr _create(const istream_type& stream,
+        const std::string& path);
     static size_t _id;
 };

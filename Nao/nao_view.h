@@ -29,6 +29,9 @@ class nao_view {
     // Create the UI
     void setup();
 
+    // Set UI elements
+    void set_path(const std::string& path) const;
+
     protected:
     nao_controller& controller;
 

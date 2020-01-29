@@ -1,27 +1,28 @@
 #pragma once
 
-#include "item_provider_factory.h"
-
 #include <string>
 #include <memory>
 
+class binary_istream;
+
 struct item_data {
+    using istream_type = std::shared_ptr<binary_istream>;
+
     std::string name;
     std::string type;
 
-    int64_t size {};
+    uintmax_t size;
     std::string size_str;
 
-    double compression {};
+    double compression;
 
-    int icon {};
+    int icon;
 
-    bool dir {};
-    bool drive {};
+    bool dir;
+    bool drive;
 
-    char drive_letter {};
-
-    item_provider_factory::stream stream;
+    char drive_letter;
+    istream_type stream;
 
     std::shared_ptr<void> data;
 };

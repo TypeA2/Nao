@@ -1,174 +1,81 @@
 #include "filesystem_provider.h"
 
 #include "item_provider_factory.h"
-#include "utils.h"
-//#include "data_model.h"
 
-#include <shellapi.h>
+#include "frameworks.h"
+
 #include <filesystem>
 
-filesystem_provider::filesystem_provider(const std::string& path, data_model& model)
-    : item_provider(nullptr, path, model)
-    , _m_path { utils::utf16(path) } {
+#include "file_info.h"
+#include "utils.h"
+#include "drive_list.h"
+#include "binary_stream.h"
+
+filesystem_provider::filesystem_provider(const std::string& path) : item_provider(nullptr, path){
     utils::coutln("[FILESYSTEM] creating for", path);
-    _populate();
-}
 
-filesystem_provider::~filesystem_provider() {
-    utils::coutln("[FILESYSTEM] deleting for", name);
-}
+    if (path == "\\") {
+        // Devices list
 
-
-size_t filesystem_provider::count() const {
-    return _m_contents.size();
-}
-
-item_data& filesystem_provider::data(size_t index) {
-    return _m_contents[index];
-}
-
-//item_provider::preview_type filesystem_provider::preview() const {
-//    return preview_type::PreviewListView;
-//}
-
-void filesystem_provider::_populate() {
-    // List devices
-    if (_m_path == L"\\") {
-        DWORD drives = GetLogicalDrives();
-
-        DWORD required = GetLogicalDriveStringsW(0, nullptr);
-        std::vector str(required, L'\0');
-
-        GetLogicalDriveStringsW(required, str.data());
-
-        LPCWSTR s = str.data();
         SHFILEINFOW finfo { };
+        for (auto [letter, name, total, free] : drive_list()) {
 
-        while (drives) {
-            if (drives & 1) {
-                DWORD_PTR hr = SHGetFileInfoW(s, 0, &finfo,
-                    sizeof(finfo),
-                    SHGFI_DISPLAYNAME | SHGFI_TYPENAME | SHGFI_ICON | SHGFI_ICONLOCATION | SHGFI_ADDOVERLAYS);
+            HASSERT(SHGetFileInfoW(utils::utf16(name).c_str(), 0, &finfo, sizeof(finfo),
+                SHGFI_TYPENAME | SHGFI_ICON | SHGFI_SYSICONINDEX | SHGFI_ADDOVERLAYS));
 
-                if (hr == 0) {
-                   // MessageBoxW(model.handle(),
-                    //    L"Failed to get drive name", L"Error", MB_OK | MB_ICONEXCLAMATION);
-                } else {
-                    DWORD sectors_per_cluster, bytes_per_sector, free_clusters, total_clusters;
-                    GetDiskFreeSpaceW(s, &sectors_per_cluster, &bytes_per_sector, &free_clusters, &total_clusters);
+            std::stringstream ss;
+            ss << utils::bytes(total) << " ("
+                << utils::bytes(free) << " free)";
 
-                    int64_t cluster_size = int64_t(sectors_per_cluster) * bytes_per_sector;
+            items.push_back(item_data {
+                .name         = utils::utf8(finfo.szDisplayName),
+                .type         = utils::utf8(finfo.szTypeName),
+                .size         = free,
+                .size_str     = ss.str(),
+                .icon         = finfo.iIcon,
+                .drive        = true,
+                .drive_letter = letter
+                });
+        }
+    } else {
+        // File list
 
-                    std::stringstream ss;
-                    ss << utils::bytes(cluster_size * total_clusters)
-                        << " ("
-                        << utils::bytes(cluster_size * free_clusters)
-                        << " free)";
+        SHFILEINFOW finfo { };
+        for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(path)) {
+            file_info info(entry);
 
-                    _m_contents.push_back({
-                        utils::utf8(finfo.szDisplayName),
-                        utils::utf8(finfo.szTypeName),
-                        cluster_size * free_clusters,
-                        ss.str(),
-                        0,
-                        finfo.iIcon,
-                        false,
-                        true,
-                        utils::utf8(s).front(),
-                        nullptr,
-                        nullptr
-                        });
-                }
-
-                s += wcslen(s) + 1;
+            if (info.invalid() || info.system() || info.hidden()) {
+                continue;
             }
 
-            drives >>= 1;
-        }
+            if (entry.path() == "." || entry.path() == "..") {
+                continue;
+            }
 
-        return;
-    }
+            ASSERT(SHGetFileInfoW(entry.path().c_str(), 0, &finfo, sizeof(finfo),
+                SHGFI_TYPENAME | SHGFI_ICON | SHGFI_SMALLICON | SHGFI_SYSICONINDEX));
 
-    WIN32_FIND_DATAW data;
-    HANDLE f = FindFirstFileW((_m_path + L"\\*").c_str(), &data);
-
-    if (f == INVALID_HANDLE_VALUE) {
-        //MessageBoxW(model.handle(),
-        //    utils::utf16("Failed to get directory contents for " + name).c_str(), L"Error",
-        //    MB_OK | MB_ICONWARNING);
-        return;
-    }
-
-    std::wstring file_path;
-
-    SetLastError(0);
-
-    do {
-        if (data.dwFileAttributes == INVALID_FILE_ATTRIBUTES ||
-            data.dwFileAttributes & FILE_ATTRIBUTE_SYSTEM ||
-            data.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) {
-            continue;
-        }
-
-        // Skip these
-        if (wcscmp(data.cFileName, L".") == 0 || wcscmp(data.cFileName, L"..") == 0) {
-            continue;
-        }
-
-        if (_m_path.back() != L'\\') {
-            file_path = _m_path + L'\\' + data.cFileName;
-        } else {
-            file_path = _m_path + data.cFileName;
-        }
-
-        SHFILEINFOW finfo {  };
-        DWORD_PTR hr = SHGetFileInfoW(file_path.c_str(), 0, &finfo,
-            sizeof(finfo),
-            SHGFI_TYPENAME | SHGFI_ICON | SHGFI_ICONLOCATION | SHGFI_SMALLICON | SHGFI_SYSICONINDEX);
-
-        if (hr == 0) {
-            std::wstringstream ss;
-            ss << L"Failed to get icon for " << file_path << ", error code " << GetLastError();
-            //MessageBoxW(model.handle(), ss.str().c_str(), L"Error",
-            //    MB_OK | MB_ICONEXCLAMATION);
-            continue;
-        }
-
-        int64_t size = (int64_t(data.nFileSizeHigh) << 32) | data.nFileSizeLow;
-
-        _m_contents.push_back({
-            utils::utf8(data.cFileName),
-            utils::utf8(finfo.szTypeName),
-            size,
-            utils::bytes(size),
-            0,
-            finfo.iIcon,
-            !!(data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY),
-            !!(data.dwFileAttributes & FILE_ATTRIBUTE_DEVICE),
-            '\0',
-            nullptr, nullptr
+            items.push_back({
+                .name   = entry.path().filename().string(),
+                .type   = utils::utf8(finfo.szTypeName),
+                .size   = entry.is_directory() ? 0 : entry.file_size(),
+                .icon   = finfo.iIcon,
+                .dir    = entry.is_directory(),
+                .stream = entry.is_directory() ? nullptr : std::make_shared<binary_istream>(entry.path())
             });
-    } while (FindNextFileW(f, &data) != 0);
-
-    if (GetLastError() != ERROR_NO_MORE_FILES) {
-        //MessageBoxW(model.handle(), L"Unexpected error", L"Error",
-        //    MB_OK | MB_ICONWARNING);
-        utils::coutln("Error:", GetLastError());
+        }
     }
-
-    FindClose(f);
 }
 
-item_provider* filesystem_provider::_create(const file_stream& /* file */,
-    const std::string& name, data_model& model) {
-    DWORD attrs = GetFileAttributesW(utils::utf16(name).c_str());
-    
-    if (attrs != INVALID_FILE_ATTRIBUTES && attrs & FILE_ATTRIBUTE_DIRECTORY) {
-        return new filesystem_provider(name, model);
+item_provider_ptr filesystem_provider::_create(const istream_type& stream, const std::string& path) {
+    file_info finfo(path);
+
+    if (!finfo.invalid() && finfo.directory()) {
+        return std::make_shared<filesystem_provider>(path);
     }
 
     return nullptr;
 }
 
-size_t filesystem_provider::_id = item_provider_factory::register_class(_create);
+size_t filesystem_provider::_id = item_provider_factory::register_class(_create, "filesystem");
 

@@ -1,83 +1,143 @@
 #include "nao_model.h"
 
-nao_model::nao_model(nao_view& view)
-    : view(view) {
+#include "utils.h"
+#include "filesystem_utils.h"
+#include "item_provider_factory.h"
+#include "file_info.h"
+#include "binary_stream.h"
+
+#include <filesystem>
+
+nao_model::nao_model(nao_view& view) : view(view) {
+
+}
+
+void nao_model::setup() {
+    move_to("C:\\Users\\Nuan\\Downloads");
+}
+
+void nao_model::move_to(std::string path) {
+    std::string old_path = _m_path;
     
+    // New path
+    path = std::filesystem::absolute(path).string();
+    if (path.back() != '\\') {
+        path.push_back('\\');
+    }
+
+    utils::coutln("move from", old_path, "to", path);
+
+    _create_tree(path);
+
+    // Move depending on direction
+    if (old_path == "\\" || fs_utils::is_direct_child(old_path, path)) {
+        utils::coutln("went deeper");
+    } else if (path == "\\" || fs_utils::is_direct_child(path, old_path)) {
+        utils::coutln("went up");
+    }
+
+    _m_path = path;
+}
+
+const std::string& nao_model::current_path() const {
+    return _m_path;
+}
+
+void nao_model::_create_tree(const std::string& to) {
+    // Modify the current tree to match the supplied path
+
+
+    // Build tree from highest level common parent
+    std::string current_path;
+
+    // Remove elements from the current queue until we reach a child of the target path
+    while (_m_tree.size() > 1) { // But never remove the last node
+
+        // Get
+        item_provider_ptr p = _m_tree.back();
+
+        // If this provider represents any child of the target path
+        if (fs_utils::is_child(p->get_path(), to)) {
+            // It's the one we need
+            current_path = p->get_path();
+            break;
+        }
+
+        _m_tree.pop_back();
+    }
+
+    // If we're moving to the root
+    if (_m_tree.size() == 1 && to == "\\") {
+        return;
+    }
+
+    // Must have at least 1 element
+    if (_m_tree.empty()) {
+        _m_tree.push_back(_provider_for("\\"));
+    }
+
+    while (current_path != to) {
+        // Construct the path for the next element from the target path
+        current_path = to.substr(0, to.find_first_of('\\', current_path.size() + 1) + 1);
+
+        auto p = _provider_for(current_path);
+
+        if (!p) {
+            throw std::runtime_error("unsupported element in tree at " + current_path);
+        }
+
+        _m_tree.push_back(p);
+    }
+
+    // Tree should be done
+}
+
+item_provider_ptr nao_model::_provider_for(std::string path) const {
+    // Requesting root
+    if (path == "\\" && !_m_tree.empty()) {
+        return _m_tree.front();
+    }
+
+    // If the element was already created and present at the back
+    if (!_m_tree.empty() && _m_tree.back()
+        && _m_tree.back()->get_path() == path) {
+        return _m_tree.back();
+    }
+
+    file_info info(path);
+
+    // If the path was not found
+    if (!info) {
+        // It may be a file that was hidden by the trailing separator
+        if (path.back() == '\\') {
+            path.pop_back();
+            info = file_info(path);
+        }
+        
+        // If not, it may be virtual
+    }
+
+    if (info.invalid()) {
+        // Virtual (in-archive) file
+    } else {
+        if (info.directory()) {
+            // file_info considers "\" a directory as well, so that is included in this
+            return item_provider_factory::create(nullptr, path);
+        }
+
+        // Create file stream
+        istream_type stream = std::make_shared<istream_type::element_type>(path);
+
+        if (stream->good()) {
+            return item_provider_factory::create(stream, path);
+        }
+    }
+
+    return nullptr;
 }
 
 
 /*
-#include "utils.h"
-#include "item_provider.h"
-#include "item_provider_factory.h"
-#include "main_window.h"
-#include "line_edit.h"
-#include "list_view.h"
-#include "push_button.h"
-#include "right_window.h"
-#include "com_thread.h"
-#include "audio_player.h"
-
-#include "controller.h"
-
-#include <ShlObj_core.h>
-
-#include <filesystem>
-#include <thread>
-#include <fstream>
-
-data_model::data_model(controller& controller, std::string initial_path)
-    : _m_controller{ controller }
-    , _m_path { std::move(initial_path) }
-    , _m_worker(1), _m_main_thread { std::this_thread::get_id() } {
-    
-}
-
-void data_model::set_window(const std::weak_ptr<ui_element>& window) {
-    auto temp = std::dynamic_pointer_cast<main_window>(window.lock());
-
-    ASSERT(temp.get());
-    _m_window = temp;
-}
-
-void data_model::set_right(const std::weak_ptr<ui_element>& right) {
-    auto temp = std::dynamic_pointer_cast<right_window>(right.lock());
-
-    ASSERT(temp.get());
-    _m_right = temp;
-}
-
-void data_model::set_list_view(const std::weak_ptr<ui_element>& list_view) {
-    auto temp = std::dynamic_pointer_cast<::list_view>(list_view.lock());
-
-    ASSERT(temp.get());
-    _m_list_view.list = temp;
-
-    _m_list_view.order.resize(_m_list_view.list.lock()->column_count());
-}
-
-void data_model::set_path_edit(const std::weak_ptr<ui_element>& path_edit) {
-    auto temp = std::dynamic_pointer_cast<line_edit>(path_edit.lock());
-
-    ASSERT(temp.get());
-    _m_path_edit = temp;
-}
-
-void data_model::set_up_button(const std::weak_ptr<ui_element>& up) {
-    auto temp = std::dynamic_pointer_cast<push_button>(up.lock());
-
-    ASSERT(temp.get());
-    _m_up_button = temp;
-}
-
-HWND data_model::handle() const {
-    return _m_window.lock()->handle();
-}
-
-const std::string& data_model::path() const {
-    return _m_path;
-}
-
 void data_model::startup() {
     // "Size" alignment
     _m_list_view.list.lock()->set_column_alignment(2, list_view::Right);
@@ -384,46 +444,6 @@ void data_model::_fill(sorted_list_view& list, item_provider* provider) {
     list_view->set_column_width(list_view->column_count() - 1, LVSCW_AUTOSIZE_USEHEADER);
 
     // Items already sorted, we're done
-}
-
-void data_model::_build() {
-    // Need root element
-    if (_m_path.size() > 1 && _m_path.back() != '\\') {
-        _m_path.push_back('\\');
-    }
-
-    std::string current;
-    // Never remove root
-    while (_m_providers.size() > 1) {
-        item_provider* p = _m_providers.back();
-        std::string name = p->get_name();
-
-        // Stop if this provider is part of the current path
-        if (name.size() <= _m_path.size() && // Equal or smaller (this should be a substring)
-            name == _m_path.substr(0, name.size())) {
-            current = name;
-            break;
-        }
-
-        utils::coutln("removing", name);
-
-        delete p;
-        _m_providers.pop_back();
-    }
-
-    // Root-only base case
-    if (_m_providers.size() == 1 && _m_path == "\\") {
-        return;
-    }
-
-    utils::coutln("current, path", current, _m_path);
-    // Build path
-    while (current != _m_path) {
-        current = _m_path.substr(0,
-            _m_path.find_first_of('\\', current.size() + 1) + 1);
-
-        _m_providers.push_back(_get_provider(current));
-    }
 }
 
 void data_model::_opened(sorted_list_view& list, int index) {

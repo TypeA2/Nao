@@ -9,7 +9,7 @@
 
 class data_model;
 class push_button;
-class binary_stream;
+class binary_istream;
 
 struct IMFMediaSession;
 struct IMFMediaSource;
@@ -33,11 +33,11 @@ class audio_player : public ui_element, IMFAsyncCallback {
 
 #pragma endregion
     public:
-    audio_player(ui_element* parent);
+    explicit audio_player(ui_element* parent);
     ~audio_player();
 
     void set_audio(const std::string& name,
-        const std::shared_ptr<binary_stream>& stream);
+        const std::shared_ptr<binary_istream>& stream);
 
     HRESULT pause();
     HRESULT play();
@@ -67,7 +67,7 @@ class audio_player : public ui_element, IMFAsyncCallback {
     void _create_session();
     void _close_session();
     void _create_source(const std::string& name,
-        const std::shared_ptr<binary_stream>& stream);
+        const std::shared_ptr<binary_istream>& stream);
 
     IMFTopology* _create_topology(IMFPresentationDescriptor* pd);
 

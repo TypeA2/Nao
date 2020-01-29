@@ -40,10 +40,23 @@ left_window::left_window(ui_element* parent, nao_view* view) : ui_element(parent
     ASSERT(handle);
 }
 
+line_edit* left_window::path() const {
+    return _m_path.get();
+}
+
+push_button* left_window::view_up() const {
+    return _m_up.get();
+}
+
 bool left_window::wm_create(CREATESTRUCTW* create) {
     nao_view* view = static_cast<nao_view*>(create->lpCreateParams);
 
     _m_list = std::make_unique<list_view>(this, nao_view::list_view_header(), nao_view::shell_image_list());
+    _m_list->set_column_alignment(2, list_view::Right);
+
+    auto sort_order = nao_view::list_view_default_sort()[0];
+    _m_list->set_sort_arrow(0,
+        (sort_order == nao_view::SortOrderNormal) ? list_view::UpArrow : list_view::DownArrow);
 
     _m_path = std::make_unique<line_edit>(this);
     _m_path->set_style(WS_DISABLED);

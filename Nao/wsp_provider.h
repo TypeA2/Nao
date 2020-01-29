@@ -4,6 +4,7 @@
 
 #include <vector>
 
+/*
 class wsp_provider : public item_provider {
     public:
     wsp_provider(const file_stream& stream,
@@ -32,3 +33,4 @@ class wsp_provider : public item_provider {
         const std::string& name, data_model& model);
     static size_t _id;
 };
+*/

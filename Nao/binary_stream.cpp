@@ -9,12 +9,12 @@
 
 #pragma region IMF interfaces
 
-ULONG binary_stream::AddRef() {
+ULONG binary_istream::AddRef() {
     InterlockedIncrement(&_m_refcount);
     return _m_refcount;
 }
 
-ULONG binary_stream::Release() {
+ULONG binary_istream::Release() {
     uint32_t refcount = InterlockedDecrement(&_m_refcount);
 
     if (_m_refcount == 0) {
@@ -24,17 +24,17 @@ ULONG binary_stream::Release() {
     return refcount;
 }
 
-HRESULT binary_stream::QueryInterface(const IID& riid, void** ppvObject) {
+HRESULT binary_istream::QueryInterface(const IID& riid, void** ppvObject) {
     static const QITAB qit[] = {
-        QITABENT(binary_stream, IMFAsyncCallback),
-        QITABENT(binary_stream, IMFByteStream),
+        QITABENT(binary_istream, IMFAsyncCallback),
+        QITABENT(binary_istream, IMFByteStream),
         { }
     };
 
     return QISearch(this, qit, riid, ppvObject);
 }
 
-HRESULT binary_stream::GetCapabilities(DWORD* pdwCapabilities) {
+HRESULT binary_istream::GetCapabilities(DWORD* pdwCapabilities) {
     if (!pdwCapabilities) {
         return E_INVALIDARG;
     }
@@ -44,7 +44,7 @@ HRESULT binary_stream::GetCapabilities(DWORD* pdwCapabilities) {
     return S_OK;
 }
 
-HRESULT binary_stream::GetLength(QWORD* pqwLength) {
+HRESULT binary_istream::GetLength(QWORD* pqwLength) {
     if (!good()) {
         return E_ABORT;
     }
@@ -61,11 +61,11 @@ HRESULT binary_stream::GetLength(QWORD* pqwLength) {
     return S_OK;
 }
 
-HRESULT binary_stream::SetLength(QWORD qwLength) {
+HRESULT binary_istream::SetLength(QWORD qwLength) {
     return E_NOTIMPL;
 }
 
-HRESULT binary_stream::GetCurrentPosition(QWORD* pqwPosition) {
+HRESULT binary_istream::GetCurrentPosition(QWORD* pqwPosition) {
     if (!good()) {
         return E_ABORT;
     }
@@ -79,7 +79,7 @@ HRESULT binary_stream::GetCurrentPosition(QWORD* pqwPosition) {
     return S_OK;
 }
 
-HRESULT binary_stream::SetCurrentPosition(QWORD qwPosition) {
+HRESULT binary_istream::SetCurrentPosition(QWORD qwPosition) {
     if (!good()) {
         return E_ABORT;
     }
@@ -89,7 +89,7 @@ HRESULT binary_stream::SetCurrentPosition(QWORD qwPosition) {
     return good() ? S_OK : E_ABORT;
 }
 
-HRESULT binary_stream::IsEndOfStream(BOOL* pfEndOfStream) {
+HRESULT binary_istream::IsEndOfStream(BOOL* pfEndOfStream) {
     if (!good()) {
         return E_ABORT;
     }
@@ -103,7 +103,7 @@ HRESULT binary_stream::IsEndOfStream(BOOL* pfEndOfStream) {
     return S_OK;
 }
 
-HRESULT binary_stream::Read(BYTE* pb, ULONG cb, ULONG* pcbRead) {
+HRESULT binary_istream::Read(BYTE* pb, ULONG cb, ULONG* pcbRead) {
     if (!good()) {
         return E_ABORT;
     }
@@ -120,7 +120,7 @@ HRESULT binary_stream::Read(BYTE* pb, ULONG cb, ULONG* pcbRead) {
     return (*pcbRead == cb) ? S_OK : E_FAIL;
 }
 
-HRESULT binary_stream::BeginRead(BYTE* pb, ULONG cb, IMFAsyncCallback* pCallback, IUnknown* punkState) {
+HRESULT binary_istream::BeginRead(BYTE* pb, ULONG cb, IMFAsyncCallback* pCallback, IUnknown* punkState) {
     if (!good()) {
         return E_ABORT;
     }
@@ -139,7 +139,7 @@ HRESULT binary_stream::BeginRead(BYTE* pb, ULONG cb, IMFAsyncCallback* pCallback
     return S_OK;
 }
 
-HRESULT binary_stream::EndRead(IMFAsyncResult* pResult, ULONG* pcbRead) {
+HRESULT binary_istream::EndRead(IMFAsyncResult* pResult, ULONG* pcbRead) {
     if (!pResult || !pcbRead) {
         return E_INVALIDARG;
     }
@@ -161,19 +161,19 @@ HRESULT binary_stream::EndRead(IMFAsyncResult* pResult, ULONG* pcbRead) {
 
 }
 
-HRESULT binary_stream::Write(const BYTE* pb, ULONG cb, ULONG* pcbWritten) {
+HRESULT binary_istream::Write(const BYTE* pb, ULONG cb, ULONG* pcbWritten) {
     return E_NOTIMPL;
 }
 
-HRESULT binary_stream::BeginWrite(const BYTE* pb, ULONG cb, IMFAsyncCallback* pCallback, IUnknown* punkState) {
+HRESULT binary_istream::BeginWrite(const BYTE* pb, ULONG cb, IMFAsyncCallback* pCallback, IUnknown* punkState) {
     return E_NOTIMPL;
 }
 
-HRESULT binary_stream::EndWrite(IMFAsyncResult* pResult, ULONG* pcbWritten) {
+HRESULT binary_istream::EndWrite(IMFAsyncResult* pResult, ULONG* pcbWritten) {
     return E_NOTIMPL;
 }
 
-HRESULT binary_stream::Seek(MFBYTESTREAM_SEEK_ORIGIN SeekOrigin, LONGLONG llSeekOffset, DWORD dwSeekFlags, QWORD* pqwCurrentPosition) {
+HRESULT binary_istream::Seek(MFBYTESTREAM_SEEK_ORIGIN SeekOrigin, LONGLONG llSeekOffset, DWORD dwSeekFlags, QWORD* pqwCurrentPosition) {
     if (!good()) {
         return E_ABORT;
     }
@@ -201,21 +201,21 @@ HRESULT binary_stream::Seek(MFBYTESTREAM_SEEK_ORIGIN SeekOrigin, LONGLONG llSeek
     return S_OK;
 }
 
-HRESULT binary_stream::Flush() {
+HRESULT binary_istream::Flush() {
     // Read-only, so no-op
     return S_OK;
 }
 
-HRESULT binary_stream::Close() {
+HRESULT binary_istream::Close() {
     // Closing is handled elsewhere
     return S_OK;
 }
 
-HRESULT binary_stream::GetParameters(DWORD* pdwFlags, DWORD* pdwQueue) {
+HRESULT binary_istream::GetParameters(DWORD* pdwFlags, DWORD* pdwQueue) {
     return E_NOTIMPL;
 }
 
-HRESULT binary_stream::Invoke(IMFAsyncResult* pAsyncResult) {
+HRESULT binary_istream::Invoke(IMFAsyncResult* pAsyncResult) {
     if (!good()) {
         return E_ABORT;
     }
@@ -251,7 +251,7 @@ HRESULT binary_stream::Invoke(IMFAsyncResult* pAsyncResult) {
     return S_OK;
 }
 
-binary_stream::async_result::async_result(BYTE* buf, ULONG count)
+binary_istream::async_result::async_result(BYTE* buf, ULONG count)
     : buf { buf }
     , count { count }
     , _m_refcount { 0 }{
@@ -259,12 +259,12 @@ binary_stream::async_result::async_result(BYTE* buf, ULONG count)
 }
 
 
-ULONG binary_stream::async_result::AddRef() {
+ULONG binary_istream::async_result::AddRef() {
     InterlockedIncrement(&_m_refcount);
     return _m_refcount;
 }
 
-ULONG binary_stream::async_result::Release() {
+ULONG binary_istream::async_result::Release() {
     uint32_t refcount = InterlockedDecrement(&_m_refcount);
 
     if (_m_refcount == 0) {
@@ -274,7 +274,7 @@ ULONG binary_stream::async_result::Release() {
     return refcount;
 }
 
-HRESULT binary_stream::async_result::QueryInterface(const IID& riid, void** ppvObject) {
+HRESULT binary_istream::async_result::QueryInterface(const IID& riid, void** ppvObject) {
     static const QITAB qit[] = {
         QITABENT(async_result, IUnknown),
         QITABENT(async_result, async_result),
@@ -286,63 +286,70 @@ HRESULT binary_stream::async_result::QueryInterface(const IID& riid, void** ppvO
 
 #pragma endregion
 
-binary_stream::binary_stream(const std::string& path, std::ios::openmode mode)
-    : _m_refcount { 0 }
-    , file { std::make_unique<std::fstream>(path, mode) } {
-    binary_stream::AddRef();
+binary_istream::binary_istream(const std::string& path)
+    : _m_refcount { 1 }
+    , file { std::make_unique<std::fstream>(path, std::ios::in | std::ios::binary) } {
+    
 }
 
-binary_stream::binary_stream(binary_stream&& other) noexcept
+binary_istream::binary_istream(const std::filesystem::path& path)
+    : _m_refcount { 1 }
+    , file { std::make_unique<std::fstream>(path, std::ios::in | std::ios::binary) } {
+    
+}
+
+
+binary_istream::binary_istream(binary_istream&& other) noexcept
     : _m_refcount { other._m_refcount }
     , file { std::move(other.file) }  {
     other.file = nullptr;
 }
 
-std::streampos binary_stream::tellg() const {
+std::streampos binary_istream::tellg() const {
     std::unique_lock lock(mutex);
 
     return file->tellg();
 }
 
-class binary_stream& binary_stream::seekg(pos_type pos) {
+class binary_istream& binary_istream::seekg(pos_type pos) {
     std::unique_lock lock(mutex);
     file->seekg(pos);
 
     return *this;
 }
 
-binary_stream& binary_stream::seekg(pos_type pos, seekdir dir) {
+binary_istream& binary_istream::seekg(pos_type pos, seekdir dir) {
     std::unique_lock lock(mutex);
     file->seekg(pos, dir);
 
     return *this;
 }
 
-bool binary_stream::eof() const {
+bool binary_istream::eof() const {
     std::unique_lock lock(mutex);
     return file->eof();
 }
 
-binary_stream& binary_stream::ignore(std::streamsize max, std::istream::int_type delim) {
+binary_istream& binary_istream::ignore(std::streamsize max, std::istream::int_type delim) {
     std::unique_lock lock(mutex);
     file->ignore(max, delim);
 
     return *this;
 }
 
-bool binary_stream::good() const {
+bool binary_istream::good() const {
     std::unique_lock lock(mutex);
     return file->good();
 }
 
-class binary_stream& binary_stream::rseek(pos_type pos) {
+class binary_istream& binary_istream::rseek(pos_type pos) {
     std::unique_lock lock(mutex);
     file->seekg(pos, std::ios::cur);
 
     return *this;
 }
 
-binary_stream& binary_stream::read(char* buf, std::streamsize count) {
+binary_istream& binary_istream::read(char* buf, std::streamsize count) {
     std::unique_lock lock(mutex);
     file->read(buf, count);
 

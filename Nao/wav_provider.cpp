@@ -2,7 +2,7 @@
 
 #include "utils.h"
 #include "audio_player.h"
-
+/*
 wav_provider::wav_provider(const file_stream& stream, const std::string& path, data_model& model)
     : item_provider(stream, path, model) {
     utils::coutln("[WAV] creating for", name);
@@ -43,3 +43,4 @@ item_provider* wav_provider::_create(const file_stream& file, const std::string&
 }
 
 size_t wav_provider::_id = item_provider_factory::register_class(_create);
+*/

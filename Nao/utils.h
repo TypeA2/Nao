@@ -67,4 +67,8 @@ namespace utils {
 
     std::string utf8(const std::wstring& str);
     std::wstring utf16(const std::string& str);
+
+    constexpr uint64_t make_quad(uint32_t low, uint32_t high) {
+        return (static_cast<uint64_t>(high) << 32) | low;
+    }
 }

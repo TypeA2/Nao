@@ -12,6 +12,9 @@ class left_window : public ui_element {
     explicit left_window(ui_element* parent, nao_view* view);
     ~left_window() override = default;
 
+    line_edit* path() const;
+    push_button* view_up() const;
+
     protected:
     bool wm_create(CREATESTRUCTW* create) override;
     void wm_size(int type, int width, int height) override;

@@ -1,14 +1,35 @@
 #pragma once
 
+#include "item_provider.h"
+
+#include <deque>
+
 class nao_view;
+class item_provider;
 
 class nao_model {
+    std::string _m_path;
     public:
     explicit nao_model(nao_view& view);
     nao_model() = delete;
 
+    void setup();
+
+    void move_to(std::string path);
+
+    const std::string& current_path() const;
+
+    private:
+    void _create_tree(const std::string& to);
+    item_provider_ptr _provider_for(std::string path) const;
+
     protected:
     nao_view& view;
+
+    private:
+    using istream_type = item_provider::istream_type;
+
+    std::deque<item_provider_ptr> _m_tree;
 };
 
 /*

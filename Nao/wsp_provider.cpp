@@ -5,7 +5,7 @@
 #include "frameworks.h"
 
 #include <iomanip>
-
+/*
 wsp_provider::wsp_provider(const file_stream& stream,
     const std::string& path, data_model& model)
     : item_provider(stream, path + '\\', model) {
@@ -106,3 +106,4 @@ item_provider* wsp_provider::_create(const file_stream& file, const std::string&
 }
 
 size_t wsp_provider::_id = item_provider_factory::register_class(_create);
+*/

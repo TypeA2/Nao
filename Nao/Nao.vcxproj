@@ -190,10 +190,12 @@
     <ClInclude Include="audio_player.h" />
     <ClInclude Include="auto_wrapper.h" />
     <ClInclude Include="binary_stream.h" />
-    <ClInclude Include="com_thread.h" />
     <ClInclude Include="dimensions.h" />
+    <ClInclude Include="drive_list.h" />
     <ClInclude Include="dynamic_library.h" />
     <ClInclude Include="filesystem_provider.h" />
+    <ClInclude Include="filesystem_utils.h" />
+    <ClInclude Include="file_info.h" />
     <ClInclude Include="icon.h" />
     <ClInclude Include="left_window.h" />
     <ClInclude Include="line_edit.h" />
@@ -221,9 +223,11 @@
     <ClCompile Include="audio_player.cpp" />
     <ClCompile Include="auto_wrapper.cpp" />
     <ClCompile Include="binary_stream.cpp" />
-    <ClCompile Include="com_thread.cpp" />
+    <ClCompile Include="drive_list.cpp" />
     <ClCompile Include="dynamic_library.cpp" />
     <ClCompile Include="filesystem_provider.cpp" />
+    <ClCompile Include="filesystem_utils.cpp" />
+    <ClCompile Include="file_info.cpp" />
     <ClCompile Include="icon.cpp" />
     <ClCompile Include="left_window.cpp" />
     <ClCompile Include="line_edit.cpp" />

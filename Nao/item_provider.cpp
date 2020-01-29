@@ -1,5 +1,39 @@
 #include "item_provider.h"
 
+#include "utils.h"
+
+item_provider::~item_provider() {
+    utils::coutln("deleting for", path);
+}
+
+size_t item_provider::count() const {
+    return items.size();
+}
+
+item_data& item_provider::data(size_t index) {
+    return items[index];
+}
+
+const std::vector<item_data>& item_provider::data() const {
+    return items;
+}
+
+const item_provider::istream_type& item_provider::get_stream() const {
+    return stream;
+}
+
+const std::string& item_provider::get_path() const {
+    return path;
+}
+
+item_provider::item_provider(const istream_type& stream, const std::string& path)
+    : stream(stream), path(path) {
+    
+}
+
+
+
+/*
 size_t item_provider::count() const {
     return 0;
 }
@@ -43,3 +77,4 @@ item_provider::item_provider(file_stream file, std::string name, data_model& mod
     , model { model } {
 
 }
+*/

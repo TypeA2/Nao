@@ -106,9 +106,6 @@
     <ClInclude Include="binary_stream.h">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="com_thread.h">
-      <Filter>Header Files\Utils</Filter>
-    </ClInclude>
     <ClInclude Include="item_provider_factory.h">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
@@ -146,6 +143,15 @@
       <Filter>Header Files\Win32</Filter>
     </ClInclude>
     <ClInclude Include="icon.h">
+      <Filter>Header Files\Win32</Filter>
+    </ClInclude>
+    <ClInclude Include="filesystem_utils.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="file_info.h">
+      <Filter>Header Files\Win32</Filter>
+    </ClInclude>
+    <ClInclude Include="drive_list.h">
       <Filter>Header Files\Win32</Filter>
     </ClInclude>
   </ItemGroup>
@@ -195,9 +201,6 @@
     <ClCompile Include="item_provider_factory.cpp">
       <Filter>Source Files\Utils</Filter>
     </ClCompile>
-    <ClCompile Include="com_thread.cpp">
-      <Filter>Source Files\Utils</Filter>
-    </ClCompile>
     <ClCompile Include="binary_stream.cpp">
       <Filter>Source Files\Utils</Filter>
     </ClCompile>
@@ -223,6 +226,15 @@
       <Filter>Source Files\Win32</Filter>
     </ClCompile>
     <ClCompile Include="icon.cpp">
+      <Filter>Source Files\Win32</Filter>
+    </ClCompile>
+    <ClCompile Include="filesystem_utils.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="file_info.cpp">
+      <Filter>Source Files\Win32</Filter>
+    </ClCompile>
+    <ClCompile Include="drive_list.cpp">
       <Filter>Source Files\Win32</Filter>
     </ClCompile>
   </ItemGroup>

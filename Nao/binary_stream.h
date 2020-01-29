@@ -2,10 +2,11 @@
 
 #include <istream>
 #include <mutex>
+#include <filesystem>
 
 #include <mfidl.h>
 
-class binary_stream : IMFAsyncCallback, public IMFByteStream {
+class binary_istream : IMFAsyncCallback, public IMFByteStream {
 #pragma region IMF interfaces
     public:
     STDMETHODIMP_(ULONG) AddRef() override;
@@ -56,41 +57,41 @@ class binary_stream : IMFAsyncCallback, public IMFByteStream {
 
     using seekdir = std::istream::seekdir;
 
-    explicit binary_stream(const std::string& path,
-        std::ios::openmode mode = std::ios::in | std::ios::binary);
+    explicit binary_istream(const std::string& path);
+    explicit binary_istream(const std::filesystem::path& path);
 
-    explicit binary_stream(binary_stream&& other) noexcept;
-    explicit binary_stream(const binary_stream& other) = delete;
+    explicit binary_istream(binary_istream&& other) noexcept;
+    explicit binary_istream(const binary_istream& other) = delete;
 
-    virtual ~binary_stream() = default;
+    virtual ~binary_istream() = default;
 
     virtual std::streampos tellg() const;
-    virtual binary_stream& seekg(pos_type pos);
-    virtual binary_stream& seekg(pos_type pos, seekdir dir);
+    virtual binary_istream& seekg(pos_type pos);
+    virtual binary_istream& seekg(pos_type pos, seekdir dir);
     virtual bool eof() const;
-    virtual binary_stream& ignore(std::streamsize max,
+    virtual binary_istream& ignore(std::streamsize max,
         std::istream::int_type delim = std::istream::traits_type::eof());
 
     virtual bool good() const;
 
     // Seek with std::ios::cur
-    binary_stream& rseek(pos_type pos);
+    binary_istream& rseek(pos_type pos);
 
-    virtual binary_stream& read(char* buf, std::streamsize count);
+    virtual binary_istream& read(char* buf, std::streamsize count);
 
     template <typename T>
-    std::enable_if_t<std::is_arithmetic_v<T>, binary_stream&>
+    std::enable_if_t<std::is_arithmetic_v<T>, binary_istream&>
         read(T* buf, std::streamsize count) {
         return read(reinterpret_cast<char*>(buf), count);
     }
 
     template <typename Container>
-    binary_stream& read(Container& buf) {
+    binary_istream& read(Container& buf) {
         return read(buf.data(), buf.size() * sizeof(Container::value_type));
     }
 
     template <typename T, size_t size>
-    std::enable_if_t<std::is_arithmetic_v<T>, binary_stream&>
+    std::enable_if_t<std::is_arithmetic_v<T>, binary_istream&>
         read(T (& buf)[size]) {
         return read(buf, size);
     }

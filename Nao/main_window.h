@@ -15,6 +15,9 @@ class main_window : public ui_element {
     explicit main_window(nao_view* view);
     ~main_window() override = default;
 
+    left_window* left() const;
+    right_window* right() const;
+
     protected:
     bool wm_create(CREATESTRUCTW* create) override;
     void wm_destroy() override;

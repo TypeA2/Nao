@@ -50,6 +50,14 @@ main_window::main_window(nao_view* view) : ui_element(nullptr) {
     ASSERT(hwnd);
 }
 
+left_window* main_window::left() const {
+    return _m_left.get();
+}
+
+right_window* main_window::right() const {
+    return _m_right.get();
+}
+
 bool main_window::wm_create(CREATESTRUCTW* create) {
     _m_left = std::make_unique<left_window>(this, static_cast<nao_view*>(create->lpCreateParams));
     _m_right = std::make_unique<right_window>(this, static_cast<nao_view*>(create->lpCreateParams));
@@ -112,11 +120,5 @@ void main_window::wm_command(WPARAM wparam, LPARAM lparam) {
 LRESULT main_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
     (void) this;
 
-    // Forward these messages to the data model
-    //if (msg > data_model::First && msg < data_model::Last) {
-    //    _m_model.handle_message(static_cast<data_model::messages>(msg), wparam, lparam);
-    //    return 0;
-    //}
-    
     return DefWindowProcW(hwnd, msg, wparam, lparam);
 }
