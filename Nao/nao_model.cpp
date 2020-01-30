@@ -21,21 +21,17 @@ void nao_model::move_to(std::string path) {
     std::string old_path = _m_path;
     
     // New path
-    path = std::filesystem::absolute(path).string();
-    if (path.back() != '\\') {
-        path.push_back('\\');
+    // Root shoudl stay root, else take the absolute path
+    if (path != "\\") {
+        path = std::filesystem::absolute(path).string();
+        if (path.back() != '\\') {
+            path.push_back('\\');
+        }
     }
 
     utils::coutln("move from", old_path, "to", path);
 
     _create_tree(path);
-
-    // Move depending on direction
-    if (old_path == "\\" || fs_utils::is_direct_child(old_path, path)) {
-        utils::coutln("went deeper");
-    } else if (path == "\\" || fs_utils::is_direct_child(path, old_path)) {
-        utils::coutln("went up");
-    }
 
     _m_path = path;
     
@@ -43,7 +39,15 @@ void nao_model::move_to(std::string path) {
 }
 
 void nao_model::move_up() {
-    move_to(_m_path + "..");
+    if (_m_tree.size() > 2) {
+        // More than 2 items, we're inside a drive
+        move_to(_m_path + "..");
+    } else if (_m_tree.size() == 2) {
+        // Going up to drive view
+        move_to("\\");
+    } else {
+        throw std::runtime_error("cannot move up from root");
+    }
 }
 
 const std::string& nao_model::current_path() const {

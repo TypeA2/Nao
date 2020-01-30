@@ -9,6 +9,7 @@ class drive_list {
     struct drive_info {
         char letter;
         std::string name;
+        int icon;
 
         uintmax_t total_size;
         uintmax_t free_size;

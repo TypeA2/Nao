@@ -15,24 +15,30 @@ drive_list::drive_list()
     GetLogicalDriveStringsW(required, s);
 
     SHFILEINFOW finfo { };
+    DWORD drives = _m_drives.to_ulong();
+    while (drives) {
+        if (drives & 1) {
+            DWORD_PTR hr = SHGetFileInfoW(s, 0, &finfo, sizeof(finfo),
+                SHGFI_DISPLAYNAME | SHGFI_ICON | SHGFI_SYSICONINDEX | SHGFI_ADDOVERLAYS);
 
-    for (size_t i = 0; i < _m_drives.count(); ++i) {
-        DWORD_PTR hr = SHGetFileInfoW(s, 0, &finfo, sizeof(finfo), SHGFI_DISPLAYNAME);
+            ASSERT(hr);
 
-        HASSERT(hr);
+            ULARGE_INTEGER total;
+            ULARGE_INTEGER free;
+            GetDiskFreeSpaceExW(s, nullptr, &total, &free);
+            
+            _m_drive_info.push_back({
+                .letter     = utils::utf8(s).front(),
+                .name       = utils::utf8(finfo.szDisplayName),
+                .icon       = finfo.iIcon,
+                .total_size = total.QuadPart,
+                .free_size  = free.QuadPart
+                });
 
-        ULARGE_INTEGER total;
-        ULARGE_INTEGER free;
-        GetDiskFreeSpaceExW(s, nullptr, &total, &free);
+            s += wcslen(s) + 1;
+        }
 
-        _m_drive_info.push_back({
-            .letter     = utils::utf8(s).front(),
-            .name       = utils::utf8(finfo.szDisplayName),
-            .total_size = total.QuadPart,
-            .free_size  = free.QuadPart
-            });
-
-        s += wcslen(s) + 1;
+        drives >>= 1;
     }
 }
 

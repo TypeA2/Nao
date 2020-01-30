@@ -18,21 +18,20 @@ filesystem_provider::filesystem_provider(const std::string& path) : item_provide
         // Devices list
 
         SHFILEINFOW finfo { };
-        for (auto [letter, name, total, free] : drive_list()) {
+        for (auto [letter, name, icon, total, free] : drive_list()) {
 
-            HASSERT(SHGetFileInfoW(utils::utf16(name).c_str(), 0, &finfo, sizeof(finfo),
-                SHGFI_DISPLAYNAME | SHGFI_TYPENAME | SHGFI_ICON | SHGFI_SYSICONINDEX | SHGFI_ADDOVERLAYS));
+            ASSERT(SHGetFileInfoW(utils::utf16({ letter, ':', '\\'}).c_str(), 0, &finfo, sizeof(finfo), SHGFI_TYPENAME));
 
             std::stringstream ss;
             ss << utils::bytes(total) << " ("
                 << utils::bytes(free) << " free)";
 
             items.push_back(item_data {
-                .name         = utils::utf8(finfo.szDisplayName),
+                .name         = name,
                 .type         = utils::utf8(finfo.szTypeName),
                 .size         = free,
                 .size_str     = ss.str(),
-                .icon         = finfo.iIcon,
+                .icon         = icon,
                 .drive        = true,
                 .drive_letter = letter
                 });
