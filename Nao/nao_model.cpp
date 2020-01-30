@@ -46,7 +46,6 @@ void nao_model::move_up() {
     move_to(_m_path + "..");
 }
 
-
 const std::string& nao_model::current_path() const {
     return _m_path;
 }
@@ -68,8 +67,8 @@ void nao_model::_create_tree(const std::string& to) {
         // Get
         item_provider_ptr p = _m_tree.back();
 
-        // If this provider represents any child of the target path
-        if (fs_utils::is_child(p->get_path(), to)) {
+        // If this provider represents any child of the target path or the path itself
+        if (fs_utils::is_child(p->get_path(), to) || p->get_path() == to) {
             // It's the one we need
             current_path = p->get_path();
             break;
