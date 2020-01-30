@@ -12,8 +12,9 @@ class thread_pool {
     public:
     static size_t pool_size();
 
-    thread_pool();
+    explicit thread_pool();
     explicit thread_pool(size_t n_threads);
+    explicit thread_pool(size_t n_threads, const std::function<void()>& before, const std::function<void()>& after = {});
     ~thread_pool();
 
     // Push a function with arguments, return the packaged task
@@ -21,8 +22,9 @@ class thread_pool {
     [[maybe_unused]] auto push(Func&& f, Args&&... args) {
 
         auto packed =
-            std::make_shared<std::packaged_task<decltype(f(args...))()>>(
-                std::bind(std::forward<Func>(f), std::forward<Args>(args)...));
+            std::make_shared<std::packaged_task<
+                decltype(std::bind(std::forward<Func>(f), std::forward<Args>(args)...)())()>>(
+                    std::bind(std::forward<Func>(f), std::forward<Args>(args)...));
 
         {
             std::unique_lock lock(_m_mutex);
@@ -35,18 +37,6 @@ class thread_pool {
         return packed;
     }
 
-    // Push a member function with an object pointer, automatically bind
-    template <typename Ret, typename T, typename... Args>
-    [[maybe_unused]] auto push(Ret(T::* mem)(Args...), T* obj, Args&&... args) {
-        return push(std::bind(mem, obj, std::forward<Args>(args)...));
-    }
-
-    // Or a reference as object to bind to
-    template <typename Ret, typename T, typename... Args>
-    [[maybe_unused]] auto push(Ret(T::* mem)(Args...), T& obj, Args&&... args) {
-        return push(std::bind(mem, &obj, std::forward<Args>(args)...));
-    }
-
     private:
     std::vector<std::unique_ptr<std::thread>> _m_threads;
 
@@ -55,5 +45,8 @@ class thread_pool {
     std::mutex _m_mutex;
     std::condition_variable _m_condition;
     std::atomic<bool> _m_stop;
+
+    std::function<void()> _m_before;
+    std::function<void()> _m_after;
 };
 

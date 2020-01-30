@@ -21,7 +21,7 @@ filesystem_provider::filesystem_provider(const std::string& path) : item_provide
         for (auto [letter, name, total, free] : drive_list()) {
 
             HASSERT(SHGetFileInfoW(utils::utf16(name).c_str(), 0, &finfo, sizeof(finfo),
-                SHGFI_TYPENAME | SHGFI_ICON | SHGFI_SYSICONINDEX | SHGFI_ADDOVERLAYS));
+                SHGFI_DISPLAYNAME | SHGFI_TYPENAME | SHGFI_ICON | SHGFI_SYSICONINDEX | SHGFI_ADDOVERLAYS));
 
             std::stringstream ss;
             ss << utils::bytes(total) << " ("

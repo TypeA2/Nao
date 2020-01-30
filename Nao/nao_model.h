@@ -5,19 +5,22 @@
 #include <deque>
 
 class nao_view;
-class item_provider;
+class nao_controller;
 
 class nao_model {
     std::string _m_path;
     public:
-    explicit nao_model(nao_view& view);
+    explicit nao_model(nao_view& view, nao_controller& controller);
     nao_model() = delete;
 
     void setup();
 
     void move_to(std::string path);
+    void move_up();
 
     const std::string& current_path() const;
+
+    const item_provider_ptr& current_provider() const;
 
     private:
     void _create_tree(const std::string& to);
@@ -25,6 +28,7 @@ class nao_model {
 
     protected:
     nao_view& view;
+    nao_controller& controller;
 
     private:
     using istream_type = item_provider::istream_type;

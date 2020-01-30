@@ -29,11 +29,22 @@ thread_pool::~thread_pool() {
     }
 }
 
-thread_pool::thread_pool(size_t n_threads)
+thread_pool::thread_pool(size_t n_threads) : thread_pool(n_threads, {}, {}) {
+    
+}
+
+
+thread_pool::thread_pool(size_t n_threads, const std::function<void()>& before,
+    const std::function<void()>& after)
     : _m_threads(n_threads)
-    , _m_stop(false) {
+    , _m_stop(false)
+    , _m_before(before), _m_after(after) {
 
     auto loop_fun = [this] {
+        if (_m_before) {
+            _m_before();
+        }
+
         bool is_empty;
 
         {
@@ -59,6 +70,9 @@ thread_pool::thread_pool(size_t n_threads)
                 }
                 // Stop if a kill is requested
                 if (_m_stop) {
+                    if (_m_after) {
+                        _m_after();
+                    }
                     return;
                 }
 
@@ -74,6 +88,9 @@ thread_pool::thread_pool(size_t n_threads)
             });
 
             if (_m_stop) {
+                if (_m_after) {
+                    _m_after();
+                }
                 return;
             }
         }

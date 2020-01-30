@@ -37,8 +37,14 @@ class list_view : public ui_element {
     void* get_item_data(int index) const;
 
     template <typename T>
-    T get_item_data(int index) const {
+    std::enable_if_t<sizeof(T) == sizeof(LPARAM), T> get_item_data(int index) const {
         return reinterpret_cast<T>(get_item_data(index));
+    }
+    
+    template <typename T>
+    std::enable_if_t<(sizeof(T) == sizeof(LPARAM) && !std::is_same_v<T, LPARAM>), int>
+        add_item(const std::vector<std::string>& text, int image, T extra = 0) {
+        return add_item(text, image, reinterpret_cast<LPARAM>(extra));
     }
 
     int add_item(const std::vector<std::string>& text,

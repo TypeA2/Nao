@@ -15,7 +15,7 @@
 
 #include <string>
 
-left_window::left_window(ui_element* parent, nao_view* view) : ui_element(parent) {
+left_window::left_window(ui_element* parent, nao_view* view) : ui_element(parent), view(view) {
     std::wstring class_name = load_wstring(IDS_LEFT_WINDOW);
 
     // Register class
@@ -35,7 +35,8 @@ left_window::left_window(ui_element* parent, nao_view* view) : ui_element(parent
     int window_width = (width - dims::gutter_size) / 2;
 
     HWND handle = create_window(class_name, L"", WS_CHILD | WS_VISIBLE | SS_SUNKEN,
-        { 0, 0, window_width, height }, parent, new wnd_init(this, &left_window::_wnd_proc, view));
+        { .x = 0, .y = 0, .width = window_width, .height = height },
+        parent, new wnd_init(this, &left_window::_wnd_proc));
 
     ASSERT(handle);
 }
@@ -48,9 +49,11 @@ push_button* left_window::view_up() const {
     return _m_up.get();
 }
 
-bool left_window::wm_create(CREATESTRUCTW* create) {
-    nao_view* view = static_cast<nao_view*>(create->lpCreateParams);
+list_view* left_window::list() const {
+    return _m_list.get();
+}
 
+bool left_window::wm_create(CREATESTRUCTW* create) {
     _m_list = std::make_unique<list_view>(this, nao_view::list_view_header(), nao_view::shell_image_list());
     _m_list->set_column_alignment(2, list_view::Right);
 
@@ -131,25 +134,6 @@ void left_window::_open_folder() {
     dialog->Release();
 }*/
 
-/*
-void left_window::_sort(NMLISTVIEW* view) const{
-    _m_model.sort_list(view->iSubItem);
-}
-
-void left_window::_dblclick(NMITEMACTIVATE* item) const {
-    _m_model.opened(item->iItem);
-}
-
-void left_window::_rclick(NMITEMACTIVATE* item) const {
-    _m_model.context_menu(item->ptAction);
-}
-
-void left_window::_lclick(NMITEMACTIVATE* item) const {
-    _m_model.selected(item->ptAction);
-}
-
-*/
-
 LRESULT left_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
     switch (msg) {
         case WM_NOTIFY: {
@@ -197,6 +181,11 @@ LRESULT left_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
             //        _m_model.menu_clicked(LOWORD(wparam));
             //    }
             //}
+            HWND target = reinterpret_cast<HWND>(lparam);
+
+            if (target == _m_up->handle()) {
+                view->button_clicked(ViewButtonUp);
+            }
 
             break;
         }

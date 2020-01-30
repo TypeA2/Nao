@@ -8,6 +8,8 @@
 #include "utils.h"
 #include "dimensions.h"
 
+#include "push_button.h"
+
 #include <clocale>
 
 main_window::main_window(nao_view* view) : ui_element(nullptr) {

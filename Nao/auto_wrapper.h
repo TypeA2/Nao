@@ -7,51 +7,52 @@
 #include <functional>
 
 struct auto_wrapper {
-    private:
-    std::function<void()> _after;
+    std::function<void()> before;
+    std::function<void()> after;
 
-    public:
     explicit auto_wrapper(const std::function<void()>& before, const std::function<void()>& after = {})
-         : _after(after) {
+         : before(before), after(after) {
         if (before) {
             before();
         }
     }
-
+    
     // Bind a function and run it in with the specified wrapper active
     template <typename Wrapper, typename Func, typename... Args>
-    static auto bind(Func&& func, Args... args) {
-        return [func, args...] {
+    static auto bind(Func&& func, Args&&... args) {
+        return [func, ... args = std::forward<Args>(args)] {
             Wrapper _wrapper;
+            (void) _wrapper;
+            
             return func(std::forward<Args>(args)...);
         };
     }
 
-    template <template<auto...> typename Wrapper, typename Func, typename... Args>
-    static auto bind(Func&& func, Args... args) {
-        return [func, args...] {
+    template <template <auto...> typename Wrapper, typename Func, typename... Args>
+    static auto bind(Func&& func, Args&&... args) {
+        return [func, ... args = std::forward<Args>(args)] {
             Wrapper _wrapper;
+            (void) _wrapper;
+            
             return func(std::forward<Args>(args)...);
         };
     }
 
-    // Same, but for member functions
-    template <typename Wrapper, typename Ret, typename T, typename... Args>
-    static auto bind(Ret(T::* mem)(Args...), T* obj, Args&&... args) {
-        return bind(std::bind(mem, obj, std::forward<Args>(args)...));
+    template <typename Wrapper, typename... Args>
+    static auto bind_obj(Args&&... args) {
+        return bind<Wrapper>(std::bind(std::forward<Args>(args)...));
     }
 
-    template <template<auto...> typename Wrapper, typename Ret, typename T, typename... Args>
-    static auto bind(Ret(T::* mem)(Args...), T& obj, Args&&... args) {
-        return bind(std::bind(mem, &obj, std::forward<Args>(args)...));
+    template <template <auto...> typename Wrapper, typename... Args>
+    static auto bind_obj(Args&&... args) {
+        return bind<Wrapper>(std::bind(std::forward<Args>(args)...));
     }
 
     ~auto_wrapper() {
-        if (_after) {
-            _after();
+        if (after) {
+            after();
         }
     }
-
 };
 
 template <DWORD _Init = COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE>
@@ -59,10 +60,9 @@ struct com_wrapper : auto_wrapper {
 
     static constexpr DWORD flags = _Init;
 
-    explicit com_wrapper()
-        : auto_wrapper(
-            [] { ASSERT(CoInitializeEx(nullptr, _Init) == S_OK); },
-            [] { CoUninitialize(); }) { }
+    explicit com_wrapper() : auto_wrapper(
+        [] { HASSERT(CoInitializeEx(nullptr, _Init) == S_OK); },
+        [] { CoUninitialize(); }) { }
 };
 
 template <DWORD _IIC = ICC_ANIMATE_CLASS | ICC_BAR_CLASSES | ICC_COOL_CLASSES |

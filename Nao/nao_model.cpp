@@ -5,10 +5,11 @@
 #include "item_provider_factory.h"
 #include "file_info.h"
 #include "binary_stream.h"
+#include "nao_controller.h"
 
 #include <filesystem>
 
-nao_model::nao_model(nao_view& view) : view(view) {
+nao_model::nao_model(nao_view& view, nao_controller& controller) : view(view), controller(controller) {
 
 }
 
@@ -37,10 +38,21 @@ void nao_model::move_to(std::string path) {
     }
 
     _m_path = path;
+    
+    controller.post_message(TM_CONTENTS_CHANGED);
 }
+
+void nao_model::move_up() {
+    move_to(_m_path + "..");
+}
+
 
 const std::string& nao_model::current_path() const {
     return _m_path;
+}
+
+const item_provider_ptr& nao_model::current_provider() const {
+    return _m_tree.back();
 }
 
 void nao_model::_create_tree(const std::string& to) {

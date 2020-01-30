@@ -14,10 +14,13 @@ class left_window : public ui_element {
 
     line_edit* path() const;
     push_button* view_up() const;
+    list_view* list() const;
 
     protected:
     bool wm_create(CREATESTRUCTW* create) override;
     void wm_size(int type, int width, int height) override;
+
+    nao_view* view;
     
     private:
     LRESULT _wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);

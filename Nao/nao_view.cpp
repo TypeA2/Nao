@@ -1,10 +1,13 @@
 #include "nao_view.h"
 
+#include "nao_controller.h"
+
 #include "main_window.h"
 #include "left_window.h"
 
 #include "line_edit.h"
 #include "push_button.h"
+#include "list_view.h"
 
 #include "utils.h"
 
@@ -60,4 +63,26 @@ void nao_view::set_path(const std::string& path) const {
 
     // Only enable the up button whenever we are not at the root path
     left->view_up()->set_enabled(path != "\\");
+}
+
+void nao_view::clear_view(const std::function<void(void*)>& deleter) const {
+    _m_main_window->left()->list()->clear(deleter);
+}
+
+void nao_view::fill_view(const std::vector<list_view_row>& items) const {
+    if (items.empty()) {
+        return;
+    }
+
+    list_view* list = _m_main_window->left()->list();
+
+    for (const auto& [name, type, size,
+        compressed, icon, data] : items) {
+
+        list->add_item({ name, type, size, compressed }, icon, data);
+    }
+}
+
+void nao_view::button_clicked(view_button_type which) const {
+    controller.post_message(TM_BUTTON_CLICKED, 0, ViewButtonUp);
 }
