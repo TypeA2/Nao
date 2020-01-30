@@ -19,19 +19,6 @@ enum nao_thread_message : unsigned {
 
     TM_MODEL_LAST,
 
-
-
-    TM_VIEW_FIRST,
-
-    // A button has been clicked
-    // WPARAM: view_butten_type of the button
-    TM_BUTTON_CLICKED,
-
-
-    TM_VIEW_LAST,
-
-
-
     TM_LAST
 };
 
@@ -44,6 +31,21 @@ enum thread_message_wparam_action : WPARAM {
 
 struct thread_message {
     std::condition_variable& condition;
+};
+
+enum click_event {
+    CLICK_FIRST,
+
+    //// Begin argumentless messages
+    CLICK_MOVE_UP,
+    //// End argumentless messages
+
+    //// Begin messages with a void* argument
+    CLICK_DBL_ITEM,
+    //// End messages with a void* argument
+
+
+    CLICK_LAST
 };
 
 class nao_controller {
@@ -61,15 +63,16 @@ class nao_controller {
         PostThreadMessageW(_m_main_threadid, message, wparam, lparam);
     }
 
+    // A view element has been clicked
+    void clicked(click_event which);
+    void clicked(click_event which, void* arg);
+
     private:
     // Handle custom messages on the main thread
     void _handle_message(nao_thread_message msg, WPARAM wparam, LPARAM lparam);
 
     // Retrieve the current provider and fill the view from that
     void _refresh_view() const;
-
-    // A view button has been clicked
-    void _handle_button_clicked(view_button_type which);
 
     protected:
     nao_view view;

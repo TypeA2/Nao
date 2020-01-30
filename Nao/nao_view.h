@@ -20,18 +20,17 @@ struct list_view_row {
 };
 
 enum view_button_type {
-    ViewButtonUp
+    BUTTON_UP
+};
+
+enum sort_order {
+    ORDER_NONE,
+    ORDER_NORMAL,
+    ORDER_REVERSE
 };
 
 class nao_view {
     public:
-
-    enum sort_order {
-        SortOrderNone,
-        SortOrderNormal,
-        SortOrderReverse
-    };
-
     static const std::vector<std::string>& list_view_header();
     static const std::vector<sort_order>& list_view_default_sort();
     static IImageList* shell_image_list();
@@ -54,6 +53,9 @@ class nao_view {
 
     // Signals that a button has been clicked
     void button_clicked(view_button_type which) const;
+
+    // Signals that the list view has been clicked in some way
+    void list_clicked(NMHDR* nm) const;
 
     protected:
     nao_controller& controller;

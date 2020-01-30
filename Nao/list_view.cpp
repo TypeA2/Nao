@@ -89,9 +89,10 @@ void list_view::get_item(LVITEMW& item) const  {
 }
 
 void* list_view::get_item_data(int index) const {
-    LVITEMW item { };
-    item.mask = LVIF_PARAM;
-    item.iItem = index;
+    LVITEMW item {
+        .mask  = LVIF_PARAM,
+        .iItem = index
+    };
     ListView_GetItem(handle(), &item);
 
     return reinterpret_cast<void*>(item.lParam);

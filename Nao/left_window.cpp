@@ -59,7 +59,7 @@ bool left_window::wm_create(CREATESTRUCTW* create) {
 
     auto sort_order = nao_view::list_view_default_sort()[0];
     _m_list->set_sort_arrow(0,
-        (sort_order == nao_view::SortOrderNormal) ? list_view::UpArrow : list_view::DownArrow);
+        (sort_order == ORDER_NORMAL) ? list_view::UpArrow : list_view::DownArrow);
 
     _m_path = std::make_unique<line_edit>(this);
     _m_path->set_style(WS_DISABLED);
@@ -140,6 +140,7 @@ LRESULT left_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
             NMHDR* nm = reinterpret_cast<NMHDR*>(lparam);
             
             if (nm->hwndFrom == _m_list->handle()) {
+                view->list_clicked(nm);
                 switch (nm->code) {
                     /*
                     case LVN_COLUMNCLICK: {
@@ -184,7 +185,7 @@ LRESULT left_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
             HWND target = reinterpret_cast<HWND>(lparam);
 
             if (target == _m_up->handle()) {
-                view->button_clicked(ViewButtonUp);
+                view->button_clicked(BUTTON_UP);
             }
 
             break;

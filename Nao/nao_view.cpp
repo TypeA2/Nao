@@ -17,8 +17,8 @@ const std::vector<std::string>& nao_view::list_view_header() {
     return vec;
 }
 
-const std::vector<nao_view::sort_order>& nao_view::list_view_default_sort() {
-    static std::vector<sort_order> vec { SortOrderNormal, SortOrderNormal, SortOrderReverse, SortOrderReverse };
+const std::vector<sort_order>& nao_view::list_view_default_sort() {
+    static std::vector<sort_order> vec { ORDER_NORMAL, ORDER_NORMAL, ORDER_REVERSE, ORDER_REVERSE };
 
     return vec;
 }
@@ -84,5 +84,30 @@ void nao_view::fill_view(const std::vector<list_view_row>& items) const {
 }
 
 void nao_view::button_clicked(view_button_type which) const {
-    controller.post_message(TM_BUTTON_CLICKED, 0, ViewButtonUp);
+    click_event type = CLICK_FIRST;
+
+    switch (which) {
+        case BUTTON_UP:
+            type = CLICK_MOVE_UP;
+            break;
+    }
+
+    controller.clicked(type);
+}
+
+void nao_view::list_clicked(NMHDR* nm) const {
+    switch (nm->code) {
+        case NM_DBLCLK: {
+            // Double-click, opened an item
+            NMITEMACTIVATE* item = reinterpret_cast<NMITEMACTIVATE*>(nm);
+
+            if (item->iItem >= 0) {
+                controller.clicked(CLICK_DBL_ITEM, 
+                    _m_main_window->left()->list()->get_item_data(item->iItem));
+            }
+            break;
+        }
+
+        default: break;
+    }
 }

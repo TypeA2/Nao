@@ -13,7 +13,7 @@
 
 filesystem_provider::filesystem_provider(const std::string& path) : item_provider(nullptr, path){
     utils::coutln("[FILESYSTEM] creating for", path);
-
+    
     if (path == "\\") {
         // Devices list
 
@@ -25,7 +25,7 @@ filesystem_provider::filesystem_provider(const std::string& path) : item_provide
             std::stringstream ss;
             ss << utils::bytes(total) << " ("
                 << utils::bytes(free) << " free)";
-
+            
             items.push_back(item_data {
                 .name         = name,
                 .type         = utils::utf8(finfo.szTypeName),

@@ -16,7 +16,12 @@ class nao_model {
     void setup();
 
     void move_to(std::string path);
+
+    // Move up one level, deleting the current provider
     void move_up();
+
+    // Move down to the given element, creating a provider if needed
+    void move_down(item_data* to);
 
     const std::string& current_path() const;
 

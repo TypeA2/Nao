@@ -50,6 +50,23 @@ void nao_model::move_up() {
     }
 }
 
+void nao_model::move_down(item_data* to) {
+    const std::vector<item_data>& current_elements = _m_tree.back()->data();
+
+    auto find_func = [&to](const item_data& data) {
+        return (to->drive == data.drive)
+            && (data.drive ? (to->drive_letter == data.drive_letter) : (to->name == data.name));
+    };
+
+    if (std::find_if(current_elements.begin(), current_elements.end(), find_func) == current_elements.end()) {
+        throw std::runtime_error("element not child of current provider");
+    }
+
+    // Element present, move down
+    move_to(to->drive ? std::string { to->drive_letter, ':', '\\' } : (_m_path + to->name));
+}
+
+
 const std::string& nao_model::current_path() const {
     return _m_path;
 }

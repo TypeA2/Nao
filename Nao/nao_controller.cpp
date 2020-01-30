@@ -44,6 +44,26 @@ DWORD nao_controller::main_threadid() const {
     return _m_main_threadid;
 }
 
+void nao_controller::clicked(click_event which) {
+    switch (which) {
+        case CLICK_MOVE_UP:
+            _m_worker.push(&nao_model::move_up, &model);
+            break;
+
+        default: throw std::runtime_error("unsupported argumentless event " + std::to_string(which));
+    }
+}
+
+void nao_controller::clicked(click_event which, void* arg) {
+    switch (which) {
+        case CLICK_DBL_ITEM:
+            _m_worker.push(&nao_model::move_down, &model, reinterpret_cast<item_data*>(arg));
+            break;
+
+        default: throw std::runtime_error("unsupported void* argument event " + std::to_string(which));
+    }
+}
+
 void nao_controller::_handle_message(nao_thread_message msg, WPARAM wparam, LPARAM lparam) {
     switch (msg) {
         //// Begin model messages
@@ -52,17 +72,9 @@ void nao_controller::_handle_message(nao_thread_message msg, WPARAM wparam, LPAR
             break;
         //// End model messages
 
-
-        //// Begin view messages
-        case TM_BUTTON_CLICKED:
-            _handle_button_clicked(static_cast<view_button_type>(wparam));
-            break;
-
-        //// End view messages
         default:
             utils::coutln("thread message:", msg, wparam, lparam);
     }
-    
 }
 
 void nao_controller::_refresh_view() const {
@@ -89,11 +101,3 @@ void nao_controller::_refresh_view() const {
     view.fill_view(list_data);
 }
 
-void nao_controller::_handle_button_clicked(view_button_type which) {
-    switch (which) {
-        case ViewButtonUp: {
-            _m_worker.push(&nao_model::move_up, &model);
-            break;
-        }
-    }
-}
