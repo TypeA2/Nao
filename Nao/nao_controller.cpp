@@ -8,8 +8,8 @@
 nao_controller::nao_controller()
     : view(*this), model(view, *this)
     , _m_worker(1,
-                 [] { HASSERT(CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE) == S_OK); },
-                 [] { CoUninitialize(); })
+                 [] { HASSERT(CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE)); },
+                 CoUninitialize)
 
     , _m_main_threadid(GetCurrentThreadId()) {
 
@@ -56,8 +56,12 @@ void nao_controller::clicked(click_event which) {
 
 void nao_controller::clicked(click_event which, void* arg) {
     switch (which) {
-        case CLICK_DBL_ITEM:
-            _m_worker.push(&nao_model::move_down, &model, reinterpret_cast<item_data*>(arg));
+        case CLICK_DOUBLE_ITEM:
+            _m_worker.push(&nao_model::move_down, &model, static_cast<item_data*>(arg));
+            break;
+
+        case CLICK_SINGLE_ITEM:
+            _m_worker.push(&nao_model::fetch_preview, &model, static_cast<item_data*>(arg));
             break;
 
         default: throw std::runtime_error("unsupported void* argument event " + std::to_string(which));
@@ -70,6 +74,11 @@ void nao_controller::_handle_message(nao_thread_message msg, WPARAM wparam, LPAR
         case TM_CONTENTS_CHANGED:
             _refresh_view();
             break;
+
+        case TM_PREVIEW_CHANGED:
+            _refresh_preview();
+            break;
+
         //// End model messages
 
         default:
@@ -99,5 +108,30 @@ void nao_controller::_refresh_view() const {
     };
     std::transform(data.begin(), data.end(), list_data.begin(), transform_func);
     view.fill_view(list_data);
+}
+
+void nao_controller::_refresh_preview() {
+    const item_provider_ptr& p = model.preview_provider();
+
+    if (p) {
+        view.create_preview(PREVIEW_LIST_VIEW);
+
+        const auto& data = p->data();
+
+        std::vector<list_view_row> list_data(data.size());
+
+        auto transform_func = [](const item_data& data) -> list_view_row {
+            return {
+                .name = data.name,
+                .type = data.type,
+                .size = (!data.dir && data.size_str.empty()) ? utils::bytes(data.size) : data.size_str,
+                .compressed = (data.compression == 0.) ? "" : (std::to_string(int64_t(data.compression / 100.)) + '%'),
+                .icon = data.icon,
+                .data = &data
+            };
+        };
+        std::transform(data.begin(), data.end(), list_data.begin(), transform_func);
+        view.list_view_preview_fill(list_data);
+    }
 }
 

@@ -125,8 +125,8 @@ class ui_element : public std::enable_shared_from_this<ui_element> {
         // Shorthand to construct for a member function taking only the
         // default arguments
         template <typename T>
-        wnd_init(T* element, LRESULT(T::* proc)(HWND, UINT, WPARAM, LPARAM), void* replacement = nullptr) {
-            static_assert(std::is_base_of_v<ui_element, T>);
+        wnd_init(T* element, LRESULT(T::* proc)(HWND, UINT, WPARAM, LPARAM), void* replacement = nullptr,
+            std::enable_if_t<std::is_base_of_v<ui_element, T>>* = nullptr) {
 
             using namespace std::placeholders;
             this->element = element;
@@ -169,13 +169,8 @@ class defer_window_pos {
         return *this;
     }
 
-    template <typename Cont>
-    defer_window_pos& move(const Cont& element, const dimensions& at,
-        std::enable_if_t<
-            std::is_pointer_v<
-                std::remove_cvref_t<decltype(element.get())>>
-            && std::is_base_of_v<ui_element,
-                std::remove_pointer_t<decltype(element.get())>>> * = nullptr) {
+    template <typename Cont> requires requires (const Cont& c) { c.get(); }
+    auto move(const Cont& element, const dimensions& at) {
         return move(element.get(), at);
     }
 };

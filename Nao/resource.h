@@ -12,6 +12,7 @@
 #define IDS_RIGHT_WINDOW                105
 #define IDS_AUDIO_PLAYER                106
 #define IDI_NAO                         107
+#define IDS_LIST_VIEW_PREVIEW           107
 #define IDI_SMALL                       108
 #define IDC_NAO                         109
 #define IDR_MAINFRAME                   128

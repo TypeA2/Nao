@@ -17,6 +17,9 @@ enum nao_thread_message : unsigned {
     // No parameters
     TM_CONTENTS_CHANGED,
 
+    // Preview has changed, fetch new preview
+    TM_PREVIEW_CHANGED,
+
     TM_MODEL_LAST,
 
     TM_LAST
@@ -41,7 +44,8 @@ enum click_event {
     //// End argumentless messages
 
     //// Begin messages with a void* argument
-    CLICK_DBL_ITEM,
+    CLICK_DOUBLE_ITEM,
+    CLICK_SINGLE_ITEM,
     //// End messages with a void* argument
 
 
@@ -73,6 +77,9 @@ class nao_controller {
 
     // Retrieve the current provider and fill the view from that
     void _refresh_view() const;
+
+    // Retrieve the current preview provider and item and display it
+    void _refresh_preview();
 
     protected:
     nao_view view;

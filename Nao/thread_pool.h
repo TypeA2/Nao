@@ -23,7 +23,7 @@ class thread_pool {
 
         auto packed =
             std::make_shared<std::packaged_task<
-                decltype(std::bind(std::forward<Func>(f), std::forward<Args>(args)...)())()>>(
+                decltype(std::invoke(std::forward<Func>(f), std::forward<Args>(args)...))()>>(
                     std::bind(std::forward<Func>(f), std::forward<Args>(args)...));
 
         {

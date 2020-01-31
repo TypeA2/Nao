@@ -61,7 +61,7 @@ struct com_wrapper : auto_wrapper {
     static constexpr DWORD flags = _Init;
 
     explicit com_wrapper() : auto_wrapper(
-        [] { HASSERT(CoInitializeEx(nullptr, _Init) == S_OK); },
+        [] { HASSERT(CoInitializeEx(nullptr, _Init)); },
         [] { CoUninitialize(); }) { }
 };
 

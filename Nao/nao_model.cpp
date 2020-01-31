@@ -21,7 +21,7 @@ void nao_model::move_to(std::string path) {
     std::string old_path = _m_path;
     
     // New path
-    // Root shoudl stay root, else take the absolute path
+    // Root should stay root, else take the absolute path
     if (path != "\\") {
         path = std::filesystem::absolute(path).string();
         if (path.back() != '\\') {
@@ -54,8 +54,7 @@ void nao_model::move_down(item_data* to) {
     const std::vector<item_data>& current_elements = _m_tree.back()->data();
 
     auto find_func = [&to](const item_data& data) {
-        return (to->drive == data.drive)
-            && (data.drive ? (to->drive_letter == data.drive_letter) : (to->name == data.name));
+        return to == &data;
     };
 
     if (std::find_if(current_elements.begin(), current_elements.end(), find_func) == current_elements.end()) {
@@ -66,6 +65,29 @@ void nao_model::move_down(item_data* to) {
     move_to(to->drive ? std::string { to->drive_letter, ':', '\\' } : (_m_path + to->name));
 }
 
+void nao_model::fetch_preview(item_data* item) {
+    const std::vector<item_data>& current_elements = _m_tree.back()->data();
+
+    auto find_func = [&item](const item_data& data) {
+        return item == &data;
+    };
+
+    if (std::find_if(current_elements.begin(), current_elements.end(), find_func) == current_elements.end()) {
+        throw std::runtime_error("element not child of current provider");
+    }
+
+    std::string path = item->drive ? std::string { item->drive_letter, ':', '\\' } : (_m_path + item->name + '\\');
+
+    item_provider_ptr p = _provider_for(path);
+
+    if (p) {
+        _m_preview = std::move(p);
+        controller.post_message(TM_PREVIEW_CHANGED);
+    } else {
+        utils::coutln("not found");
+    }
+}
+
 
 const std::string& nao_model::current_path() const {
     return _m_path;
@@ -73,6 +95,10 @@ const std::string& nao_model::current_path() const {
 
 const item_provider_ptr& nao_model::current_provider() const {
     return _m_tree.back();
+}
+
+const item_provider_ptr& nao_model::preview_provider() const {
+    return _m_preview;
 }
 
 void nao_model::_create_tree(const std::string& to) {
@@ -170,85 +196,6 @@ item_provider_ptr nao_model::_provider_for(std::string path) const {
 
 
 /*
-void data_model::startup() {
-    // "Size" alignment
-    _m_list_view.list.lock()->set_column_alignment(2, list_view::Right);
-
-    if (_m_path.empty()) {
-        _m_path = "\\";
-    }
-
-    _m_providers.push_back(_get_provider("\\"));
-    move(_m_path);
-
-    // Default sort
-    _m_list_view.order[0] = SortOrderReverse;
-    sort_list(0);
-}
-
-void data_model::sort_list(int col) {
-    _sort(_m_list_view, col);
-}
-
-void data_model::sort_preview(int col) {
-    if (_m_right.lock()->type() == PreviewListView) {
-        _sort(_m_preview.list, col);
-    }
-}
-
-
-void data_model::move_relative(const std::string& rel) {
-    _m_worker.push_detached(com_thread::bind([this, rel] {
-        if (rel == "..") {
-            delete _m_providers.back();
-            _m_providers.pop_back();
-
-            // Current directory is a drive (C:\)
-            if (_m_path.size() == 3 &&
-                _m_path[0] >= 'A' &&
-                _m_path[0] <= 'Z' &&
-                _m_path.substr(1, 2) == ":\\") {
-                _move("\\");
-                return;
-            }
-        }
-
-        _move(std::filesystem::absolute(_m_path + '\\' + rel).string());
-        }));
-}
-
-void data_model::move(const std::string& path) {
-    _m_worker.push_detached(com_thread::bind(std::bind(&data_model::_move, this, path)));
-}
-
-void data_model::opened(int index) {
-    _m_worker.push_detached(
-        com_thread::bind_cond(
-            [index] { return index >= 0; },
-            std::bind(&data_model::_opened, this, std::ref(_m_list_view), index)));
-}
-
-void data_model::opened_preview(int index) {
-    _m_worker.push_detached(
-        com_thread::bind_cond(
-            [index] { return index >= 0; },
-            std::bind(&data_model::_opened, this, std::ref(_m_preview.list), index)));
-}
-
-void data_model::context_menu(POINT pt) {
-    _context_menu(_m_list_view, pt, false);
-}
-
-void data_model::context_menu_preview(POINT pt) {
-    _context_menu(_m_preview.list, pt, true);
-}
-
-void data_model::selected(POINT pt) {
-    _m_worker.push_detached(
-        com_thread::bind_cond(
-            [this, pt] { return _m_list_view.list.lock()->item_at(pt) >= 0; },
-            std::bind(&data_model::_selected, this, pt)));
-}
 
 void data_model::menu_clicked(short id) {
     item_data* data = _m_menu.data;
@@ -269,131 +216,7 @@ void data_model::menu_clicked(short id) {
 
         default: return;
     }
-    
-    _m_menu = { };
-}
 
-
-
-void data_model::handle_message(messages msg, WPARAM wparam, LPARAM lparam) {
-    bool _delete = LOWORD(wparam);
-    bool _notify = HIWORD(wparam);
-
-    switch (msg) {
-        case ExecuteFunction: {
-            auto func = reinterpret_cast<std::function<void()>*>(lparam);
-
-            (*func)();
-
-            if (_delete) {
-                delete func;
-            }
-            break;
-        }
-
-        case CreatePreviewElement: {
-            auto cpa = reinterpret_cast<create_preview_async*>(lparam);
-
-            _m_right.lock()->set_preview(cpa->creator(), cpa->type);
-
-            if (_delete) {
-                delete cpa;
-            }
-            break;
-        }
-
-        case ClearPreviewElement: {
-            _m_right.lock()->clear_preview();
-            break;
-        }
-
-        case InsertElementAsync: {
-            auto item = reinterpret_cast<insert_element_async*>(lparam);
-
-            item->list.lock()->add_item(
-                item->elements, item->icon, LPARAM(item->data));
-
-            if (_delete) {
-                delete item;
-            }
-            break;
-        }
-
-        default: break;
-    }
-
-    if (_notify) {
-        std::unique_lock lock(_m_message_mutex);
-        _m_cond.notify_all();
-    }
-}
-
-
-
-item_provider* data_model::preview_state::operator->() const noexcept {
-    return provider;
-}
-
-
-
-item_provider* data_model::_get_provider(std::string path, bool return_on_error) {
-    // When only moving up 1 level 
-    if (!_m_providers.empty()) {
-        std::string name = _m_providers.back()->get_name();
-
-        if (path.size() > 1 && name.back() == '\\' && path.back() != '\\') {
-            name.pop_back();
-        }
-
-        if (name == path) {
-            return _m_providers.back();
-        }
-    }
-
-    if (_m_preview.is_shown) {
-        const std::string& name = _m_preview->get_name();
-        
-        if (name == path || name == path.substr(0, path.size() - 1)) {
-            return _m_preview.provider;
-        }
-    }
-
-    item_provider* p = nullptr;
-
-    DWORD attribs = GetFileAttributesW(utils::utf16(path).c_str());
-
-    if (attribs == INVALID_FILE_ATTRIBUTES) {
-        if (path.back() == '\\') {
-            path.pop_back();
-        }
-
-        attribs = GetFileAttributesW(utils::utf16(path).c_str());
-    }
-
-    
-
-    if (attribs != INVALID_FILE_ATTRIBUTES) {
-        if (attribs & FILE_ATTRIBUTE_DIRECTORY) {
-            // "\" is also treated as a directory
-            p = item_provider_factory::create(nullptr, path, *this);
-
-        } else {
-            stream s = std::make_unique<binary_stream>(path);
-
-            if (s->good()) {
-                p = item_provider_factory::create(s, path, *this);
-            }
-        }
-    }
-
-    if (!return_on_error && !p) {
-        MessageBoxW(handle(), utils::utf16("Could not open " + path).c_str(),
-            L"Error", MB_OK | MB_ICONEXCLAMATION);
-        return nullptr;
-    }
-
-    return p;
-}
 
 void data_model::_clear_preview() {
     ASSERT(std::this_thread::get_id() != _m_main_thread);
@@ -476,72 +299,6 @@ void data_model::_fill(sorted_list_view& list, item_provider* provider) {
     list_view->set_column_width(list_view->column_count() - 1, LVSCW_AUTOSIZE_USEHEADER);
 
     // Items already sorted, we're done
-}
-
-void data_model::_opened(sorted_list_view& list, int index) {
-    auto list_view = list.list.lock();
-    ASSERT(index < list_view->item_count());
-
-    item_data* data = list_view->get_item_data<item_data>(index);
-
-    if (data->dir) {
-        if (list_view.get() == _m_preview.list.list.lock().get()) {
-            // Preview list is selected
-            _move(std::filesystem::absolute(
-                _m_path + _m_preview.data->name + '\\' + data->name).string());
-        } else {
-            // Normal list is clicked
-            _move(std::filesystem::absolute(_m_path + data->name).string());
-        }
-    } else if (data->drive) {
-        _move({ data->drive_letter, ':', '\\' });
-    } else if (_m_preview.is_shown) {
-        if (_m_preview.type == PreviewListView) {
-            _move(_m_path + data->name + '\\');
-        }
-    }
-}
-
-void data_model::_move(const std::string& path) {
-    std::string old_path = _m_path;
-    _m_path = path;
-    if (_m_path.back() != '\\') {
-        _m_path.push_back('\\');
-    }
-
-    utils::coutln("from", old_path, "to", _m_path);
-
-    _m_path_edit.lock()->set_text(utils::utf16(_m_path));
-
-    if (
-        // Went deeper
-        _m_path.size() > old_path.size()
-
-        // Same tree
-        && (old_path == "\\" || _m_path.substr(0, old_path.size()) == old_path)
-
-        // Preview currently shown
-        && _m_preview.is_shown) {
-
-        item_provider* p = _m_preview.provider;
-        _m_preview.provider = nullptr;
-
-        _clear_preview();
-
-        _m_providers.push_back(p);
-    } else {
-        // Went up
-        if (old_path.size() > _m_path.size()
-            && old_path.substr(0, _m_path.size()) == _m_path) {
-            _clear_preview();
-        }
-
-        _build();
-    }
-
-    _fill(_m_list_view);
-
-    _m_up_button.lock()->set_enabled(_m_path != "\\");
 }
 
 void data_model::_context_menu(sorted_list_view& list, POINT pt, bool preview) {
