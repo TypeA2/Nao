@@ -63,8 +63,12 @@ class nao_view {
     // Create the specified preview element
     void create_preview(preview_element_type type);
 
-    // If the preview is a list_view_preview, fill the view with the given items
+    // Delete the current preview
+    void clear_preview() const;
+
+    // If the preview is a list_view_preview, execute the same actions as on the main list_view
     void list_view_preview_fill(const std::vector<list_view_row>& items) const;
+    void list_view_preview_clicked(NMHDR* nm) const;
 
 
     // Retrieve main window
@@ -86,7 +90,7 @@ class preview : public ui_element {
     nao_view* view;
 };
 
-using preview_ptr = std::shared_ptr<preview>;
+using preview_ptr = std::unique_ptr<preview>;
 
 class list_view;
 // Multi-use list-view preview

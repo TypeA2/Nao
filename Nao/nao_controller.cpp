@@ -68,6 +68,16 @@ void nao_controller::clicked(click_event which, void* arg) {
     }
 }
 
+void nao_controller::list_view_clicked(click_event which, void* arg) {
+    switch (which) {
+        case CLICK_DOUBLE_ITEM:
+            _m_worker.push(&nao_model::move_down, &model, static_cast<item_data*>(arg));
+            break;
+
+        default: throw std::runtime_error("unsupported void* argument event " + std::to_string(which));
+    }
+}
+
 void nao_controller::_handle_message(nao_thread_message msg, WPARAM wparam, LPARAM lparam) {
     switch (msg) {
         //// Begin model messages
@@ -90,6 +100,7 @@ void nao_controller::_refresh_view() const {
     view.set_path(model.current_path());
 
     view.clear_view();
+    view.clear_preview();
 
     const item_provider_ptr& p = model.current_provider();
     const auto& data = p->data();

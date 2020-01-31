@@ -43,7 +43,7 @@ class nao_model {
     using istream_type = item_provider::istream_type;
 
     std::deque<item_provider_ptr> _m_tree;
-    item_provider_ptr _m_preview;
+    item_provider_ptr _m_preview_provider;
 };
 
 /*

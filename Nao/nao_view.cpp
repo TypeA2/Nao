@@ -126,11 +126,15 @@ void nao_view::create_preview(preview_element_type type) {
 
     switch (type) {
         case PREVIEW_LIST_VIEW:
-            preview = std::make_shared<list_view_preview>(this);
+            preview = std::make_unique<list_view_preview>(this);
             break;
     }
 
-    _m_main_window->right()->set_preview(preview);
+    _m_main_window->right()->set_preview(std::move(preview));
+}
+
+void nao_view::clear_preview() const {
+    _m_main_window->right()->remove_preview();
 }
 
 void nao_view::list_view_preview_fill(const std::vector<list_view_row>& items) const {
@@ -153,6 +157,19 @@ void nao_view::list_view_preview_fill(const std::vector<list_view_row>& items) c
     }
 }
 
+void nao_view::list_view_preview_clicked(NMHDR* nm) const {
+    switch (nm->code) {
+        case NM_DBLCLK: {
+            // Double click to open a nested item
+            NMITEMACTIVATE* item = reinterpret_cast<NMITEMACTIVATE*>(nm);
+            if (item->iItem >= 0) {
+                controller.list_view_clicked(CLICK_DOUBLE_ITEM,
+                   dynamic_cast<list_view_preview&>(
+                       *_m_main_window->right()->get_preview())->get_item_data(item->iItem));
+            }
+        }
+    }
+}
 
 main_window* nao_view::window() const {
     return _m_main_window.get();
@@ -207,7 +224,7 @@ LRESULT list_view_preview::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM 
             NMHDR* nm = reinterpret_cast<NMHDR*>(lparam);
 
             if (nm->hwndFrom == _m_list->handle()) {
-                
+                view->list_view_preview_clicked(nm);
             }
 
             break;

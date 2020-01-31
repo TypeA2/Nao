@@ -51,18 +51,30 @@ void nao_model::move_up() {
 }
 
 void nao_model::move_down(item_data* to) {
-    const std::vector<item_data>& current_elements = _m_tree.back()->data();
+    const auto& current_elements = _m_tree.back()->data();
 
     auto find_func = [&to](const item_data& data) {
         return to == &data;
     };
 
     if (std::find_if(current_elements.begin(), current_elements.end(), find_func) == current_elements.end()) {
-        throw std::runtime_error("element not child of current provider");
-    }
+        // Not in current view, try preview
 
-    // Element present, move down
-    move_to(to->drive ? std::string { to->drive_letter, ':', '\\' } : (_m_path + to->name));
+        if (_m_preview_provider) {
+            const auto& preview_elements = _m_preview_provider->data();
+
+            if (std::find_if(preview_elements.begin(), preview_elements.end(), find_func) == preview_elements.end()) {
+                throw std::runtime_error("element not child of preview provider");
+            }
+
+            move_to(_m_preview_provider->get_path() + to->name);
+        } else {
+            throw std::runtime_error("element not child of current provider");
+        }
+    } else {
+        // Element present, move down
+        move_to(to->drive ? std::string { to->drive_letter, ':', '\\' } : (_m_path + to->name));
+    }
 }
 
 void nao_model::fetch_preview(item_data* item) {
@@ -81,7 +93,7 @@ void nao_model::fetch_preview(item_data* item) {
     item_provider_ptr p = _provider_for(path);
 
     if (p) {
-        _m_preview = std::move(p);
+        _m_preview_provider = std::move(p);
         controller.post_message(TM_PREVIEW_CHANGED);
     } else {
         utils::coutln("not found");
@@ -98,7 +110,7 @@ const item_provider_ptr& nao_model::current_provider() const {
 }
 
 const item_provider_ptr& nao_model::preview_provider() const {
-    return _m_preview;
+    return _m_preview_provider;
 }
 
 void nao_model::_create_tree(const std::string& to) {
@@ -194,9 +206,7 @@ item_provider_ptr nao_model::_provider_for(std::string path) const {
     return nullptr;
 }
 
-
 /*
-
 void data_model::menu_clicked(short id) {
     item_data* data = _m_menu.data;
     switch (id) {

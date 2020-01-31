@@ -37,6 +37,10 @@ void right_window::set_preview(preview_ptr instance) {
     _m_preview = std::move(instance);
 }
 
+void right_window::remove_preview() {
+    _m_preview.reset();
+}
+
 preview* right_window::get_preview() const {
     return _m_preview.get();
 }

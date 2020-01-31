@@ -71,6 +71,8 @@ class nao_controller {
     void clicked(click_event which);
     void clicked(click_event which, void* arg);
 
+    void list_view_clicked(click_event which, void* arg);
+
     private:
     // Handle custom messages on the main thread
     void _handle_message(nao_thread_message msg, WPARAM wparam, LPARAM lparam);

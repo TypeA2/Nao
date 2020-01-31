@@ -9,6 +9,7 @@ class right_window : public ui_element {
     ~right_window() override = default;
 
     void set_preview(preview_ptr instance);
+    void remove_preview();
     preview* get_preview() const;
 
     protected:
