@@ -163,7 +163,7 @@ void nao_view::list_view_preview_clicked(NMHDR* nm) const {
             // Double click to open a nested item
             NMITEMACTIVATE* item = reinterpret_cast<NMITEMACTIVATE*>(nm);
             if (item->iItem >= 0) {
-                controller.list_view_clicked(CLICK_DOUBLE_ITEM,
+                controller.list_view_preview_clicked(CLICK_DOUBLE_ITEM,
                    dynamic_cast<list_view_preview&>(
                        *_m_main_window->right()->get_preview())->get_item_data(item->iItem));
             }

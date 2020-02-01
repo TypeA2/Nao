@@ -68,7 +68,7 @@ void nao_controller::clicked(click_event which, void* arg) {
     }
 }
 
-void nao_controller::list_view_clicked(click_event which, void* arg) {
+void nao_controller::list_view_preview_clicked(click_event which, void* arg) {
     switch (which) {
         case CLICK_DOUBLE_ITEM:
             _m_worker.push(&nao_model::move_down, &model, static_cast<item_data*>(arg));
@@ -96,7 +96,9 @@ void nao_controller::_handle_message(nao_thread_message msg, WPARAM wparam, LPAR
     }
 }
 
-void nao_controller::_refresh_view() const {
+void nao_controller::_refresh_view() {
+    (void) this;
+
     view.set_path(model.current_path());
 
     view.clear_view();

@@ -8,6 +8,8 @@
 #include <atomic>
 #include <future>
 
+#include "utils.h"
+
 class thread_pool {
     public:
     static size_t pool_size();
@@ -28,7 +30,19 @@ class thread_pool {
 
         {
             std::unique_lock lock(_m_mutex);
-            _m_queue.push(new std::function<void()>([packed] { (*packed)(); }));
+            
+            _m_queue.push(new std::function<void()>([packed] {
+                (*packed)();
+
+                auto future = packed->get_future();
+
+                try {
+                    future.get();
+                } catch (const std::exception& e) {
+                    utils::coutln("exception in thread", std::this_thread::get_id(), ":", e.what());
+                    throw;
+                }
+            }));
         }
 
         std::unique_lock lock(_m_mutex);

@@ -100,6 +100,9 @@ void nao_model::fetch_preview(item_data* item) {
     }
 }
 
+void nao_model::clear_preview() {
+    _m_preview_provider.reset();
+}
 
 const std::string& nao_model::current_path() const {
     return _m_path;
@@ -115,7 +118,6 @@ const item_provider_ptr& nao_model::preview_provider() const {
 
 void nao_model::_create_tree(const std::string& to) {
     // Modify the current tree to match the supplied path
-
 
     // Build tree from highest level common parent
     std::string current_path;
@@ -151,7 +153,7 @@ void nao_model::_create_tree(const std::string& to) {
         current_path = to.substr(0, to.find_first_of('\\', current_path.size() + 1) + 1);
 
         auto p = _provider_for(current_path);
-
+        
         if (!p) {
             throw std::runtime_error("unsupported element in tree at " + current_path);
         }
@@ -162,7 +164,15 @@ void nao_model::_create_tree(const std::string& to) {
     // Tree should be done
 }
 
-item_provider_ptr nao_model::_provider_for(std::string path) const {
+item_provider_ptr nao_model::_provider_for(std::string path) {
+    // If a preview is set, it should just be the next element
+    if (_m_preview_provider && path == _m_preview_provider->get_path()) {
+        auto p = _m_preview_provider;
+
+        clear_preview();
+
+        return p;
+    }
     // Requesting root
     if (path == "\\" && !_m_tree.empty()) {
         return _m_tree.front();

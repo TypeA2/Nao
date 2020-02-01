@@ -23,9 +23,11 @@ class nao_model {
     // Move down to the given element, creating a provider if needed
     void move_down(item_data* to);
 
-    // Try to fetch a preview for the given item,
-    // notify the controller if one is found.
+    // Try to fetch a preview for the given item, notify the controller if one is found.
     void fetch_preview(item_data* item);
+
+    // Free up the current preview provider
+    void clear_preview();
 
     const std::string& current_path() const;
     const item_provider_ptr& current_provider() const;
@@ -33,7 +35,7 @@ class nao_model {
 
     private:
     void _create_tree(const std::string& to);
-    item_provider_ptr _provider_for(std::string path) const;
+    item_provider_ptr _provider_for(std::string path);
 
     protected:
     nao_view& view;

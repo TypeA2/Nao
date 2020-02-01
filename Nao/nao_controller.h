@@ -71,14 +71,14 @@ class nao_controller {
     void clicked(click_event which);
     void clicked(click_event which, void* arg);
 
-    void list_view_clicked(click_event which, void* arg);
+    void list_view_preview_clicked(click_event which, void* arg);
 
     private:
     // Handle custom messages on the main thread
     void _handle_message(nao_thread_message msg, WPARAM wparam, LPARAM lparam);
 
     // Retrieve the current provider and fill the view from that
-    void _refresh_view() const;
+    void _refresh_view();
 
     // Retrieve the current preview provider and item and display it
     void _refresh_preview();
