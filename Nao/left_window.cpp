@@ -57,9 +57,9 @@ bool left_window::wm_create(CREATESTRUCTW* create) {
     _m_list = std::make_unique<list_view>(this, nao_view::list_view_header(), nao_view::shell_image_list());
     _m_list->set_column_alignment(2, list_view::Right);
 
-    auto sort_order = nao_view::list_view_default_sort()[0];
+    /*auto sort_order = nao_view::list_view_default_sort()[0];
     _m_list->set_sort_arrow(0,
-        (sort_order == ORDER_NORMAL) ? list_view::UpArrow : list_view::DownArrow);
+        (sort_order == ORDER_NORMAL) ? list_view::UpArrow : list_view::DownArrow);*/
 
     _m_path = std::make_unique<line_edit>(this);
     _m_path->set_style(WS_DISABLED);
@@ -141,7 +141,6 @@ LRESULT left_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
             
             if (nm->hwndFrom == _m_list->handle()) {
                 view->list_clicked(nm);
-                switch (nm->code) {
                     /*
                     case LVN_COLUMNCLICK: {
                         _sort(reinterpret_cast<NMLISTVIEW*>(nm));
@@ -162,10 +161,6 @@ LRESULT left_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
                         _lclick(reinterpret_cast<NMITEMACTIVATE*>(nm));
                     }
 */
-                    case 3: break;
-                    default:
-                        break;
-                }
             }
             break;
         }

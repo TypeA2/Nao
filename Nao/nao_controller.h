@@ -73,6 +73,11 @@ class nao_controller {
 
     void list_view_preview_clicked(click_event which, void* arg);
 
+    // Returns the relative ordering between 2 items,
+    // returns -1 if the order is [first, second], returns 1
+    // if the order is [second, first], or 0 if equivalent
+    int order_items(void* first, void* second, data_key key, sort_order order);
+
     private:
     // Handle custom messages on the main thread
     void _handle_message(nao_thread_message msg, WPARAM wparam, LPARAM lparam);
@@ -82,6 +87,10 @@ class nao_controller {
 
     // Retrieve the current preview provider and item and display it
     void _refresh_preview();
+
+    // Transforms an item_data to a list_view_row
+    static list_view_row _transform_data_to_row(const item_data& data);
+    static std::vector<list_view_row> _transform_data_to_row(const std::vector<item_data>& data);
 
     protected:
     nao_view view;

@@ -139,7 +139,7 @@ int list_view::item_at(POINT pt) const {
 }
 
 
-void list_view::sort(int (CALLBACK* cb)(LPARAM, LPARAM, LPARAM), LPARAM extra) const {
+void list_view::sort(PFNLVCOMPARE cb, LPARAM extra) const {
     ListView_SortItems(handle(), cb, extra);
 }
 

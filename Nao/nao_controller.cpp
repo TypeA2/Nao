@@ -78,6 +78,81 @@ void nao_controller::list_view_preview_clicked(click_event which, void* arg) {
     }
 }
 
+int nao_controller::order_items(void* first, void* second, data_key key, sort_order order) {
+    item_data* item1 = reinterpret_cast<item_data*>(first);
+    item_data* item2 = reinterpret_cast<item_data*>(second);
+
+    if (!item1 || !item2) {
+        return 0;
+    }
+
+    int first1 = 0;
+    int first2 = 0;
+
+    switch (order) {
+        case ORDER_NORMAL:
+            first1 = -1;
+            first2 = 1;
+            break;
+
+        case ORDER_REVERSE:
+            first1 = 1;
+            first2 = -1;
+            break;
+
+        default:
+            break;
+    }
+
+    // Directories on top
+    if (!item1->dir != !item2->dir) {
+        return item1->dir ? -1 : 1;
+    }
+
+    const auto& f = std::use_facet<std::ctype<std::string::value_type>>(std::locale());
+
+    auto cmp = [&, first1, first2](const std::string& left, const std::string& right) -> int {
+        return std::lexicographical_compare(
+            left.begin(), left.end(), right.begin(), right.end(),
+            [&f](std::string::value_type a, std::string::value_type b) {
+                return f.tolower(a) < f.tolower(b);
+            }) ? first1 : first2;
+    };
+
+    switch (key) {
+        case KEY_NAME: // Name, alphabetically
+            if (item1->name == item2->name) { return 0; }
+
+            return cmp(item1->name, item2->name);
+        case KEY_TYPE: { // Type, alphabetically
+            if (item1->type == item2->type) {
+                // Fallback on name
+                return cmp(item1->name, item2->name);
+            }
+
+            return cmp(item1->type, item2->type); }
+
+        case KEY_SIZE: // File size
+            if (item1->size == item2->size) {
+                // Fallback on name
+                return cmp(item1->name, item2->name);
+            }
+
+            return (item1->size < item2->size) ? first1 : first2;
+
+        case KEY_COMP: // Compression ratio
+            if (item1->compression == item2->compression) {
+                // Fallback on name
+                return cmp(item1->name, item2->name);
+            }
+
+            return (item1->compression < item2->compression) ? first1 : first2;
+
+        default: return 0;
+    }
+}
+
+
 void nao_controller::_handle_message(nao_thread_message msg, WPARAM wparam, LPARAM lparam) {
     switch (msg) {
         //// Begin model messages
@@ -105,22 +180,7 @@ void nao_controller::_refresh_view() {
     view.clear_preview();
 
     const item_provider_ptr& p = model.current_provider();
-    const auto& data = p->data();
-
-    std::vector<list_view_row> list_data(data.size());
-
-    auto transform_func = [](const item_data& data) -> list_view_row {
-        return {
-            .name = data.name,
-            .type = data.type,
-            .size = (!data.dir && data.size_str.empty()) ? utils::bytes(data.size) : data.size_str,
-            .compressed = (data.compression == 0.) ? "" : (std::to_string(int64_t(data.compression / 100.)) + '%'),
-            .icon = data.icon,
-            .data = &data
-        };
-    };
-    std::transform(data.begin(), data.end(), list_data.begin(), transform_func);
-    view.fill_view(list_data);
+    view.fill_view(_transform_data_to_row(p->data()));
 }
 
 void nao_controller::_refresh_preview() {
@@ -129,22 +189,27 @@ void nao_controller::_refresh_preview() {
     if (p) {
         view.create_preview(PREVIEW_LIST_VIEW);
 
-        const auto& data = p->data();
-
-        std::vector<list_view_row> list_data(data.size());
-
-        auto transform_func = [](const item_data& data) -> list_view_row {
-            return {
-                .name = data.name,
-                .type = data.type,
-                .size = (!data.dir && data.size_str.empty()) ? utils::bytes(data.size) : data.size_str,
-                .compressed = (data.compression == 0.) ? "" : (std::to_string(int64_t(data.compression / 100.)) + '%'),
-                .icon = data.icon,
-                .data = &data
-            };
-        };
-        std::transform(data.begin(), data.end(), list_data.begin(), transform_func);
-        view.list_view_preview_fill(list_data);
+        view.list_view_preview_fill(_transform_data_to_row(p->data()));
     }
+}
+
+list_view_row nao_controller::_transform_data_to_row(const item_data& data) {
+    return {
+        .name = data.name,
+        .type = data.type,
+        .size = (!data.dir && data.size_str.empty()) ? utils::bytes(data.size) : data.size_str,
+        .compressed = (data.compression == 0.) ? "" : (std::to_string(int64_t(data.compression / 100.)) + '%'),
+        .icon = data.icon,
+        .data = &data
+    };
+}
+
+std::vector<list_view_row> nao_controller::_transform_data_to_row(const std::vector<item_data>& data) {
+    std::vector<list_view_row> list_data(data.size());
+
+    std::transform(data.begin(), data.end(), list_data.begin(),
+        static_cast<list_view_row(*)(const item_data&)>(_transform_data_to_row));
+
+    return list_data;
 }
 

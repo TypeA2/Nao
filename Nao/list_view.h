@@ -54,7 +54,12 @@ class list_view : public ui_element {
 
     int item_at(POINT pt) const;
 
-    void sort(int(CALLBACK* cb)(LPARAM, LPARAM, LPARAM), LPARAM extra) const;
+    void sort(PFNLVCOMPARE cb, LPARAM extra) const;
+
+    template <typename T>
+    std::enable_if_t<sizeof(T) == sizeof(LPARAM) && !std::is_same_v<T, LPARAM>> sort(PFNLVCOMPARE cb, T extra) {
+        sort(cb, reinterpret_cast<LPARAM>(extra));
+    }
 
     void set_sort_arrow(int col, sort_arrow direction) const;
     void set_column_width(int col, int width, int min = 0) const;

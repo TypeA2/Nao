@@ -19,10 +19,15 @@ const std::vector<std::string>& nao_view::list_view_header() {
     return vec;
 }
 
-const std::vector<sort_order>& nao_view::list_view_default_sort() {
-    static std::vector<sort_order> vec { ORDER_NORMAL, ORDER_NORMAL, ORDER_REVERSE, ORDER_REVERSE };
+const std::map<data_key, sort_order>& nao_view::list_view_default_sort() {
+    static std::map<data_key, sort_order> map {
+        { KEY_NAME, ORDER_NORMAL },
+        { KEY_TYPE, ORDER_NORMAL },
+        { KEY_SIZE, ORDER_REVERSE },
+        { KEY_COMP, ORDER_REVERSE }
+    };
 
-    return vec;
+    return map;
 }
 
 IImageList* nao_view::shell_image_list() {
@@ -43,8 +48,13 @@ IImageList* nao_view::shell_image_list() {
     return imglist;
 }
 
-nao_view::nao_view(nao_controller& controller) : controller(controller) {
-    
+nao_view::nao_view(nao_controller& controller) : controller(controller)
+    , _m_sort_order(list_view_default_sort()), _m_selected_column(KEY_NAME) {
+
+    /*std::for_each(_m_sort_order.begin(), _m_sort_order.end(), [](auto& pair) {
+        auto& val = pair.second;
+        val = (val == ORDER_NORMAL) ? ORDER_REVERSE : ORDER_NORMAL;
+        });*/
 }
 
 nao_view::~nao_view() {
@@ -69,15 +79,28 @@ void nao_view::clear_view(const std::function<void(void*)>& deleter) const {
     _m_main_window->left()->list()->clear(deleter);
 }
 
-void nao_view::fill_view(const std::vector<list_view_row>& items) const {
+void nao_view::fill_view(std::vector<list_view_row> items) const {
     if (items.empty()) {
         return;
     }
 
     list_view* list = _m_main_window->left()->list();
 
-    for (const auto& [name, type, size,
-        compressed, icon, data] : items) {
+    std::sort(items.begin(), items.end(), [this](const list_view_row& first, const list_view_row& second) {
+        return controller.order_items(const_cast<void*>(first.data), const_cast<void*>(second.data),
+            _m_selected_column, selected_column_order()) == -1;
+        });
+
+    for (const auto& [key, order] : _m_sort_order) {
+        if (key == _m_selected_column) {
+            list->set_sort_arrow(key, (order == ORDER_NORMAL) ? list_view::UpArrow : list_view::DownArrow);
+        } else {
+            list->set_sort_arrow(key, list_view::NoArrow);
+        }
+    }
+
+    for (const auto& [name, type, size, compressed,
+            icon ,data] : items) {
 
         list->add_item({ name, type, size, compressed }, icon, data);
     }
@@ -95,7 +118,7 @@ void nao_view::button_clicked(view_button_type which) const {
     controller.clicked(type);
 }
 
-void nao_view::list_clicked(NMHDR* nm) const {
+void nao_view::list_clicked(NMHDR* nm) {
     switch (nm->code) {
         case NM_DBLCLK: {
             // Double-click, opened an item
@@ -115,6 +138,26 @@ void nao_view::list_clicked(NMHDR* nm) const {
                 controller.clicked(CLICK_SINGLE_ITEM,
                     _m_main_window->left()->list()->get_item_data(item->iItem));
             }
+        }
+
+        case LVN_COLUMNCLICK: {
+            // Clicked on a column, sort based on this column
+            NMLISTVIEW* view = reinterpret_cast<NMLISTVIEW*>(nm);
+            list_view* list = _m_main_window->left()->list();
+
+            _m_selected_column = static_cast<data_key>(view->iSubItem);
+            _m_sort_order[_m_selected_column] =
+                (selected_column_order() == ORDER_NORMAL) ? ORDER_REVERSE : ORDER_NORMAL;
+
+            for (const auto & [key, order] : _m_sort_order) {
+                if (key == _m_selected_column) {
+                    list->set_sort_arrow(key, (order == ORDER_NORMAL) ? list_view::UpArrow : list_view::DownArrow);
+                } else {
+                    list->set_sort_arrow(key, list_view::NoArrow);
+                }
+            }
+
+            list->sort(_sort_list_view_row, this);
         }
 
         default: break;
@@ -168,6 +211,8 @@ void nao_view::list_view_preview_clicked(NMHDR* nm) const {
                        *_m_main_window->right()->get_preview())->get_item_data(item->iItem));
             }
         }
+
+        default: break;
     }
 }
 
@@ -175,9 +220,33 @@ main_window* nao_view::window() const {
     return _m_main_window.get();
 }
 
+data_key nao_view::selected_column() const {
+    return _m_selected_column;
+}
+
+sort_order nao_view::selected_column_order() const {
+    return _m_sort_order.at(_m_selected_column);
+}
+
+int nao_view::_sort_list_view_row(LPARAM lparam1, LPARAM lparam2, LPARAM info) {
+    nao_view const* view = reinterpret_cast<nao_view const*>(info);
+
+    return view->controller.order_items(
+        reinterpret_cast<void*>(lparam1), reinterpret_cast<void*>(lparam2),
+        view->selected_column(), view->selected_column_order());
+}
+
+
+
+
+
 preview::preview(nao_view* view) : ui_element(view->window()->right()), view(view) {
 
 }
+
+
+
+
 
 list_view_preview::list_view_preview(nao_view* view) : preview(view) {
     std::wstring class_name = load_wstring(IDS_LIST_VIEW_PREVIEW);
