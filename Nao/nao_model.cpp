@@ -266,43 +266,6 @@ void data_model::_clear_preview() {
 
 
 
-void data_model::_fill(sorted_list_view& list, item_provider* provider) {
-    auto list_view = list.list.lock();
-    list_view->clear([](void* data) { delete reinterpret_cast<item_data*>(data); });
-    
-    item_provider* p = provider ? provider : _get_provider(_m_path);
-    if (!p) {
-        return;
-    }
-    // Sort columns
-    std::vector<item_data*> items(p->count());
-    for (size_t i = 0; i < p->count(); ++i) {
-        items[i] = new item_data;
-        *items[i] = p->data(i);
-    }
-
-    std::sort(items.begin(), items.end(), [list](item_data* left, item_data* right) -> bool {
-        return _sort_impl(LPARAM(left), LPARAM(right),
-            MAKELPARAM(list.selected, list.order[list.selected])) == -1;
-        });
-
-    // TODO maybe go on main thread from here on?
-
-    // Add items
-    for (item_data* data : items) {
-        PostMessageW(handle(), InsertElementAsync, MAKEWPARAM(true, false),
-            LPARAM(new insert_element_async {
-            .list     = list_view,
-            .elements = {
-                data->name,
-                data->type,
-                (data->size == 0) ? std::string() : data->size_str,
-                (data->compression == 0.) ? std::string() : (std::to_string(int64_t(data->compression / 100.)) + '%')
-            },
-            .icon = data->icon,
-            .data = data
-                }));
-    }
 
     // Fit columns
     for (int i = 0; i < list_view->column_count() - 1; ++i) {

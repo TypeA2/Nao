@@ -130,7 +130,8 @@ int nao_controller::order_items(void* first, void* second, data_key key, sort_or
                 return cmp(item1->name, item2->name);
             }
 
-            return cmp(item1->type, item2->type); }
+            return cmp(item1->type, item2->type);
+        }
 
         case KEY_SIZE: // File size
             if (item1->size == item2->size) {

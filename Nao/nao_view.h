@@ -97,7 +97,10 @@ class nao_view {
     private:
     std::unique_ptr<main_window> _m_main_window;
 
-    // Current column ordering of the main view
+    friend class preview;
+    friend class list_view_preview;
+
+    // Current column ordering of the view
     std::map<data_key, sort_order> _m_sort_order;
     data_key _m_selected_column;
 };
@@ -121,7 +124,9 @@ class list_view_preview : public preview {
     explicit list_view_preview(nao_view* view);
     ~list_view_preview() override = default;
 
-    list_view* operator->() const;
+    void fill(std::vector<list_view_row> items);
+
+    list_view* get_list() const;
 
     protected:
     bool wm_create(CREATESTRUCTW* create) override;
@@ -130,6 +135,10 @@ class list_view_preview : public preview {
     LRESULT _wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
     std::unique_ptr<list_view> _m_list;
+
+    // Current column ordering of the view
+    std::map<data_key, sort_order> _m_sort_order;
+    data_key _m_selected_column;
 
     inline static bool _initialised = false;
 };
