@@ -100,6 +100,17 @@ void nao_view::fill_view(std::vector<list_view_row> items) const {
 
         list->add_item({ name, type, size, compressed }, icon, data);
     }
+
+    // Fit columns
+    for (int i = 0; i < list->column_count() - 1; ++i) {
+        int min = 0;
+
+        if (i == 0) {
+            min = list->width() / list->column_count();
+        }
+
+        list->set_column_width(i, LVSCW_AUTOSIZE, min);
+    }
 }
 
 void nao_view::button_clicked(view_button_type which) const {
@@ -141,6 +152,10 @@ void nao_view::list_clicked(NMHDR* nm) {
             NMLISTVIEW* view = reinterpret_cast<NMLISTVIEW*>(nm);
             list_view* list = _m_main_window->left()->list();
 
+            if (view->iItem != -1) {
+                break;
+            }
+
             // If a different column was selected, use the default sort
             if (_m_selected_column != view->iSubItem) {
 
@@ -160,7 +175,15 @@ void nao_view::list_clicked(NMHDR* nm) {
                 }
             }
 
-            list->sort(_sort_list_view_row, this);
+            static auto sort_func = [](LPARAM lparam1, LPARAM lparam2, LPARAM info) {
+                nao_view const* view = reinterpret_cast<nao_view const*>(info);
+
+                return view->controller.order_items(
+                    reinterpret_cast<void*>(lparam1), reinterpret_cast<void*>(lparam2),
+                    view->selected_column(), view->selected_column_order());
+            };
+
+            list->sort(sort_func, this);
             break;
         }
 
@@ -229,25 +252,12 @@ sort_order nao_view::selected_column_order() const {
     return _m_sort_order.at(_m_selected_column);
 }
 
-int nao_view::_sort_list_view_row(LPARAM lparam1, LPARAM lparam2, LPARAM info) {
-    nao_view const* view = reinterpret_cast<nao_view const*>(info);
-
-    return view->controller.order_items(
-        reinterpret_cast<void*>(lparam1), reinterpret_cast<void*>(lparam2),
-        view->selected_column(), view->selected_column_order());
-}
-
-
 
 
 
 preview::preview(nao_view* view) : ui_element(view->window()->right()), view(view) {
 
 }
-
-
-
-
 
 list_view_preview::list_view_preview(nao_view* view) : preview(view)
     , _m_sort_order(nao_view::list_view_default_sort()), _m_selected_column(KEY_NAME) {
@@ -297,6 +307,17 @@ void list_view_preview::fill(std::vector<list_view_row> items) {
 
         _m_list->add_item({ name, type, size, compressed }, icon, data);
     }
+
+    // Fit columns
+    for (int i = 0; i < _m_list->column_count() - 1; ++i) {
+        int min = 0;
+
+        if (i == 0) {
+            min = _m_list->width() / _m_list->column_count();
+        }
+
+        _m_list->set_column_width(i, LVSCW_AUTOSIZE, min);
+    }
 }
 
 list_view* list_view_preview::get_list() const {
@@ -320,6 +341,10 @@ LRESULT list_view_preview::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM 
                     case LVN_COLUMNCLICK: {
                         // Clicked on a column, sort based on this column
                         NMLISTVIEW* view = reinterpret_cast<NMLISTVIEW*>(nm);
+
+                        if (view->iItem != -1) {
+                            break;
+                        }
 
                         // If a different column was selected, use the default sort
                         if (_m_selected_column != view->iSubItem) {

@@ -88,9 +88,6 @@ class nao_view {
     sort_order selected_column_order() const;
 
     private:
-    // Sorts list_view_row items depending on the current order
-    static int _sort_list_view_row(LPARAM lparam1, LPARAM lparam2, LPARAM info);
-
     protected:
     nao_controller& controller;
 

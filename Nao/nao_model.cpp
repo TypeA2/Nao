@@ -237,53 +237,6 @@ void data_model::menu_clicked(short id) {
         default: return;
     }
 
-
-void data_model::_clear_preview() {
-    ASSERT(std::this_thread::get_id() != _m_main_thread);
-
-    delete _m_preview.provider;
-    _m_preview.provider = nullptr;
-
-    switch (_m_preview.type) {
-        case PreviewListView:
-            _m_preview.list.list.reset();
-            break;
-        case PreviewAudioPlayer:
-            _m_preview.player.reset();
-            break;
-
-        default: break;
-    }
-
-    _m_preview.type = PreviewNone;
-
-    _m_preview.is_shown = false;
-
-    PostMessageW(handle(), ClearPreviewElement, MAKEWPARAM(false, true), 0);
-    std::unique_lock lock(_m_message_mutex);
-    _m_cond.wait(lock, [this] { return !_m_right.lock()->preview().lock().get(); });
-}
-
-
-
-
-    // Fit columns
-    for (int i = 0; i < list_view->column_count() - 1; ++i) {
-        int min = 0;
-
-        if (i == 0) {
-            min = list_view->width() / list_view->column_count();
-        }
-
-        list_view->set_column_width(i, LVSCW_AUTOSIZE, min);
-    }
-
-    // Fill remainder with last column
-    list_view->set_column_width(list_view->column_count() - 1, LVSCW_AUTOSIZE_USEHEADER);
-
-    // Items already sorted, we're done
-}
-
 void data_model::_context_menu(sorted_list_view& list, POINT pt, bool preview) {
     auto list_view = list.list.lock();
     int index = list_view->item_at(pt);
@@ -342,78 +295,6 @@ void data_model::_context_menu(sorted_list_view& list, POINT pt, bool preview) {
     DestroyMenu(popup);
 }
 
-void data_model::_sort(sorted_list_view& list, int col) const {
-    std::vector default_order = listview_default_sort();
-
-    if (list.selected != col) {
-        // Set default order
-        list.order[col] = default_order[col];
-    } else {
-        list.order[list.selected]
-            = (list.order[col] == SortOrderReverse) ? SortOrderNormal : SortOrderReverse;
-    }
-
-    list.selected = col;
-
-    auto list_view = list.list.lock();
-    for (int i = 0; i < int(std::size(list.order)); ++i) {
-        if (i == col) {
-            list_view->set_sort_arrow(i,
-                (list.order[i] == SortOrderReverse) ? list_view::DownArrow : list_view::UpArrow);
-        } else {
-            list_view->set_sort_arrow(i, list_view::NoArrow);
-        }
-    }
-
-    ListView_SortItems(list_view->handle(), &data_model::_sort_impl, MAKELPARAM(col, list.order[col]));
-}
-
-void data_model::_preview_item_list(item_provider* p) {
-    if (_m_preview.first_time) {
-        _m_preview.list.selected = _m_list_view.selected;
-        _m_preview.list.order = _m_list_view.order;
-    }
-
-    create_preview_async preview {
-        .creator = [this] {
-            auto ptr = std::make_shared<list_view>(_m_right);
-            ptr->init();
-            ptr->set_columns(listview_header());
-            ptr->set_image_list(shell_image_list());
-            return ptr;
-        },
-        .type    = PreviewListView
-    };
-
-    PostMessageW(handle(), CreatePreviewElement, MAKEWPARAM(false, true), LPARAM(&preview));
-
-    auto right = _m_right.lock();
-    std::unique_lock lock(_m_message_mutex);
-    _m_cond.wait(lock, [right] { return !!right->preview().lock(); });
-
-    _m_preview.type = PreviewListView;
-    _m_preview.is_shown = true;
-    _m_preview.list.list = std::dynamic_pointer_cast<list_view>(right->preview().lock());
-    _m_preview.provider = p;
-    _fill(_m_preview.list, p);
-
-    _m_preview.list.list.lock()->set_sort_arrow(_m_preview.list.selected,
-        (_m_preview.list.order[_m_preview.list.selected] == SortOrderReverse)
-        ? list_view::DownArrow : list_view::UpArrow);
-
-    // Sort by name first
-    if (_m_preview.first_time) {
-        _m_preview.first_time = false;
-
-        PostMessageW(handle(), ExecuteFunction,
-            MAKEWPARAM(true, false),
-            LPARAM(new std::function<void()>([this] {
-                _m_preview.list.order[0] = SortOrderReverse;
-                _sort(_m_preview.list, 0);
-                })));
-    }
-}
-
 void data_model::_preview_audio_player(item_provider* p) {
     create_preview_async preview {
         .creator = [this, p] { return p->preview_element(_m_right.lock()); },
@@ -432,8 +313,6 @@ void data_model::_preview_audio_player(item_provider* p) {
     _m_preview.player = std::dynamic_pointer_cast<audio_player>(_m_right.lock()->preview().lock());
 
 }
-
-
 
 
 void data_model::_show_in_explorer(menu_state& state) const {
