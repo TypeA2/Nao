@@ -1,9 +1,13 @@
 #include "nao_controller.h"
 #include "utils.h"
 
+#include "frameworks.h"
+
 #include "auto_wrapper.h"
+#include "file_info.h"
 
 #include <filesystem>
+#include <mfapi.h>
 
 nao_controller::nao_controller()
     : view(*this), model(view, *this)
@@ -78,11 +82,8 @@ void nao_controller::list_view_preview_clicked(click_event which, void* arg) {
     }
 }
 
-int nao_controller::order_items(void* first, void* second, data_key key, sort_order order) {
-    item_data* item1 = reinterpret_cast<item_data*>(first);
-    item_data* item2 = reinterpret_cast<item_data*>(second);
-
-    if (!item1 || !item2) {
+int nao_controller::order_items(item_data* first, item_data* second, data_key key, sort_order order) {
+    if (!first || !second) {
         return 0;
     }
 
@@ -105,8 +106,8 @@ int nao_controller::order_items(void* first, void* second, data_key key, sort_or
     }
 
     // Directories on top
-    if (!item1->dir != !item2->dir) {
-        return item1->dir ? -1 : 1;
+    if (!first->dir != !second->dir) {
+        return first->dir ? -1 : 1;
     }
 
     const auto& f = std::use_facet<std::ctype<std::string::value_type>>(std::locale());
@@ -121,36 +122,75 @@ int nao_controller::order_items(void* first, void* second, data_key key, sort_or
 
     switch (key) {
         case KEY_NAME: // Name, alphabetically
-            if (item1->name == item2->name) { return 0; }
+            if (first->name == second->name) { return 0; }
 
-            return cmp(item1->name, item2->name);
+            return cmp(first->name, second->name);
         case KEY_TYPE: { // Type, alphabetically
-            if (item1->type == item2->type) {
+            if (first->type == second->type) {
                 // Fallback on name
-                return cmp(item1->name, item2->name);
+                return cmp(first->name, second->name);
             }
 
-            return cmp(item1->type, item2->type);
+            return cmp(first->type, second->type);
         }
 
         case KEY_SIZE: // File size
-            if (item1->size == item2->size) {
+            if (first->size == second->size) {
                 // Fallback on name
-                return cmp(item1->name, item2->name);
+                return cmp(first->name, second->name);
             }
 
-            return (item1->size < item2->size) ? first1 : first2;
+            return (first->size < second->size) ? first1 : first2;
 
         case KEY_COMP: // Compression ratio
-            if (item1->compression == item2->compression) {
+            if (first->compression == second->compression) {
                 // Fallback on name
-                return cmp(item1->name, item2->name);
+                return cmp(first->name, second->name);
             }
 
-            return (item1->compression < item2->compression) ? first1 : first2;
+            return (first->compression < second->compression) ? first1 : first2;
 
         default: return 0;
     }
+}
+
+void nao_controller::create_context_menu(item_data* data, POINT pt) {
+    
+
+    auto async_func = [this, data, pt] {
+        context_menu menu;
+        if (data->dir || data->drive || model.can_open(data)) {
+            menu.push_back({
+                .text = "Open",
+                .func = std::bind(&nao_model::move_down, &model, data)
+                });
+            menu.push_back({});
+        }
+
+        file_info info(data->path());
+        
+        if (!info.invalid()) {
+            // Exists on disk
+            menu.push_back({
+                .text = "Show in explorer",
+                .func = [=] {
+                        LPITEMIDLIST idl = ILCreateFromPathW(utils::utf16(data->path()).c_str());
+                        if (idl) {
+                            SHOpenFolderAndSelectItems(idl, 0, nullptr, 0);
+                            ILFree(idl);
+                        }
+                    }
+                });
+        }
+
+        if (!menu.empty()) {
+            auto func = new std::function<void()>(std::bind(&nao_view::execute_context_menu, &view, menu, pt));
+            post_message(TM_EXECUTE_FUNC, 0, func);
+        }
+
+    };
+
+    _m_worker.push(async_func);
 }
 
 
@@ -166,6 +206,18 @@ void nao_controller::_handle_message(nao_thread_message msg, WPARAM wparam, LPAR
             break;
 
         //// End model messages
+
+        //// Begin controller messages
+        case TM_EXECUTE_FUNC: {
+            std::function<void()>* func = reinterpret_cast<std::function<void()>*>(lparam);
+
+            (*func)();
+
+            delete func;
+            break;
+        }
+
+        //// End controller messages
 
         default:
             utils::coutln("thread message:", msg, wparam, lparam);

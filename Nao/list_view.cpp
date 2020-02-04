@@ -138,6 +138,9 @@ int list_view::item_at(POINT pt) const {
     return info.iItem;
 }
 
+HWND list_view::header() const {
+    return ListView_GetHeader(handle());
+}
 
 void list_view::sort(PFNLVCOMPARE cb, LPARAM extra) const {
     ListView_SortItems(handle(), cb, extra);

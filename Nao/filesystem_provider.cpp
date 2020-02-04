@@ -27,6 +27,7 @@ filesystem_provider::filesystem_provider(const std::string& path) : item_provide
                 << utils::bytes(free) << " free)";
             
             items.push_back(item_data {
+                .provider     = this,
                 .name         = name,
                 .type         = utils::utf8(finfo.szTypeName),
                 .size         = free,
@@ -55,6 +56,7 @@ filesystem_provider::filesystem_provider(const std::string& path) : item_provide
                 SHGFI_TYPENAME | SHGFI_ICON | SHGFI_SMALLICON | SHGFI_SYSICONINDEX));
 
             items.push_back({
+                .provider     = this,
                 .name   = entry.path().filename().string(),
                 .type   = utils::utf8(finfo.szTypeName),
                 .size   = entry.is_directory() ? 0 : entry.file_size(),

@@ -229,6 +229,7 @@
     <ClCompile Include="filesystem_utils.cpp" />
     <ClCompile Include="file_info.cpp" />
     <ClCompile Include="icon.cpp" />
+    <ClCompile Include="item_data.cpp" />
     <ClCompile Include="left_window.cpp" />
     <ClCompile Include="line_edit.cpp" />
     <ClCompile Include="list_view.cpp" />

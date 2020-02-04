@@ -237,6 +237,9 @@
     <ClCompile Include="drive_list.cpp">
       <Filter>Source Files\Win32</Filter>
     </ClCompile>
+    <ClCompile Include="item_data.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="Nao.exe.manifest" />

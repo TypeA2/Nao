@@ -83,7 +83,9 @@ void nao_view::fill_view(std::vector<list_view_row> items) const {
     list_view* list = _m_main_window->left()->list();
 
     std::sort(items.begin(), items.end(), [this](const list_view_row& first, const list_view_row& second) {
-        return controller.order_items(const_cast<void*>(first.data), const_cast<void*>(second.data),
+        return controller.order_items(
+            static_cast<item_data*>(const_cast<void*>(first.data)),
+            static_cast<item_data*>(const_cast<void*>(second.data)),
             _m_selected_column, selected_column_order()) == -1;
         });
 
@@ -145,6 +147,7 @@ void nao_view::list_clicked(NMHDR* nm) {
                 controller.clicked(CLICK_SINGLE_ITEM,
                     _m_main_window->left()->list()->get_item_data(item->iItem));
             }
+            break;
         }
 
         case LVN_COLUMNCLICK: {
@@ -179,11 +182,27 @@ void nao_view::list_clicked(NMHDR* nm) {
                 nao_view const* view = reinterpret_cast<nao_view const*>(info);
 
                 return view->controller.order_items(
-                    reinterpret_cast<void*>(lparam1), reinterpret_cast<void*>(lparam2),
+                    reinterpret_cast<item_data*>(lparam1), reinterpret_cast<item_data*>(lparam2),
                     view->selected_column(), view->selected_column_order());
             };
 
             list->sort(sort_func, this);
+            break;
+        }
+
+        case NM_RCLICK: {
+            NMITEMACTIVATE* item = reinterpret_cast<NMITEMACTIVATE*>(nm);
+
+            if (item->iItem >= 0) {
+                list_view* list = _m_main_window->left()->list();
+
+                item_data* data = list->get_item_data<item_data*>(item->iItem);
+
+                if (data) {
+                    ClientToScreen(list->handle(), &item->ptAction);
+                    controller.create_context_menu(data, item->ptAction);
+                }
+            }
             break;
         }
 
@@ -221,24 +240,55 @@ void nao_view::list_view_preview_fill(const std::vector<list_view_row>& items) c
     p->fill(items);
 }
 
-void nao_view::list_view_preview_clicked(NMHDR* nm) const {
-    switch (nm->code) {
-        case NM_DBLCLK: {
-            // Double click to open a nested item
-            NMITEMACTIVATE* item = reinterpret_cast<NMITEMACTIVATE*>(nm);
-            if (item->iItem >= 0) {
-                list_view_preview* preview = dynamic_cast<list_view_preview*>(_m_main_window->right()->get_preview());
+void nao_view::execute_context_menu(const context_menu& menu, POINT pt) {
+    HMENU popup = CreatePopupMenu();
 
-                if (preview) {
-                    controller.list_view_preview_clicked(CLICK_DOUBLE_ITEM,
-                        preview->get_list()->get_item_data(item->iItem));
-                }
+    MENUITEMINFOW item {
+        .cbSize = sizeof(MENUITEMINFOW),
+        .fMask = MIIM_DATA | MIIM_STRING | MIIM_ID
+    };
+
+    std::map<UINT, std::reference_wrapper<const std::function<void()>>> menu_functions;
+
+    UINT id = 1;
+    for (const auto& [text, function] : menu) {
+        if (text.empty()) {
+            if (menu.back().text != text) {
+                // Empty indicates separator, ommit trailing separators
+                static MENUITEMINFOW separator_item {
+                    .cbSize = sizeof(MENUITEMINFOW),
+                    .fMask = MIIM_TYPE,
+                    .fType = MFT_SEPARATOR
+                };
+
+                InsertMenuItemW(popup, -1, true, &separator_item);
             }
-        }
+        } else {
+            auto wide = utils::utf16(text);
+            item.dwTypeData = wide.data();
+            item.dwItemData = reinterpret_cast<UINT_PTR>(&function);
+            item.wID = id;
 
-        default: break;
+            menu_functions.emplace(id, std::ref(function));
+
+            ++id;
+
+            InsertMenuItemW(popup, -1, true, &item);
+        }
     }
+
+    UINT selected = TrackPopupMenuEx(popup,
+        TPM_TOPALIGN | TPM_LEFTALIGN | TPM_VERPOSANIMATION | TPM_RETURNCMD | TPM_NONOTIFY,
+        pt.x, pt.y, _m_main_window->left()->handle(), nullptr);
+
+    if (selected > 0 && menu_functions.at(selected).get()) {
+        auto func = new std::function<void()>(menu_functions.at(selected).get());
+        controller.post_message(TM_EXECUTE_FUNC, 0, func);
+    }
+
+    DestroyMenu(popup);
 }
+
 
 main_window* nao_view::window() const {
     return _m_main_window.get();
@@ -290,7 +340,9 @@ list_view_preview::list_view_preview(nao_view* view) : preview(view)
 
 void list_view_preview::fill(std::vector<list_view_row> items) {
     std::sort(items.begin(), items.end(), [this](const list_view_row& first, const list_view_row& second) {
-        return view->controller.order_items(const_cast<void*>(first.data), const_cast<void*>(second.data),
+        return view->controller.order_items(
+            static_cast<item_data*>(const_cast<void*>(first.data)),
+            static_cast<item_data*>(const_cast<void*>(second.data)),
             _m_selected_column, _m_sort_order[_m_selected_column]) == -1;
         });
 
@@ -369,7 +421,7 @@ LRESULT list_view_preview::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM 
                             list_view_preview const* preview = reinterpret_cast<list_view_preview const*>(info);
 
                             return preview->view->controller.order_items(
-                                reinterpret_cast<void*>(lparam1), reinterpret_cast<void*>(lparam2),
+                                reinterpret_cast<item_data*>(lparam1), reinterpret_cast<item_data*>(lparam2),
                                 preview->_m_selected_column, preview->_m_sort_order.at(preview->_m_selected_column));
                         };
 
@@ -377,8 +429,30 @@ LRESULT list_view_preview::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM 
                         break;
                     }
 
-                    default:
-                        view->list_view_preview_clicked(nm);
+                    case NM_DBLCLK: {
+                        // Double click to open a nested item
+                        NMITEMACTIVATE* item = reinterpret_cast<NMITEMACTIVATE*>(nm);
+                        if (item->iItem >= 0) {
+                            view->controller.list_view_preview_clicked(CLICK_DOUBLE_ITEM,
+                                _m_list->get_item_data(item->iItem));
+                        }
+                        break;
+                    }
+
+                    case NM_RCLICK: {
+                        NMITEMACTIVATE* item = reinterpret_cast<NMITEMACTIVATE*>(nm);
+
+                        if (item->iItem >= 0) {
+                            item_data* data = _m_list->get_item_data<item_data*>(item->iItem);
+
+                            if (data) {
+                                ClientToScreen(_m_list->handle(), &item->ptAction);
+                                view->controller.create_context_menu(data, item->ptAction);
+                            }
+                        }
+                    }
+
+                    default: break;
                 }
             }
 

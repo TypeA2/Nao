@@ -16,8 +16,8 @@ struct list_view_row {
     std::string size;
     std::string compressed;
 
-    int icon;
-    void const* data;
+    int icon { };
+    void const* data { };
 };
 
 enum view_button_type {
@@ -40,6 +40,13 @@ enum data_key {
 enum preview_element_type {
     PREVIEW_LIST_VIEW
 };
+
+struct context_menu_entry {
+    std::string text;
+    std::function<void()> func;
+};
+
+using context_menu = std::vector<context_menu_entry>;
 
 class nao_view {
     public:
@@ -77,7 +84,9 @@ class nao_view {
 
     // If the preview is a list_view_preview, execute the same actions as on the main list_view
     void list_view_preview_fill(const std::vector<list_view_row>& items) const;
-    void list_view_preview_clicked(NMHDR* nm) const;
+
+    // Constructs and executes the given context menu
+    void execute_context_menu(const context_menu& menu, POINT pt);
 
 
     // Retrieve main window
@@ -87,7 +96,6 @@ class nao_view {
     data_key selected_column() const;
     sort_order selected_column_order() const;
 
-    private:
     protected:
     nao_controller& controller;
 

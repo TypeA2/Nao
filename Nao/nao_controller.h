@@ -22,6 +22,13 @@ enum nao_thread_message : unsigned {
 
     TM_MODEL_LAST,
 
+    TM_CONTROLLER_FIRST,
+
+    // LPARAM: std::function<void()>* that should be deleted
+    TM_EXECUTE_FUNC,
+
+    TM_CONTROLLER_LAST,
+
     TM_LAST
 };
 
@@ -63,8 +70,18 @@ class nao_controller {
     DWORD main_threadid() const;
 
     template <typename W = WPARAM, typename L = LPARAM>
-    void post_message(nao_thread_message message, W wparam = 0, L lparam = 0) const {
+    std::enable_if_t<
+        std::is_convertible_v<W, WPARAM> &&
+        std::is_convertible_v<L, LPARAM>>
+        post_message(nao_thread_message message, W wparam = 0, L lparam = 0) const {
         PostThreadMessageW(_m_main_threadid, message, wparam, lparam);
+    }
+
+    template <typename W, typename L>
+    std::enable_if_t<!std::is_convertible_v<L, LPARAM>>
+        post_message(nao_thread_message message, W wparam = 0, L lparam = 0) const {
+
+        post_message(message, wparam, reinterpret_cast<LPARAM>(lparam));
     }
 
     // A view element has been clicked
@@ -76,7 +93,10 @@ class nao_controller {
     // Returns the relative ordering between 2 items,
     // returns -1 if the order is [first, second], returns 1
     // if the order is [second, first], or 0 if equivalent
-    int order_items(void* first, void* second, data_key key, sort_order order);
+    int order_items(item_data* first, item_data* second, data_key key, sort_order order);
+
+    // Construct the items needed for a context menu of the given item
+    void create_context_menu(item_data* data, POINT pt);
 
     private:
     // Handle custom messages on the main thread

@@ -4,9 +4,12 @@
 #include <memory>
 
 class binary_istream;
+class item_provider;
 
 struct item_data {
     using istream_type = std::shared_ptr<binary_istream>;
+
+    item_provider* provider;
 
     std::string name;
     std::string type;
@@ -25,4 +28,6 @@ struct item_data {
     istream_type stream;
 
     std::shared_ptr<void> data;
+
+    std::string path() const;
 };

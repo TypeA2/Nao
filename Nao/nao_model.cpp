@@ -51,30 +51,7 @@ void nao_model::move_up() {
 }
 
 void nao_model::move_down(item_data* to) {
-    const auto& current_elements = _m_tree.back()->data();
-
-    auto find_func = [&to](const item_data& data) {
-        return to == &data;
-    };
-
-    if (std::find_if(current_elements.begin(), current_elements.end(), find_func) == current_elements.end()) {
-        // Not in current view, try preview
-
-        if (_m_preview_provider) {
-            const auto& preview_elements = _m_preview_provider->data();
-
-            if (std::find_if(preview_elements.begin(), preview_elements.end(), find_func) == preview_elements.end()) {
-                throw std::runtime_error("element not child of preview provider");
-            }
-
-            move_to(_m_preview_provider->get_path() + to->name);
-        } else {
-            throw std::runtime_error("element not child of current provider");
-        }
-    } else {
-        // Element present, move down
-        move_to(to->drive ? std::string { to->drive_letter, ':', '\\' } : (_m_path + to->name));
-    }
+    move_to(to->path());
 }
 
 void nao_model::fetch_preview(item_data* item) {
@@ -115,6 +92,21 @@ const item_provider_ptr& nao_model::current_provider() const {
 const item_provider_ptr& nao_model::preview_provider() const {
     return _m_preview_provider;
 }
+
+bool nao_model::can_open(item_data* data) {
+    if (data->drive) {
+        if (item_provider_ptr p = _provider_for({ data->drive_letter, ':', '\\' }); p) {
+            return true;
+        }
+    } else {
+        if (item_provider_ptr p = _provider_for(data->provider->get_path() + data->name); p) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 
 void nao_model::_create_tree(const std::string& to) {
     // Modify the current tree to match the supplied path
@@ -217,25 +209,6 @@ item_provider_ptr nao_model::_provider_for(std::string path) {
 }
 
 /*
-void data_model::menu_clicked(short id) {
-    item_data* data = _m_menu.data;
-    switch (id) {
-        case CtxOpen: {
-            if (data->dir || !data->drive) {
-                move(_m_menu.path + data->name);
-            } else if (data->drive) {
-                move({ data->drive_letter, ':', '\\' });
-            }
-            break;
-        }
-
-        case CtxShowInExplorer: {
-            _show_in_explorer(_m_menu);
-            break;
-        }
-
-        default: return;
-    }
 
 void data_model::_context_menu(sorted_list_view& list, POINT pt, bool preview) {
     auto list_view = list.list.lock();
@@ -295,44 +268,6 @@ void data_model::_context_menu(sorted_list_view& list, POINT pt, bool preview) {
     DestroyMenu(popup);
 }
 
-void data_model::_preview_audio_player(item_provider* p) {
-    create_preview_async preview {
-        .creator = [this, p] { return p->preview_element(_m_right.lock()); },
-        .type    = PreviewAudioPlayer
-    };
 
-    PostMessageW(handle(), CreatePreviewElement, MAKEWPARAM(false, true), LPARAM(&preview));
-
-    std::unique_lock lock(_m_message_mutex);
-    _m_cond.wait(lock, [this] { return !!_m_right.lock()->preview().lock().get(); });
-
-    _m_preview.type = PreviewAudioPlayer;
-    _m_preview.is_shown = true;
-    _m_preview.provider = p;
-
-    _m_preview.player = std::dynamic_pointer_cast<audio_player>(_m_right.lock()->preview().lock());
-
-}
-
-
-void data_model::_show_in_explorer(menu_state& state) const {
-    (void) this;
-
-    const sorted_list_view& list = state.is_preview ? _m_preview.list : _m_list_view;
-
-    LPITEMIDLIST idl;
-    if (state.index >= 0) {
-        item_data* data = list.list.lock()->get_item_data<item_data>(state.index);
-        idl = ILCreateFromPathW(utils::utf16(_m_menu.path + data->name).c_str());
-    } else {
-        idl = ILCreateFromPathW(utils::utf16(_m_menu.path).c_str());
-    }
-
-    if (idl) {
-        SHOpenFolderAndSelectItems(idl, 0, nullptr, 0);
-
-        ILFree(idl);
-    }
-}
 
 */

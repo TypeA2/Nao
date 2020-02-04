@@ -53,6 +53,7 @@ class list_view : public ui_element {
         int image, LPARAM extra = 0) const;
 
     int item_at(POINT pt) const;
+    HWND header() const;
 
     void sort(PFNLVCOMPARE cb, LPARAM extra) const;
 
