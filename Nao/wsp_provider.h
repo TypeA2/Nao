@@ -2,35 +2,16 @@
 
 #include "item_provider.h"
 
-#include <vector>
-
-/*
 class wsp_provider : public item_provider {
     public:
-    wsp_provider(const file_stream& stream,
-        const std::string& path, data_model& model);
-
-    ~wsp_provider() override;
-
-    size_t count() const override;
-    item_data& data(size_t index) override;
-
-    //preview_type preview() const override;
+    wsp_provider(const istream_type& stream, const std::string& path);
 
     private:
-    // Represents a sequenced file
+
     struct wwriff_file {
-        int64_t size;
-        int64_t offset;
+        uintmax_t size;
+        uintmax_t offset;
     };
 
-    void _populate();
-
-    std::vector<item_data> _m_contents;
-    std::vector<wwriff_file> _m_riff_files;
-
-    static item_provider* _create(const file_stream& file,
-        const std::string& name, data_model& model);
-    static size_t _id;
+    std::vector<wwriff_file> _m_riff;
 };
-*/

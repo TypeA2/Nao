@@ -6,6 +6,8 @@
 #include <vector>
 #include <functional>
 
+#include "concepts.h"
+
 class list_view : public ui_element {
     public:
     enum sort_arrow {
@@ -34,31 +36,22 @@ class list_view : public ui_element {
 
     void get_item(LVITEMW& item) const;
 
+    template <std::convertible_to<void*> T>
+    T get_item_data(int index) const {
+        return static_cast<T>(get_item_data(index));
+    }
+
     void* get_item_data(int index) const;
 
-    template <typename T>
-    std::enable_if_t<sizeof(T) == sizeof(LPARAM), T> get_item_data(int index) const {
-        return reinterpret_cast<T>(get_item_data(index));
-    }
-    
-    template <typename T>
-    std::enable_if_t<(sizeof(T) == sizeof(LPARAM) && !std::is_same_v<T, LPARAM>), int>
-        add_item(const std::vector<std::string>& text, int image, T extra = 0) {
-        return add_item(text, image, reinterpret_cast<LPARAM>(extra));
-    }
-
-    int add_item(const std::vector<std::string>& text,
-        int image, LPARAM extra = 0) const;
-    int add_item(const std::vector<std::wstring>& text,
-        int image, LPARAM extra = 0) const;
+    int add_item(const std::vector<std::string>& text, int image, void* extra = nullptr) const;
 
     int item_at(POINT pt) const;
     HWND header() const;
 
     void sort(PFNLVCOMPARE cb, LPARAM extra) const;
 
-    template <typename T>
-    std::enable_if_t<sizeof(T) == sizeof(LPARAM) && !std::is_same_v<T, LPARAM>> sort(PFNLVCOMPARE cb, T extra) {
+    template <concepts::pointer T>
+    void sort(PFNLVCOMPARE cb, T extra) {
         sort(cb, reinterpret_cast<LPARAM>(extra));
     }
 

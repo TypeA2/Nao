@@ -1,70 +1,47 @@
 #include "wsp_provider.h"
+
 #include "item_provider_factory.h"
+#include "binary_stream.h"
 #include "utils.h"
-//#include "data_model.h"
-#include "frameworks.h"
 
-#include <iomanip>
-/*
-wsp_provider::wsp_provider(const file_stream& stream,
-    const std::string& path, data_model& model)
-    : item_provider(stream, path + '\\', model) {
-    utils::coutln("[WSP] creating for", path);
-    _populate();
-}
+wsp_provider::wsp_provider(const istream_type& stream, const std::string& path) : item_provider(stream, path) {
+    utils::coutln("[FILESYSTEM] creating for", path);
 
-wsp_provider::~wsp_provider() {
-    utils::coutln("[WSP] deleting for", name);
-}
-
-size_t wsp_provider::count() const {
-    return _m_contents.size();
-}
-
-item_data& wsp_provider::data(size_t index) {
-    return _m_contents[index];
-}
-
-//item_provider::preview_type wsp_provider::preview() const {
-//    return preview_type::PreviewListView;
-//}
-
-void wsp_provider::_populate() {
-    while (!file->eof()) {
+    while (!stream->eof()) {
         wwriff_file f;
-        f.offset = file->tellg();
+        f.offset = stream->tellg();
 
         std::string fcc(4, '\0');
-        file->read(fcc);
+        stream->read(fcc);
 
         if (fcc != "RIFF") {
-            utils::coutln(file->tellg(), fcc);
-           // MessageBoxW(model.handle(), L"Invalid RIFF signature",
-            //    L"Error", MB_ICONEXCLAMATION | MB_OK);
+            utils::coutln("invalid fourcc at", stream->tellg(), fcc);
             return;
         }
 
-        f.size = file->read<uint32_t>() + 8i64;
+        f.size = stream->read<uint32_t>() + 8i64;
 
-        _m_riff_files.push_back(f);
+        _m_riff.push_back(f);
 
-        file->rseek(f.size);
-        file->ignore(std::numeric_limits<std::streamsize>::max(), 'R');
+        stream->rseek(f.size);
+        stream->ignore(std::numeric_limits<std::streamsize>::max(), 'R');
 
-        if (!file->eof()) {
-            file->rseek(-1);
+        if (!stream->eof()) {
+            stream->rseek(-1);
         }
     }
 
-    _m_contents.reserve(_m_riff_files.size());
+    items.reserve(_m_riff.size());
 
-    std::streamsize name_width = std::streamsize(log10(_m_riff_files.size()) + 1);
+    std::streamsize name_width = std::streamsize(log10(_m_riff.size()) + 1);
 
     size_t i = 0;
 
     SHFILEINFOW finfo {};
 
-    for (const auto& wwriff : _m_riff_files) {
+    std::string filename = std::filesystem::path(path).stem().string();
+
+    for (const auto& wwriff : _m_riff) {
         DWORD_PTR hr = SHGetFileInfoW(L".wem", FILE_ATTRIBUTE_NORMAL, &finfo, sizeof(finfo),
             SHGFI_TYPENAME | SHGFI_ICON | SHGFI_ICONLOCATION | SHGFI_ADDOVERLAYS | SHGFI_USEFILEATTRIBUTES);
 
@@ -75,13 +52,13 @@ void wsp_provider::_populate() {
         }
 
         std::stringstream ss;
-        ss << std::setfill('0') << std::setw(name_width) << i++;
+        ss << filename << "_" << std::setfill('0') << std::setw(name_width) << i++;
 
-        _m_contents.push_back({
+        items.push_back(item_data {
+            .provider = this,
             .name     = ss.str() + ".wem",
             .type     = utils::utf8(finfo.szTypeName),
             .size     = wwriff.size,
-            .size_str = utils::bytes(wwriff.size),
             .icon     = finfo.iIcon,
             .stream   = nullptr,
             .data     = std::make_shared<wwriff_file>(wwriff)
@@ -90,20 +67,20 @@ void wsp_provider::_populate() {
     }
 }
 
-item_provider* wsp_provider::_create(const file_stream& file, const std::string& name, data_model& model) {
-    if (name.substr(name.size() - 4) == ".wsp") {
-        
+
+item_provider_ptr _create(const item_provider::istream_type& stream, const std::string& path) {
+    if (path.substr(path.size() - 4) == ".wsp") {
+
         std::string fcc(4, '\0');
-        file->read(fcc);
-        file->seekg(-4, std::ios::cur);
+        stream->read(fcc);
+        stream->seekg(-4, std::ios::cur);
 
         if (fcc == "RIFF") {
-            return new wsp_provider(file, name, model);
+            return std::make_shared<wsp_provider>(stream, path);
         }
     }
 
     return nullptr;
 }
 
-size_t wsp_provider::_id = item_provider_factory::register_class(_create);
-*/
+static size_t id = item_provider_factory::register_class(_create, "wsp");

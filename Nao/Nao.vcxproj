@@ -190,6 +190,7 @@
     <ClInclude Include="audio_player.h" />
     <ClInclude Include="auto_wrapper.h" />
     <ClInclude Include="binary_stream.h" />
+    <ClInclude Include="concepts.h" />
     <ClInclude Include="dimensions.h" />
     <ClInclude Include="drive_list.h" />
     <ClInclude Include="dynamic_library.h" />

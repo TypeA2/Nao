@@ -136,16 +136,8 @@ LRESULT ui_element::send_message(UINT msg, WPARAM wparam, LPARAM lparam) const {
     return SendMessageW(handle(), msg, wparam, lparam);
 }
 
-LRESULT ui_element::send_message(UINT msg, WPARAM wparam, const void* lparam) const {
-    return SendMessageW(handle(), msg, wparam, reinterpret_cast<LPARAM>(lparam));
-}
-
 bool ui_element::post_message(UINT msg, WPARAM wparam, LPARAM lparam) const {
     return PostMessageW(handle(), msg, wparam, lparam);
-}
-
-bool ui_element::post_message(UINT msg, WPARAM wparam, const void* lparam) const {
-    return PostMessageW(handle(), msg, wparam, reinterpret_cast<LPARAM>(lparam));
 }
 
 void ui_element::set_handle(HWND handle) {

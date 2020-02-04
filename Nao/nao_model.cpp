@@ -6,6 +6,7 @@
 #include "file_info.h"
 #include "binary_stream.h"
 #include "nao_controller.h"
+#include "steam_utils.h"
 
 #include <filesystem>
 
@@ -14,7 +15,7 @@ nao_model::nao_model(nao_view& view, nao_controller& controller) : view(view), c
 }
 
 void nao_model::setup() {
-    move_to("C:\\Users\\Nuan\\Downloads");
+    move_to(steam_utils::game_path("NieRAutomata", "data"));
 }
 
 void nao_model::move_to(std::string path) {
@@ -69,12 +70,8 @@ void nao_model::fetch_preview(item_data* item) {
 
     item_provider_ptr p = _provider_for(path);
 
-    if (p) {
-        _m_preview_provider = std::move(p);
-        controller.post_message(TM_PREVIEW_CHANGED);
-    } else {
-        utils::coutln("not found");
-    }
+    _m_preview_provider = std::move(p);
+    controller.post_message(TM_PREVIEW_CHANGED);
 }
 
 void nao_model::clear_preview() {

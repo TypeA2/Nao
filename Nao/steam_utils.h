@@ -4,10 +4,9 @@
 #include <vector>
 
 namespace steam_utils {
-    std::wstring steam_path();
+    std::string steam_path();
 
-    std::vector<std::wstring> steam_install_folders();
+    std::vector<std::string> steam_install_folders();
 
-    std::wstring game_path(const std::wstring& game,
-        const std::wstring& subdir = std::wstring());
+    std::string game_path(const std::string& game, const std::string& subdir = std::string());
 }

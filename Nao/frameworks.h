@@ -9,6 +9,4 @@
 #include <Uxtheme.h>
 #include <shellapi.h>
 #include <ShlObj.h>
-
-#undef min
-#undef max
+#include <mfidl.h>

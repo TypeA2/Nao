@@ -5,6 +5,7 @@
 #include "frameworks.h"
 
 #include <algorithm>
+#include <ranges>
 
 list_view::list_view(ui_element* parent) : ui_element(parent), _m_image_list(nullptr) {
     HWND handle = CreateWindowExW(0,
@@ -101,29 +102,25 @@ void* list_view::get_item_data(int index) const {
 
 
 
-int list_view::add_item(const std::vector<std::string>& text, int image, LPARAM extra) const {
-    std::vector<std::wstring> wide;
-    std::transform(text.begin(), text.end(), std::back_inserter(wide), utils::utf16);
-
-    return add_item(wide, image, extra);
-}
-
-int list_view::add_item(const std::vector<std::wstring>& text, int image, LPARAM extra) const {
+int list_view::add_item(const std::vector<std::string>& text, int image, void* extra) const {
     ASSERT(_m_image_list);
     ASSERT(!text.empty());
     size_t header_size = Header_GetItemCount(ListView_GetHeader(handle()));
     ASSERT(text.size() == header_size);
 
+    std::vector<std::wstring> utf16;
+    std::transform(text.begin(), text.end(), std::back_inserter(utf16), utils::utf16);
+
     LVITEMW item { };
     item.mask = LVIF_TEXT | LVIF_IMAGE | LVIF_PARAM;
-    item.lParam = extra;
+    item.lParam = reinterpret_cast<LPARAM>(extra);
     item.iItem = ListView_GetItemCount(handle());
     item.iImage = image;
-    item.pszText = const_cast<LPWSTR>(text.front().data());
+    item.pszText = utf16.front().data();
 
     ListView_InsertItem(handle(), &item);
-    for (size_t i = 1; i < text.size(); ++i) {
-        ListView_SetItemText(handle(), item.iItem, int(i), const_cast<LPWSTR>(text[i].data()));
+    for (size_t i = 1; i < utf16.size(); ++i) {
+        ListView_SetItemText(handle(), item.iItem, static_cast<int>(i), utf16[i].data());
     }
 
     return item.iItem;

@@ -17,7 +17,7 @@ struct list_view_row {
     std::string compressed;
 
     int icon { };
-    void const* data { };
+    void* data { };
 };
 
 enum view_button_type {

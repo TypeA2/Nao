@@ -154,6 +154,9 @@
     <ClInclude Include="drive_list.h">
       <Filter>Header Files\Win32</Filter>
     </ClInclude>
+    <ClInclude Include="concepts.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="nao.cpp">

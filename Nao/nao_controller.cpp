@@ -48,6 +48,10 @@ DWORD nao_controller::main_threadid() const {
     return _m_main_threadid;
 }
 
+void nao_controller::post_message(nao_thread_message message, WPARAM wparam, LPARAM lparam) const {
+    PostThreadMessageW(_m_main_threadid, message, wparam, lparam);
+}
+
 void nao_controller::clicked(click_event which) {
     switch (which) {
         case CLICK_MOVE_UP:
@@ -240,10 +244,12 @@ void nao_controller::_refresh_view() {
 void nao_controller::_refresh_preview() {
     const item_provider_ptr& p = model.preview_provider();
 
-    if (p) {
+    if (p != nullptr) {
         view.create_preview(PREVIEW_LIST_VIEW);
 
         view.list_view_preview_fill(_transform_data_to_row(p->data()));
+    } else {
+        view.clear_preview();
     }
 }
 
@@ -254,7 +260,7 @@ list_view_row nao_controller::_transform_data_to_row(const item_data& data) {
         .size = (!data.dir && data.size_str.empty()) ? utils::bytes(data.size) : data.size_str,
         .compressed = (data.compression == 0.) ? "" : (std::to_string(int64_t(data.compression / 100.)) + '%'),
         .icon = data.icon,
-        .data = &data
+        .data = const_cast<item_data*>(&data)
     };
 }
 

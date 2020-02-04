@@ -3,6 +3,7 @@
 #include "frameworks.h"
 
 #include "icon.h"
+#include "concepts.h"
 
 #include <memory>
 #include <functional>
@@ -30,10 +31,9 @@ class ui_element : public std::enable_shared_from_this<ui_element> {
 
     static HGDIOBJ stock_object(int obj);
 
-    template <typename T>
-    static std::enable_if_t<std::is_pointer_v<T>, T>
-        stock_object(int obj) {
-            return static_cast<T>(stock_object(obj));
+    template <concepts::pointer T>
+    static T stock_object(int obj) {
+        return static_cast<T>(stock_object(obj));
     }
 
     static void set_instance(HINSTANCE instance);
@@ -82,21 +82,48 @@ class ui_element : public std::enable_shared_from_this<ui_element> {
 
     // Manually send or post messages
     virtual LRESULT send_message(UINT msg, WPARAM wparam, LPARAM lparam) const;
-    [[maybe_unused]] LRESULT send_message(UINT msg, WPARAM wparam, const void* lparam) const;
-    template <typename _LPARAM>
-    [[maybe_unused]] std::enable_if_t<
-        !std::is_same_v<_LPARAM, LPARAM> && std::is_convertible_v<_LPARAM, LPARAM>, LRESULT>
-        send_message(UINT msg, WPARAM wparam, _LPARAM lparam) const {
-        return send_message(msg, wparam, static_cast<LPARAM>(lparam));
+    template <concepts::pointer_or_integral W, concepts::pointer_or_integral L>
+    LRESULT send_message(UINT msg, W wparam, L lparam) const {
+        static_assert(sizeof(WPARAM) == sizeof(void*) && sizeof(LPARAM) == sizeof(void*));
+
+        WPARAM _wparam;
+        if constexpr (concepts::pointer<W>) {
+            _wparam = reinterpret_cast<WPARAM>(wparam);
+        } else {
+            _wparam = static_cast<WPARAM>(wparam);
+        }
+
+        LPARAM _lparam;
+        if constexpr (concepts::pointer<L>) {
+            _lparam = reinterpret_cast<LPARAM>(lparam);
+        } else {
+            _lparam = static_cast<LPARAM>(lparam);
+        }
+
+        return send_message(msg, _wparam, _lparam);
     }
 
     virtual bool post_message(UINT msg, WPARAM wparam, LPARAM lparam) const;
-    bool post_message(UINT msg, WPARAM wparam, const void* lparam) const;
-    template <typename _LPARAM>
-    std::enable_if_t<
-        !std::is_same_v<_LPARAM, LPARAM> &&  std::is_convertible_v<_LPARAM, LPARAM>, bool>
-        post_message(UINT msg, WPARAM wparam, _LPARAM lparam) const {
-        return post_message(msg, wparam, static_cast<LPARAM>(lparam));
+
+    template <concepts::pointer_or_integral W, concepts::pointer_or_integral L>
+    bool post_message(UINT msg, W wparam, L lparam) const {
+        static_assert(sizeof(WPARAM) == sizeof(void*) && sizeof(LPARAM) == sizeof(void*));
+
+        WPARAM _wparam;
+        if constexpr (concepts::pointer<W>) {
+            _wparam = reinterpret_cast<WPARAM>(wparam);
+        } else {
+            _wparam = static_cast<WPARAM>(wparam);
+        }
+
+        LPARAM _lparam;
+        if constexpr (concepts::pointer<L>) {
+            _lparam = reinterpret_cast<LPARAM>(lparam);
+        } else {
+            _lparam = static_cast<LPARAM>(lparam);
+        }
+
+        return post_message(msg, _wparam, _lparam);
     }
 
     protected:
@@ -124,9 +151,8 @@ class ui_element : public std::enable_shared_from_this<ui_element> {
 
         // Shorthand to construct for a member function taking only the
         // default arguments
-        template <typename T>
-        wnd_init(T* element, LRESULT(T::* proc)(HWND, UINT, WPARAM, LPARAM), void* replacement = nullptr,
-            std::enable_if_t<std::is_base_of_v<ui_element, T>>* = nullptr) {
+        template <std::derived_from<ui_element> T>
+        wnd_init(T* element, LRESULT(T::* proc)(HWND, UINT, WPARAM, LPARAM), void* replacement = nullptr) {
 
             using namespace std::placeholders;
             this->element = element;

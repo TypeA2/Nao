@@ -9,6 +9,47 @@
 
 #pragma region IMF interfaces
 
+struct DECLSPEC_UUID("1E89C9C0-318E-4E1B-9EE1-81A586111507") async_result : IUnknown {
+    explicit async_result(BYTE* buf, ULONG count)
+        : buf { buf }
+        , count { count }
+        , read { 0 }
+        , _m_refcount { 1 } { }
+
+    virtual ~async_result() = default;
+
+    STDMETHODIMP_(ULONG) AddRef() override {
+        InterlockedIncrement(&_m_refcount);
+        return _m_refcount;
+    }
+
+    STDMETHODIMP_(ULONG) Release() override {
+        uint32_t refcount = InterlockedDecrement(&_m_refcount);
+
+        if (_m_refcount == 0) {
+            delete this;
+        }
+
+        return refcount;
+    }
+
+    STDMETHODIMP QueryInterface(const IID & riid, void** ppvObject) override {
+        static const QITAB qit[] = {
+            QITABENT(async_result, IUnknown),
+            QITABENT(async_result, async_result),
+            { }
+        };
+
+        return QISearch(this, qit, riid, ppvObject);
+    }
+
+    BYTE* buf;
+    ULONG count;
+    ULONG read;
+    private:
+    volatile uint32_t _m_refcount;
+};
+
 ULONG binary_istream::AddRef() {
     InterlockedIncrement(&_m_refcount);
     return _m_refcount;
@@ -45,7 +86,9 @@ HRESULT binary_istream::GetCapabilities(DWORD* pdwCapabilities) {
 }
 
 HRESULT binary_istream::GetLength(QWORD* pqwLength) {
-    if (!good()) {
+    std::unique_lock lock(mutex);
+
+    if (!file->good()) {
         return E_ABORT;
     }
 
@@ -53,10 +96,10 @@ HRESULT binary_istream::GetLength(QWORD* pqwLength) {
         return E_INVALIDARG;
     }
 
-    auto current = tellg();
-    seekg(0, std::ios::end);
-    *pqwLength = tellg();
-    seekg(current);
+    auto current = file->tellg();
+    file->seekg(0, std::ios::end);
+    *pqwLength = file->tellg();
+    file->seekg(current);
 
     return S_OK;
 }
@@ -66,7 +109,9 @@ HRESULT binary_istream::SetLength(QWORD qwLength) {
 }
 
 HRESULT binary_istream::GetCurrentPosition(QWORD* pqwPosition) {
-    if (!good()) {
+    std::unique_lock lock(mutex);
+
+    if (!file->good()) {
         return E_ABORT;
     }
 
@@ -74,23 +119,27 @@ HRESULT binary_istream::GetCurrentPosition(QWORD* pqwPosition) {
         return E_INVALIDARG;
     }
 
-    *pqwPosition = tellg();
+    *pqwPosition = file->tellg();
 
     return S_OK;
 }
 
 HRESULT binary_istream::SetCurrentPosition(QWORD qwPosition) {
-    if (!good()) {
+    std::unique_lock lock(mutex);
+
+    if (!file->good()) {
         return E_ABORT;
     }
 
-    seekg(qwPosition);
+    file->seekg(qwPosition);
 
-    return good() ? S_OK : E_ABORT;
+    return file->good() ? S_OK : E_ABORT;
 }
 
 HRESULT binary_istream::IsEndOfStream(BOOL* pfEndOfStream) {
-    if (!good()) {
+    std::unique_lock lock(mutex);
+
+    if (!file->good()) {
         return E_ABORT;
     }
 
@@ -98,13 +147,15 @@ HRESULT binary_istream::IsEndOfStream(BOOL* pfEndOfStream) {
         return E_INVALIDARG;
     }
 
-    *pfEndOfStream = eof();
+    *pfEndOfStream = file->eof();
 
     return S_OK;
 }
 
 HRESULT binary_istream::Read(BYTE* pb, ULONG cb, ULONG* pcbRead) {
-    if (!good()) {
+    std::unique_lock lock(mutex);
+
+    if (!file->good()) {
         return E_ABORT;
     }
 
@@ -112,16 +163,18 @@ HRESULT binary_istream::Read(BYTE* pb, ULONG cb, ULONG* pcbRead) {
         return E_INVALIDARG;
     }
 
-    auto start = tellg();
-    read(pb, cb);
+    auto start = file->tellg();
+    file->read(reinterpret_cast<char*>(pb), cb);
 
-    *pcbRead = ULONG(tellg() - start);
+    *pcbRead = static_cast<ULONG>(file->tellg() - start);
 
     return (*pcbRead == cb) ? S_OK : E_FAIL;
 }
 
 HRESULT binary_istream::BeginRead(BYTE* pb, ULONG cb, IMFAsyncCallback* pCallback, IUnknown* punkState) {
-    if (!good()) {
+    std::unique_lock lock(mutex);
+
+    if (!file->good()) {
         return E_ABORT;
     }
 
@@ -174,7 +227,9 @@ HRESULT binary_istream::EndWrite(IMFAsyncResult* pResult, ULONG* pcbWritten) {
 }
 
 HRESULT binary_istream::Seek(MFBYTESTREAM_SEEK_ORIGIN SeekOrigin, LONGLONG llSeekOffset, DWORD dwSeekFlags, QWORD* pqwCurrentPosition) {
-    if (!good()) {
+    std::unique_lock lock(mutex);
+
+    if (!file->good()) {
         return E_ABORT;
     }
 
@@ -188,11 +243,11 @@ HRESULT binary_istream::Seek(MFBYTESTREAM_SEEK_ORIGIN SeekOrigin, LONGLONG llSee
 
     switch (SeekOrigin) {
         case msoBegin:
-            seekg(llSeekOffset);
+            file->seekg(llSeekOffset);
             break;
 
         case msoCurrent:
-            rseek(llSeekOffset);
+            file->seekg(llSeekOffset, std::ios::cur);
             break;
     }
 
@@ -216,7 +271,9 @@ HRESULT binary_istream::GetParameters(DWORD* pdwFlags, DWORD* pdwQueue) {
 }
 
 HRESULT binary_istream::Invoke(IMFAsyncResult* pAsyncResult) {
-    if (!good()) {
+    std::unique_lock lock(mutex);
+
+    if (!file->good()) {
         return E_ABORT;
     }
 
@@ -235,12 +292,12 @@ HRESULT binary_istream::Invoke(IMFAsyncResult* pAsyncResult) {
 
     async_result* result = dynamic_cast<async_result*>(unk_result);
 
-    auto start = tellg();
-    read(result->buf, result->count);
-    result->read = ULONG(tellg() - start);
+    auto start = file->tellg();
+    file->read(reinterpret_cast<char*>(result->buf), result->count);
+    result->read = static_cast<ULONG>(file->tellg() - start);
 
     if (operation_result) {
-        operation_result->SetStatus(good() ? S_OK : E_ABORT);
+        operation_result->SetStatus(file->good() ? S_OK : E_ABORT);
         MFInvokeCallback(operation_result);
     }
 
@@ -249,39 +306,6 @@ HRESULT binary_istream::Invoke(IMFAsyncResult* pAsyncResult) {
     operation_result->Release();
 
     return S_OK;
-}
-
-binary_istream::async_result::async_result(BYTE* buf, ULONG count)
-    : buf { buf }
-    , count { count }
-    , _m_refcount { 0 }{
-    async_result::AddRef();
-}
-
-
-ULONG binary_istream::async_result::AddRef() {
-    InterlockedIncrement(&_m_refcount);
-    return _m_refcount;
-}
-
-ULONG binary_istream::async_result::Release() {
-    uint32_t refcount = InterlockedDecrement(&_m_refcount);
-
-    if (_m_refcount == 0) {
-        delete this;
-    }
-
-    return refcount;
-}
-
-HRESULT binary_istream::async_result::QueryInterface(const IID& riid, void** ppvObject) {
-    static const QITAB qit[] = {
-        QITABENT(async_result, IUnknown),
-        QITABENT(async_result, async_result),
-        { }
-    };
-
-    return QISearch(this, qit, riid, ppvObject);
 }
 
 #pragma endregion

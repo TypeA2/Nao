@@ -4,7 +4,8 @@
 #include <mutex>
 #include <filesystem>
 
-#include <mfidl.h>
+#include "frameworks.h"
+#include "concepts.h"
 
 class binary_istream : IMFAsyncCallback, public IMFByteStream {
 #pragma region IMF interfaces
@@ -34,20 +35,6 @@ class binary_istream : IMFAsyncCallback, public IMFByteStream {
     STDMETHODIMP Invoke(IMFAsyncResult* pAsyncResult) override;
 
     private:
-    struct DECLSPEC_UUID("1E89C9C0-318E-4E1B-9EE1-81A586111507") async_result : IUnknown {
-        explicit async_result(BYTE* buf, ULONG count);
-        virtual ~async_result() = default;
-
-        STDMETHODIMP_(ULONG) AddRef() override;
-        STDMETHODIMP_(ULONG) Release() override;
-        STDMETHODIMP QueryInterface(const IID& riid, void** ppvObject) override;
-
-        BYTE* buf;
-        ULONG count;
-        ULONG read;
-        private:
-        volatile uint32_t _m_refcount;
-    };
     volatile uint32_t _m_refcount;
 
 #pragma endregion
@@ -79,26 +66,27 @@ class binary_istream : IMFAsyncCallback, public IMFByteStream {
 
     virtual binary_istream& read(char* buf, std::streamsize count);
 
-    template <typename T>
-    std::enable_if_t<std::is_arithmetic_v<T>, binary_istream&>
-        read(T* buf, std::streamsize count) {
-        return read(reinterpret_cast<char*>(buf), count);
+    // Read an arithmetic (integer or floating-point) value array
+    template <concepts::arithmetic T>
+    binary_istream& read(T* buf, std::streamsize count) {
+        return read(reinterpret_cast<char*>(buf), count * sizeof(T));
     }
 
-    template <typename Container>
+    // Read an arithmetic (integer or floating-point) C value array
+    template <concepts::arithmetic T, size_t size>
+    binary_istream& read(T(&buf)[size]) {
+        return read(buf, size * sizeof(T));
+    }
+
+    // Read any container which exposes ::data(), ::size() and ::value_type
+    template <concepts::readable_container Container>
     binary_istream& read(Container& buf) {
         return read(buf.data(), buf.size() * sizeof(Container::value_type));
     }
 
-    template <typename T, size_t size>
-    std::enable_if_t<std::is_arithmetic_v<T>, binary_istream&>
-        read(T (& buf)[size]) {
-        return read(buf, size);
-    }
-
-    template <typename T, std::endian endian = std::endian::native>
-    std::enable_if_t<std::is_arithmetic_v<T>, T>
-        read() {
+    // Read an arithmetic value in the specified endianness
+    template <concepts::arithmetic T, std::endian endian = std::endian::native>
+    T read() {
         T temp {};
         char buf[sizeof(T)];
         read(buf, sizeof(T));
@@ -114,6 +102,14 @@ class binary_istream : IMFAsyncCallback, public IMFByteStream {
         }
 
         return temp;
+    }
+
+    // Read an arithmetic value into the argument
+    template <concepts::arithmetic T, std::endian endian = std::endian::native>
+    binary_istream& read(T& val) {
+        val = read<T>();
+
+        return *this;
     }
 
     protected:

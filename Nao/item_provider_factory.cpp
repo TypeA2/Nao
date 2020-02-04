@@ -40,7 +40,7 @@ item_provider_ptr item_provider_factory::create(const istream_type& stream, cons
     for (const factory_registry& reg : _registered_classes()) {
         auto p = reg.creator(stream, path);
 
-        if (p) {
+        if (p != nullptr) {
             return p;
         }
 

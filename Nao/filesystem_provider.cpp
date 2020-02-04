@@ -68,7 +68,7 @@ filesystem_provider::filesystem_provider(const std::string& path) : item_provide
     }
 }
 
-item_provider_ptr filesystem_provider::_create(const istream_type& stream, const std::string& path) {
+static item_provider_ptr _create(const item_provider::istream_type&, const std::string& path) {
     file_info finfo(path);
 
     if (!finfo.invalid() && finfo.directory()) {
@@ -78,5 +78,6 @@ item_provider_ptr filesystem_provider::_create(const istream_type& stream, const
     return nullptr;
 }
 
-size_t filesystem_provider::_id = item_provider_factory::register_class(_create, "filesystem");
+static size_t id = item_provider_factory::register_class(_create, "filesystem");
+
 

@@ -5,6 +5,8 @@
 
 #include "thread_pool.h"
 
+#include "concepts.h"
+
 // Thread messages to handle processing on the main thread
 enum nao_thread_message : unsigned {
     TM_FIRST = WM_APP + 1,
@@ -69,18 +71,10 @@ class nao_controller {
 
     DWORD main_threadid() const;
 
-    template <typename W = WPARAM, typename L = LPARAM>
-    std::enable_if_t<
-        std::is_convertible_v<W, WPARAM> &&
-        std::is_convertible_v<L, LPARAM>>
-        post_message(nao_thread_message message, W wparam = 0, L lparam = 0) const {
-        PostThreadMessageW(_m_main_threadid, message, wparam, lparam);
-    }
+    void post_message(nao_thread_message message, WPARAM wparam = 0, LPARAM lparam = 0) const;
 
-    template <typename W, typename L>
-    std::enable_if_t<!std::is_convertible_v<L, LPARAM>>
-        post_message(nao_thread_message message, W wparam = 0, L lparam = 0) const {
-
+    template <concepts::pointer P>
+    void post_message(nao_thread_message message, WPARAM wparam, P lparam) const {
         post_message(message, wparam, reinterpret_cast<LPARAM>(lparam));
     }
 

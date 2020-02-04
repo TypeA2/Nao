@@ -35,5 +35,5 @@ void push_button::set_icon(const icon& icon) const {
 }
 
 void push_button::set_font(HFONT font) const {
-    send_message(WM_SETFONT, WPARAM(font), 0);
+    send_message(WM_SETFONT, font, 0);
 }
