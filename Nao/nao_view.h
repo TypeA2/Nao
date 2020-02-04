@@ -21,7 +21,10 @@ struct list_view_row {
 };
 
 enum view_button_type {
-    BUTTON_UP
+    BUTTON_NONE,
+
+    BUTTON_UP,
+    BUTTON_BROWSE
 };
 
 enum sort_order {
@@ -86,7 +89,7 @@ class nao_view {
     void list_view_preview_fill(const std::vector<list_view_row>& items) const;
 
     // Constructs and executes the given context menu
-    void execute_context_menu(const context_menu& menu, POINT pt);
+    void execute_context_menu(const context_menu& menu, POINT pt) const;
 
 
     // Retrieve main window

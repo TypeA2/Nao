@@ -98,6 +98,9 @@ class nao_controller {
     // Construct the items needed for a context menu of the given item
     void create_context_menu(item_data* data, POINT pt);
 
+    // Move to an absolute path
+    void move_to(const std::string& to);
+
     private:
     // Handle custom messages on the main thread
     void _handle_message(nao_thread_message msg, WPARAM wparam, LPARAM lparam);

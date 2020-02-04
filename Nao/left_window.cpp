@@ -69,7 +69,6 @@ bool left_window::wm_create(CREATESTRUCTW* create) {
     _m_refresh->set_enabled(false);
 
     _m_browse = std::make_unique<push_button>(this, "Browse...", shell32.load_icon_scaled(4, 16, 16));
-    _m_browse->set_enabled(false);
 
     defer_window_pos<2>()
         .move(_m_up, { dims::gutter_size, dims::gutter_size,
@@ -92,44 +91,6 @@ void left_window::wm_size(int type, int width, int height) {
             dims::browse_button_width, dims::control_height + 2 });
 }
 
-/*
-void left_window::_open_folder() {
-    IFileOpenDialog* dialog;
-    HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_ALL,
-        IID_IFileOpenDialog, reinterpret_cast<void**>(&dialog));
-
-    if (FAILED(hr)) {
-        utils::coutln("Failed to create FileOpenDialog");
-        return;
-    }
-
-    FILEOPENDIALOGOPTIONS options;
-    hr = dialog->GetOptions(&options);
-    if (SUCCEEDED(hr)) {
-        dialog->SetOptions(options | FOS_PICKFOLDERS);
-
-        hr = dialog->Show(handle());
-        if (SUCCEEDED(hr)) {
-            IShellItem* item;
-            hr = dialog->GetResult(&item);
-            if (SUCCEEDED(hr)) {
-                LPWSTR path;
-                hr = item->GetDisplayName(SIGDN_FILESYSPATH, &path);
-                if (FAILED(hr)) {
-                    utils::coutln("Failed to get path");
-                } else {
-                    //_move_to(path);
-                    (void) this;
-                }
-
-                item->Release();
-            }
-        }
-    }
-
-    dialog->Release();
-}*/
-
 LRESULT left_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
     switch (msg) {
         case WM_NOTIFY: {
@@ -144,8 +105,16 @@ LRESULT left_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam
         case WM_COMMAND: {
             HWND target = reinterpret_cast<HWND>(lparam);
 
+            view_button_type btn = BUTTON_NONE;
+
             if (target == _m_up->handle()) {
-                view->button_clicked(BUTTON_UP);
+                btn = BUTTON_UP;
+            } else if (target == _m_browse->handle()) {
+                btn = BUTTON_BROWSE;
+            }
+
+            if (btn != BUTTON_NONE) {
+                view->button_clicked(btn);
             }
 
             break;

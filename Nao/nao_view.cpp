@@ -116,15 +116,53 @@ void nao_view::fill_view(std::vector<list_view_row> items) const {
 }
 
 void nao_view::button_clicked(view_button_type which) const {
-    click_event type = CLICK_FIRST;
 
     switch (which) {
-        case BUTTON_UP:
-            type = CLICK_MOVE_UP;
-            break;
+        case BUTTON_BROWSE: {
+            IFileOpenDialog* dialog;
+            HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, nullptr,
+                CLSCTX_ALL, IID_PPV_ARGS(&dialog));
+
+            if (FAILED(hr)) {
+                utils::coutln("Failed to create FileOpenDialog");
+                return;
+            }
+
+            FILEOPENDIALOGOPTIONS options;
+            hr = dialog->GetOptions(&options);
+            if (SUCCEEDED(hr)) {
+                dialog->SetOptions(options | FOS_PICKFOLDERS);
+
+                hr = dialog->Show(_m_main_window->handle());
+                if (SUCCEEDED(hr)) {
+                    IShellItem* item;
+                    hr = dialog->GetResult(&item);
+                    if (SUCCEEDED(hr)) {
+                        LPWSTR path;
+                        hr = item->GetDisplayName(SIGDN_FILESYSPATH, &path);
+                        if (FAILED(hr)) {
+                            utils::coutln("Failed to get path");
+                        } else {
+                            controller.move_to(utils::utf8(path));
+                        }
+
+                        item->Release();
+                    }
+                }
+            }
+
+            dialog->Release();
+            return;
+        }
+
+        default: break;
     }
 
-    controller.clicked(type);
+    static std::map<view_button_type, click_event> map {
+        { BUTTON_UP, CLICK_MOVE_UP },
+    };
+
+    controller.clicked(map[which]);
 }
 
 void nao_view::list_clicked(NMHDR* nm) {
@@ -240,7 +278,7 @@ void nao_view::list_view_preview_fill(const std::vector<list_view_row>& items) c
     p->fill(items);
 }
 
-void nao_view::execute_context_menu(const context_menu& menu, POINT pt) {
+void nao_view::execute_context_menu(const context_menu& menu, POINT pt) const {
     HMENU popup = CreatePopupMenu();
 
     MENUITEMINFOW item {

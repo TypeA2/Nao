@@ -155,8 +155,6 @@ int nao_controller::order_items(item_data* first, item_data* second, data_key ke
 }
 
 void nao_controller::create_context_menu(item_data* data, POINT pt) {
-    
-
     auto async_func = [this, data, pt] {
         context_menu menu;
         if (data->dir || data->drive || model.can_open(data)) {
@@ -193,6 +191,9 @@ void nao_controller::create_context_menu(item_data* data, POINT pt) {
     _m_worker.push(async_func);
 }
 
+void nao_controller::move_to(const std::string& to) {
+    _m_worker.push(&nao_model::move_to, &model, to);
+}
 
 void nao_controller::_handle_message(nao_thread_message msg, WPARAM wparam, LPARAM lparam) {
     switch (msg) {
