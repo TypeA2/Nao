@@ -92,6 +92,9 @@ class nao_controller {
     // Construct the items needed for a context menu of the given item
     void create_context_menu(item_data* data, POINT pt);
 
+    // Create a context menu for the preview, which needs some additional processing
+    void create_context_menu_preview(item_data* data, POINT pt);
+
     // Move to an absolute path
     void move_to(const std::string& to);
 

@@ -231,15 +231,16 @@ void nao_view::list_clicked(NMHDR* nm) {
         case NM_RCLICK: {
             NMITEMACTIVATE* item = reinterpret_cast<NMITEMACTIVATE*>(nm);
 
+            list_view* list = _m_main_window->left()->list();
+            ClientToScreen(list->handle(), &item->ptAction);
             if (item->iItem >= 0) {
-                list_view* list = _m_main_window->left()->list();
-
                 item_data* data = list->get_item_data<item_data*>(item->iItem);
-
                 if (data) {
-                    ClientToScreen(list->handle(), &item->ptAction);
                     controller.create_context_menu(data, item->ptAction);
                 }
+            } else {
+                // Clicked outside of item, pass null
+                controller.create_context_menu(nullptr, item->ptAction);
             }
             break;
         }
@@ -479,14 +480,17 @@ LRESULT list_view_preview::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM 
 
                     case NM_RCLICK: {
                         NMITEMACTIVATE* item = reinterpret_cast<NMITEMACTIVATE*>(nm);
+                        ClientToScreen(_m_list->handle(), &item->ptAction);
 
                         if (item->iItem >= 0) {
                             item_data* data = _m_list->get_item_data<item_data*>(item->iItem);
 
                             if (data) {
-                                ClientToScreen(_m_list->handle(), &item->ptAction);
-                                view->controller.create_context_menu(data, item->ptAction);
+                                view->controller.create_context_menu_preview(data, item->ptAction);
                             }
+                        } else {
+                            // Clicked outside
+                            view->controller.create_context_menu_preview(nullptr, item->ptAction);
                         }
                     }
 

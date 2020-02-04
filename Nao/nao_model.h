@@ -32,6 +32,7 @@ class nao_model {
     const std::string& current_path() const;
     const item_provider_ptr& current_provider() const;
     const item_provider_ptr& preview_provider() const;
+    const item_provider_ptr& parent_provider() const;
 
     // Whether we can "open" the given item
     bool can_open(item_data* data);

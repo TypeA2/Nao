@@ -159,19 +159,43 @@ int nao_controller::order_items(item_data* first, item_data* second, data_key ke
 }
 
 void nao_controller::create_context_menu(item_data* data, POINT pt) {
-    auto async_func = [this, data, pt] {
+    auto async_func = [this, pt] (item_data* data) {
         context_menu menu;
-        if (data->dir || data->drive || model.can_open(data)) {
-            menu.push_back({
-                .text = "Open",
-                .func = std::bind(&nao_model::move_down, &model, data)
-                });
-            menu.push_back({});
+
+        // Only add "open" if the passed element is not null
+        if (data) {
+            if (data->dir || data->drive || model.can_open(data)) {
+                menu.push_back({
+                    .text = "Open",
+                    .func = std::bind(&nao_model::move_down, &model, data)
+                    });
+                menu.push_back({});
+            }
         }
 
-        file_info info(data->path());
-        
-        if (!info.invalid()) {
+        // nullptr means the current element must be retrieved from the current provider
+        if (!data) {
+            const auto& p = model.parent_provider();
+
+            // If the parent provider points to an existing path
+            if (p != nullptr && !file_info(p->get_path()).invalid()) {
+                auto current_path = model.current_path();
+                const auto& d = p->data();
+
+                auto search_func = [&current_path](const item_data& data) {
+                    return data.path() == current_path;
+                };
+
+                if (auto it = std::find_if(d.begin(), d.end(), search_func);
+                    it != d.end()) {
+                    data = const_cast<item_data*>(&(*it));
+                } else {
+                    throw std::runtime_error("parent element not child of parent");
+                }
+            }
+        }
+
+        if (data && !file_info(data->path()).invalid()) {
             // Exists on disk
             menu.push_back({
                 .text = "Show in explorer",
@@ -192,8 +216,38 @@ void nao_controller::create_context_menu(item_data* data, POINT pt) {
 
     };
 
-    _m_worker.push(async_func);
+    _m_worker.push(async_func, data);
 }
+
+void nao_controller::create_context_menu_preview(item_data* data, POINT pt) {
+    if (data) {
+        create_context_menu(data, pt);
+    } else {
+        // Parent element is current provider, just do it manually if the preview exists on disk
+
+        auto async_func = [this, pt] {
+            if (!file_info(model.preview_provider()->get_path()).invalid()) {
+
+                auto func = new std::function<void()>(
+                    std::bind(&nao_view::execute_context_menu, &view, context_menu { {
+                        .text = "Show in explorer",
+                        .func = std::bind([](const std::string& path) {
+                            LPITEMIDLIST idl = ILCreateFromPathW(utils::utf16(path).c_str());
+                            if (idl) {
+                                SHOpenFolderAndSelectItems(idl, 0, nullptr, 0);
+                                ILFree(idl);
+                            }
+                            }, model.preview_provider()->get_path())
+                        } }, pt)
+                    );
+
+                post_message(TM_EXECUTE_FUNC, 0, func);
+            }};
+
+        _m_worker.push(async_func);
+    }
+}
+
 
 void nao_controller::move_to(const std::string& to) {
     _m_worker.push(&nao_model::move_to, &model, to);

@@ -90,6 +90,15 @@ const item_provider_ptr& nao_model::preview_provider() const {
     return _m_preview_provider;
 }
 
+const item_provider_ptr& nao_model::parent_provider() const {
+    if (_m_tree.size() < 2) {
+        static item_provider_ptr null = nullptr;
+        return null;
+    }
+
+    return _m_tree[_m_tree.size() - 2];
+}
+
 bool nao_model::can_open(item_data* data) {
     if (data->drive) {
         if (item_provider_ptr p = _provider_for({ data->drive_letter, ':', '\\' }); p) {
