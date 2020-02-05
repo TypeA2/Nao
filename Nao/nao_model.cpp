@@ -22,6 +22,10 @@ void nao_model::move_to(std::string path) {
     std::string old_path = _m_path;
     
     // New path
+    if (path.empty()) {
+        path = "\\";
+    }
+
     // Root should stay root, else take the absolute path
     if (path != "\\") {
         path = std::filesystem::absolute(path).string();
@@ -56,22 +60,20 @@ void nao_model::move_down(item_data* to) {
 }
 
 void nao_model::fetch_preview(item_data* item) {
-    const std::vector<item_data>& current_elements = _m_tree.back()->data();
+    const std::vector<item_data>& items = _m_tree.back()->data();
 
     auto find_func = [&item](const item_data& data) {
         return item == &data;
     };
 
-    if (std::find_if(current_elements.begin(), current_elements.end(), find_func) == current_elements.end()) {
+    if (std::find_if(items.begin(), items.end(), find_func) == items.end()) {
         throw std::runtime_error("element not child of current provider");
     }
 
-    std::string path = item->drive ? std::string { item->drive_letter, ':', '\\' } : (_m_path + item->name + '\\');
-
-    item_provider_ptr p = _provider_for(path);
+    item_provider_ptr p = _provider_for(item->path());
 
     _m_preview_provider = std::move(p);
-    controller.post_message(TM_PREVIEW_CHANGED);
+    controller.post_message(TM_PREVIEW_CHANGED, 0, item);
 }
 
 void nao_model::clear_preview() {
@@ -136,14 +138,14 @@ void nao_model::_create_tree(const std::string& to) {
         _m_tree.pop_back();
     }
 
-    // If we're moving to the root
-    if (_m_tree.size() == 1 && to == "\\") {
-        return;
-    }
-
     // Must have at least 1 element
     if (_m_tree.empty()) {
         _m_tree.push_back(_provider_for("\\"));
+    }
+
+    // If we're moving to the root
+    if (_m_tree.size() == 1 && to == "\\") {
+        return;
     }
 
     while (current_path != to) {

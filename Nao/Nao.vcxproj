@@ -209,6 +209,7 @@
     <ClInclude Include="item_provider.h" />
     <ClInclude Include="item_provider_factory.h" />
     <ClInclude Include="nao_view.h" />
+    <ClInclude Include="preview.h" />
     <ClInclude Include="push_button.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="right_window.h" />
@@ -241,6 +242,7 @@
     <ClCompile Include="item_provider_factory.cpp" />
     <ClCompile Include="nao.cpp" />
     <ClCompile Include="nao_view.cpp" />
+    <ClCompile Include="preview.cpp" />
     <ClCompile Include="push_button.cpp" />
     <ClCompile Include="right_window.cpp" />
     <ClCompile Include="steam_utils.cpp" />

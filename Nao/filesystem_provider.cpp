@@ -10,6 +10,7 @@
 #include "utils.h"
 #include "drive_list.h"
 #include "binary_stream.h"
+#include "preview.h"
 
 filesystem_provider::filesystem_provider(const std::string& path) : item_provider(nullptr, path){
     utils::coutln("[FILESYSTEM] creating for", path);
@@ -66,6 +67,14 @@ filesystem_provider::filesystem_provider(const std::string& path) : item_provide
             });
         }
     }
+}
+
+preview_element_type filesystem_provider::preview_type() const {
+    return PREVIEW_LIST_VIEW;
+}
+
+std::unique_ptr<preview> filesystem_provider::make_preview(nao_view& view) {
+    return std::make_unique<list_view_preview>(view, this);
 }
 
 static item_provider_ptr _create(const item_provider::istream_type&, const std::string& path) {

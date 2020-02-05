@@ -3,6 +3,7 @@
 #include "item_provider_factory.h"
 #include "binary_stream.h"
 #include "utils.h"
+#include "preview.h"
 
 wsp_provider::wsp_provider(const istream_type& stream, const std::string& path) : item_provider(stream, path) {
     utils::coutln("[FILESYSTEM] creating for", path);
@@ -67,6 +68,13 @@ wsp_provider::wsp_provider(const istream_type& stream, const std::string& path) 
     }
 }
 
+preview_element_type wsp_provider::preview_type() const {
+    return PREVIEW_LIST_VIEW;
+}
+
+std::unique_ptr<preview> wsp_provider::make_preview(nao_view& view) {
+    return std::make_unique<list_view_preview>(view, this);
+}
 
 item_provider_ptr _create(const item_provider::istream_type& stream, const std::string& path) {
     if (path.substr(path.size() - 4) == ".wsp") {

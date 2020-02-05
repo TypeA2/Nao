@@ -63,6 +63,11 @@ enum click_event {
 
 class nao_controller {
     public:
+
+    // Transforms an item_data to a list_view_row
+    static list_view_row transform_data_to_row(const item_data& data);
+    static std::vector<list_view_row> transform_data_to_row(const std::vector<item_data>& data);
+
     explicit nao_controller();
     ~nao_controller() = default;
 
@@ -106,11 +111,7 @@ class nao_controller {
     void _refresh_view();
 
     // Retrieve the current preview provider and item and display it
-    void _refresh_preview();
-
-    // Transforms an item_data to a list_view_row
-    static list_view_row _transform_data_to_row(const item_data& data);
-    static std::vector<list_view_row> _transform_data_to_row(const std::vector<item_data>& data);
+    void _refresh_preview(item_data* data);
 
     protected:
     nao_view view;

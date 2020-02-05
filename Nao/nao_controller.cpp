@@ -6,8 +6,29 @@
 #include "auto_wrapper.h"
 #include "file_info.h"
 
+#include "preview.h"
+
 #include <filesystem>
-#include <mfapi.h>
+
+list_view_row nao_controller::transform_data_to_row(const item_data& data) {
+    return {
+        .name = data.name,
+        .type = data.type,
+        .size = (!data.dir && data.size_str.empty()) ? utils::bytes(data.size) : data.size_str,
+        .compressed = (data.compression == 0.) ? "" : (std::to_string(int64_t(data.compression / 100.)) + '%'),
+        .icon = data.icon,
+        .data = const_cast<item_data*>(&data)
+    };
+}
+
+std::vector<list_view_row> nao_controller::transform_data_to_row(const std::vector<item_data>& data) {
+    std::vector<list_view_row> list_data(data.size());
+
+    std::transform(data.begin(), data.end(), list_data.begin(),
+        static_cast<list_view_row(*)(const item_data&)>(transform_data_to_row));
+
+    return list_data;
+}
 
 nao_controller::nao_controller()
     : view(*this), model(view, *this)
@@ -261,7 +282,7 @@ void nao_controller::_handle_message(nao_thread_message msg, WPARAM wparam, LPAR
             break;
 
         case TM_PREVIEW_CHANGED:
-            _refresh_preview();
+            _refresh_preview(reinterpret_cast<item_data*>(lparam));
             break;
 
         //// End model messages
@@ -292,38 +313,15 @@ void nao_controller::_refresh_view() {
     view.clear_preview();
 
     const item_provider_ptr& p = model.current_provider();
-    view.fill_view(_transform_data_to_row(p->data()));
+    view.fill_view(transform_data_to_row(p->data()));
 }
 
-void nao_controller::_refresh_preview() {
+void nao_controller::_refresh_preview(item_data* data) {
     const item_provider_ptr& p = model.preview_provider();
 
     if (p != nullptr) {
-        view.create_preview(PREVIEW_LIST_VIEW);
-
-        view.list_view_preview_fill(_transform_data_to_row(p->data()));
+        view.set_preview(p->make_preview(view));
     } else {
         view.clear_preview();
     }
 }
-
-list_view_row nao_controller::_transform_data_to_row(const item_data& data) {
-    return {
-        .name = data.name,
-        .type = data.type,
-        .size = (!data.dir && data.size_str.empty()) ? utils::bytes(data.size) : data.size_str,
-        .compressed = (data.compression == 0.) ? "" : (std::to_string(int64_t(data.compression / 100.)) + '%'),
-        .icon = data.icon,
-        .data = const_cast<item_data*>(&data)
-    };
-}
-
-std::vector<list_view_row> nao_controller::_transform_data_to_row(const std::vector<item_data>& data) {
-    std::vector<list_view_row> list_data(data.size());
-
-    std::transform(data.begin(), data.end(), list_data.begin(),
-        static_cast<list_view_row(*)(const item_data&)>(_transform_data_to_row));
-
-    return list_data;
-}
-

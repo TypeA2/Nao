@@ -157,6 +157,9 @@
     <ClInclude Include="concepts.h">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
+    <ClInclude Include="preview.h">
+      <Filter>Header Files\UI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="nao.cpp">
@@ -242,6 +245,9 @@
     </ClCompile>
     <ClCompile Include="item_data.cpp">
       <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="preview.cpp">
+      <Filter>Source Files\UI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -2,6 +2,7 @@
 
 #include "ui_element.h"
 #include "nao_view.h"
+#include "preview.h"
 
 class right_window : public ui_element {
     public:

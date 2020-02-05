@@ -1,7 +1,9 @@
 #pragma once
 
 #include "frameworks.h"
+
 #include "ui_element.h"
+#include "item_provider.h"
 
 #include <vector>
 #include <string>
@@ -40,10 +42,6 @@ enum data_key {
     KEY_COMP
 };
 
-enum preview_element_type {
-    PREVIEW_LIST_VIEW
-};
-
 struct context_menu_entry {
     std::string text;
     std::function<void()> func;
@@ -79,14 +77,11 @@ class nao_view {
     // Signals that the list view has been clicked in some way
     void list_clicked(NMHDR* nm);
 
-    // Create the specified preview element
-    void create_preview(preview_element_type type);
+    // Set the preview to the specified element
+    void set_preview(std::unique_ptr<preview> preview) const;
 
     // Delete the current preview
     void clear_preview() const;
-
-    // If the preview is a list_view_preview, execute the same actions as on the main list_view
-    void list_view_preview_fill(const std::vector<list_view_row>& items) const;
 
     // Constructs and executes the given context menu
     void execute_context_menu(const context_menu& menu, POINT pt) const;
@@ -106,47 +101,8 @@ class nao_view {
     std::unique_ptr<main_window> _m_main_window;
 
     friend class preview;
-    friend class list_view_preview;
 
     // Current column ordering of the view
     std::map<data_key, sort_order> _m_sort_order;
     data_key _m_selected_column;
-};
-
-// Wrapper class for preview elements
-class preview : public ui_element {
-    public:
-    explicit preview(nao_view* view);
-
-    protected:
-    nao_view* view;
-};
-
-using preview_ptr = std::unique_ptr<preview>;
-
-class list_view;
-
-// Multi-use list-view preview
-class list_view_preview : public preview {
-    public:
-    explicit list_view_preview(nao_view* view);
-    ~list_view_preview() override = default;
-
-    void fill(std::vector<list_view_row> items);
-
-    list_view* get_list() const;
-
-    protected:
-    bool wm_create(CREATESTRUCTW* create) override;
-
-    private:
-    LRESULT _wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
-
-    std::unique_ptr<list_view> _m_list;
-
-    // Current column ordering of the view
-    std::map<data_key, sort_order> _m_sort_order;
-    data_key _m_selected_column;
-
-    inline static bool _initialised = false;
 };
