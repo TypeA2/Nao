@@ -195,8 +195,8 @@ class defer_window_pos {
         return *this;
     }
 
-    template <typename Cont> requires requires (const Cont& c) { c.get(); }
-    auto move(const Cont& element, const dimensions& at) {
+    template <concepts::smart_pointer Ptr>
+    auto move(const Ptr& element, const dimensions& at) {
         return move(element.get(), at);
     }
 };

@@ -24,4 +24,10 @@ namespace concepts {
     // A pointer or any integer type
     template <typename T>
     concept pointer_or_integral = pointer<T> || std::integral<T>;
+
+    // A smart(-ish) pointer with a getter
+    template <typename Container>
+    concept smart_pointer = requires (const Container & c) {
+        { c.get() } -> pointer;
+    };
 }

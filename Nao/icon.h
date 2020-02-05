@@ -8,8 +8,11 @@ class icon {
     explicit icon();
     explicit icon(HICON handle, bool destroy = true);
 
-    icon(const icon& other) = delete;
+    icon(const icon&) = delete;
     icon(icon&& other) noexcept;
+
+    icon& operator=(const icon&) = delete;
+    icon& operator=(icon&& other);
 
     ~icon();
 

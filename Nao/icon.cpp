@@ -12,6 +12,15 @@ icon::icon(icon&& other) noexcept : _m_handle(other._m_handle), _m_destroy(other
     
 }
 
+icon& icon::operator=(icon&& other) {
+    _m_handle = other._m_handle;
+    _m_destroy = other._m_destroy;
+
+    other._m_handle = nullptr;
+    other._m_destroy = false;
+
+    return *this;
+}
 
 icon::~icon() {
     if (_m_destroy) {

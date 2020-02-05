@@ -14,7 +14,7 @@ preview_element_type wav_provider::preview_type() const {
 }
 
 std::unique_ptr<preview> wav_provider::make_preview(nao_view& view) {
-    return nullptr;
+    return std::make_unique<audio_player_preview>(view, this);
 }
 
 static item_provider_ptr create(const item_provider::istream_type& stream, const std::string& path) {

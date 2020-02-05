@@ -8,24 +8,30 @@
 #include "main_window.h"
 #include "right_window.h"
 #include "list_view.h"
+#include "push_button.h"
 
 #include "utils.h"
+#include "dimensions.h"
+#include "dynamic_library.h"
 
 #include <algorithm>
+#include <unordered_set>
 
-preview::preview(nao_view& view, item_provider* provider) : ui_element(view.window()->right())
+
+preview::preview(nao_view& view, item_provider* provider)
+    : ui_element(view.window()->right())
     , view(view), controller(view.controller), provider(provider) {
 
 }
 
 preview::~preview() { }
 
-list_view_preview::list_view_preview(nao_view& view, item_provider* provider) : preview(view, provider)
-    , _m_sort_order(nao_view::list_view_default_sort()), _m_selected_column(KEY_NAME) {
-    std::wstring class_name = load_wstring(IDS_LIST_VIEW_PREVIEW);
+std::wstring preview::register_once(int id) {
+    static std::unordered_set<int> registered_classes;
 
-    static bool initialised = false;
-    if (!initialised) {
+    std::wstring class_name = load_wstring(id);
+
+    if (!registered_classes.contains(id)) {
         WNDCLASSEXW wcx {
             .cbSize = sizeof(WNDCLASSEXW),
             .style = CS_HREDRAW | CS_VREDRAW,
@@ -38,8 +44,16 @@ list_view_preview::list_view_preview(nao_view& view, item_provider* provider) : 
 
         ASSERT(RegisterClassExW(&wcx) != 0);
 
-        initialised = true;
+        registered_classes.insert(id);
     }
+
+    return class_name;
+}
+
+list_view_preview::list_view_preview(nao_view& view, item_provider* provider) : preview(view, provider)
+    , _m_sort_order(nao_view::list_view_default_sort()), _m_selected_column(KEY_NAME) {
+
+    std::wstring class_name =  register_once(IDS_LIST_VIEW_PREVIEW);
 
     auto [x, y, width, height] = parent()->dimensions();
 
@@ -50,7 +64,7 @@ list_view_preview::list_view_preview(nao_view& view, item_provider* provider) : 
     ASSERT(handle);
 }
 
-bool list_view_preview::wm_create(CREATESTRUCTW* create) {
+bool list_view_preview::wm_create(CREATESTRUCTW*) {
     _m_list = std::make_unique<list_view>(this, nao_view::list_view_header(), nao_view::shell_image_list());
     _m_list->set_column_alignment(2, list_view::Right);
 
@@ -89,6 +103,12 @@ bool list_view_preview::wm_create(CREATESTRUCTW* create) {
     }
 
     return true;
+}
+
+void list_view_preview::wm_size(int, int width, int height) {
+    
+    defer_window_pos<1>()
+        .move(_m_list, { 0, 0, width, height });
 }
 
 LRESULT list_view_preview::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
@@ -174,4 +194,42 @@ LRESULT list_view_preview::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM 
     }
 
     return 0;
+}
+
+
+
+
+
+
+audio_player_preview::audio_player_preview(nao_view& view, item_provider* provider) : preview(view, provider) {
+    std::wstring class_name = register_once(IDS_AUDIO_PLAYER_PREVIEW);
+
+    auto [x, y, width, height] = parent()->dimensions();
+
+    HWND handle = create_window(class_name, L"", WS_CHILD | WS_VISIBLE | SS_SUNKEN,
+        { 0, 0, width, height }, parent(),
+        new wnd_init(this, &audio_player_preview::_wnd_proc));
+
+    ASSERT(handle);
+}
+
+bool audio_player_preview::wm_create(CREATESTRUCTW*) {
+    dynamic_library mmcndmgr("mmcndmgr.dll");
+
+    _m_play_icon = mmcndmgr.load_icon_scaled(30529, dims::play_button_size, dims::play_button_size);
+    _m_pause_icon = mmcndmgr.load_icon_scaled(30531, dims::play_button_size, dims::play_button_size);
+
+    _m_toggle_button = std::make_unique<push_button>(this, _m_play_icon);
+
+    return true;
+}
+
+void audio_player_preview::wm_size(int, int width, int height) {
+    defer_window_pos<1>()
+        .move(_m_toggle_button, { ((width - 2 * dims::gutter_size) / 2) - (dims::play_button_size / 2),
+            dims::gutter_size, dims::play_button_size, dims::play_button_size });
+}
+
+LRESULT audio_player_preview::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
+    return DefWindowProcW(hwnd, msg, wparam, lparam);
 }
