@@ -77,7 +77,7 @@ std::unique_ptr<preview> filesystem_provider::make_preview(nao_view& view) {
     return std::make_unique<list_view_preview>(view, this);
 }
 
-static item_provider_ptr _create(const item_provider::istream_type&, const std::string& path) {
+static item_provider_ptr create(const item_provider::istream_type&, const std::string& path) {
     file_info finfo(path);
 
     if (!finfo.invalid() && finfo.directory()) {
@@ -87,6 +87,6 @@ static item_provider_ptr _create(const item_provider::istream_type&, const std::
     return nullptr;
 }
 
-static size_t id = item_provider_factory::register_class(_create, "filesystem");
+static size_t id = item_provider_factory::register_class(create, "filesystem");
 
 

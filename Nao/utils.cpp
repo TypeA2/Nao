@@ -6,7 +6,7 @@
 
 namespace utils {
     void cout(const char* str) {
-        OutputDebugStringA(str);
+        OutputDebugStringW(utf16(str).c_str());
     }
 
     void cout(const wchar_t* wstr) {

@@ -1,46 +1,38 @@
 #include "wav_provider.h"
 
+#include "item_provider_factory.h"
+#include "binary_stream.h"
 #include "utils.h"
-#include "audio_player.h"
-/*
-wav_provider::wav_provider(const file_stream& stream, const std::string& path, data_model& model)
-    : item_provider(stream, path, model) {
-    utils::coutln("[WAV] creating for", name);
+#include "preview.h"
+
+wav_provider::wav_provider(const istream_type& stream, const std::string& path) : item_provider(stream, path) {
+    utils::coutln("[WAV] creating for", path);
 }
 
-wav_provider::~wav_provider() {
-    utils::coutln("[WAV] deleting for", name);
+preview_element_type wav_provider::preview_type() const {
+    return PREVIEW_PLAY_AUDIO;
 }
 
-//item_provider::preview_type wav_provider::preview() const {
-//    return preview_type::PreviewAudioPlayer;
-//}
-
-std::shared_ptr<ui_element> wav_provider::preview_element(const std::shared_ptr<ui_element>& parent) const {
-    auto player = std::make_shared<audio_player>(parent.get());
-
-    player->set_audio(name, file);
-
-    return player;
+std::unique_ptr<preview> wav_provider::make_preview(nao_view& view) {
+    return nullptr;
 }
 
-item_provider* wav_provider::_create(const file_stream& file, const std::string& name, data_model& model) {
-    if (name.substr(name.size() - 4) == ".wav") {
+static item_provider_ptr create(const item_provider::istream_type& stream, const std::string& path) {
+    if (path.substr(path.size() - 4) == ".wav") {
         std::string fcc(4, '\0');
-        file->read(fcc);
-        (void) file->read<uint32_t>();
+        stream->read(fcc);
+        (void) stream->read<uint32_t>();
 
         std::string wavefmt(8, '\0');
-        file->read(wavefmt);
-        file->rseek(-16);
+        stream->read(wavefmt);
+        stream->rseek(-16);
 
         if (fcc == "RIFF" && wavefmt == "WAVEfmt ") {
-            return new wav_provider(file, name, model);
+            return std::make_shared<wav_provider>(stream, path);
         }
     }
 
     return nullptr;
 }
 
-size_t wav_provider::_id = item_provider_factory::register_class(_create);
-*/
+static size_t id = item_provider_factory::register_class(create, "wav");

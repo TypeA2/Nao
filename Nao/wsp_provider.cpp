@@ -6,7 +6,7 @@
 #include "preview.h"
 
 wsp_provider::wsp_provider(const istream_type& stream, const std::string& path) : item_provider(stream, path) {
-    utils::coutln("[FILESYSTEM] creating for", path);
+    utils::coutln("[WSP] creating for", path);
 
     while (!stream->eof()) {
         wwriff_file f;
@@ -47,8 +47,6 @@ wsp_provider::wsp_provider(const istream_type& stream, const std::string& path) 
             SHGFI_TYPENAME | SHGFI_ICON | SHGFI_ICONLOCATION | SHGFI_ADDOVERLAYS | SHGFI_USEFILEATTRIBUTES);
 
         if (hr == 0) {
-            //MessageBoxW(model.handle(),
-            //    L"Failed to get file info", L"Error", MB_OK | MB_ICONEXCLAMATION);
             continue;
         }
 
@@ -76,7 +74,7 @@ std::unique_ptr<preview> wsp_provider::make_preview(nao_view& view) {
     return std::make_unique<list_view_preview>(view, this);
 }
 
-item_provider_ptr _create(const item_provider::istream_type& stream, const std::string& path) {
+item_provider_ptr create(const item_provider::istream_type& stream, const std::string& path) {
     if (path.substr(path.size() - 4) == ".wsp") {
 
         std::string fcc(4, '\0');
@@ -91,4 +89,4 @@ item_provider_ptr _create(const item_provider::istream_type& stream, const std::
     return nullptr;
 }
 
-static size_t id = item_provider_factory::register_class(_create, "wsp");
+static size_t id = item_provider_factory::register_class(create, "wsp");
