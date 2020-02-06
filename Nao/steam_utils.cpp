@@ -44,10 +44,14 @@ namespace steam_utils {
 
     std::string game_path(const std::string& game, const std::string& subdir) {
         for (const std::string& dir : steam_install_folders()) {
-            for (const auto& entry : std::filesystem::directory_iterator(dir + "/SteamApps/common")) {
-                if (is_directory(entry.path()) && entry.path().filename() == game) {
-                    return std::filesystem::path(entry.path().string() + '\\' + subdir).lexically_normal().string();
+            try {
+                for (const auto& entry : std::filesystem::directory_iterator(dir + "/SteamApps/common")) {
+                    if (is_directory(entry.path()) && entry.path().filename() == game) {
+                        return std::filesystem::path(entry.path().string() + '\\' + subdir).lexically_normal().string();
+                    }
                 }
+            } catch (const std::filesystem::filesystem_error&) {
+                // Doesn't exist
             }
         }
 

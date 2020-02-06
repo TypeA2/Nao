@@ -117,3 +117,4 @@ class binary_istream : IMFAsyncCallback, public IMFByteStream {
     mutable std::mutex mutex;
 };
 
+using istream_ptr = std::shared_ptr<binary_istream>;

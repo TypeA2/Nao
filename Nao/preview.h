@@ -45,6 +45,7 @@ class list_view_preview : public preview {
 };
 
 class push_button;
+class audio_player;
 
 // A preview which plays audio
 class audio_player_preview : public preview {
@@ -62,4 +63,5 @@ class audio_player_preview : public preview {
     icon _m_pause_icon;
 
     std::unique_ptr<push_button> _m_toggle_button;
+    std::unique_ptr<audio_player> _m_player;
 };

@@ -1,26 +1,28 @@
 #pragma once
 
-#include "ui_element.h"
+#include "binary_stream.h"
+#include "frameworks.h"
 
-#include <string>
-#include <memory>
+enum playback_state {
+    STATE_STOPPED,
+    STATE_PENDING,
 
-#include <mfidl.h>
+    STATE_PAUSED,
+    STATE_PLAYING,
 
-class data_model;
-class push_button;
-class binary_istream;
+    STATE_CLOSING
+};
 
-struct IMFMediaSession;
-struct IMFMediaSource;
-struct IMFPresentationDescriptor;
-struct IMFTopology;
+class nao_controller;
 
-struct item_data;
-
-class audio_player : public ui_element, IMFAsyncCallback {
-#pragma region IMF interfaces
+class audio_player : IMFAsyncCallback {
     public:
+    explicit audio_player(const istream_ptr& stream, const std::string& path, nao_controller& controller);
+    virtual ~audio_player();
+
+    void toggle_playback();
+    playback_state state() const;
+
     STDMETHODIMP_(ULONG) AddRef() override;
     STDMETHODIMP_(ULONG) Release() override;
     STDMETHODIMP QueryInterface(const IID& riid, void** ppvObject) override;
@@ -29,61 +31,19 @@ class audio_player : public ui_element, IMFAsyncCallback {
     STDMETHODIMP Invoke(IMFAsyncResult* pAsyncResult) override;
 
     private:
-    volatile uint32_t _m_refcount;
-
-#pragma endregion
-    public:
-    explicit audio_player(ui_element* parent);
-    ~audio_player();
-
-    void set_audio(const std::string& name,
-        const std::shared_ptr<binary_istream>& stream);
-
-    HRESULT pause();
-    HRESULT play();
-
-    protected:
-    bool wm_create(CREATESTRUCTW* create) override;
-    void wm_size(int type, int width, int height) override;
-
-    private:
-    enum player_state {
-        PlayerStateClosed,
-        PlayerStateReady,
-        PlayerStatePending,
-        PlayerStateStarted,
-        PlayerStatePaused,
-        PlayerStateStopped,
-        PlayerStateClosing
-    };
-
-    static constexpr UINT WM_APP_MSG = WM_APP + 1;
-
-    void _init();
-
-    void _toggle_pause_play();
-    HRESULT _start_playback();
-
-    void _create_session();
-    void _close_session();
-    void _create_source(const std::string& name,
-        const std::shared_ptr<binary_istream>& stream);
-
+    void _handle_event(IMFMediaEvent* event, MediaEventType type);
     IMFTopology* _create_topology(IMFPresentationDescriptor* pd);
 
-    LRESULT _wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
-    LRESULT _player_event(WPARAM wparam, LPARAM lparam);
+    protected:
+    nao_controller& controller;
 
-    std::unique_ptr<push_button> _m_toggle;
+    private:
+    volatile uint32_t _m_ref_count;
 
-    HICON _m_play_icon;
-    HICON _m_pause_icon;
-
+    istream_ptr _m_stream;
+    std::string _m_path;
+    
+    playback_state _m_playback_state;
     IMFMediaSession* _m_session;
     IMFMediaSource* _m_source;
-    HANDLE _m_close_event;
-
-    player_state _m_state;
-
-    bool _m_is_playing;
 };

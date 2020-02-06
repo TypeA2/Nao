@@ -251,7 +251,7 @@ HRESULT binary_istream::Seek(MFBYTESTREAM_SEEK_ORIGIN SeekOrigin, LONGLONG llSee
             break;
     }
 
-    *pqwCurrentPosition = tellg();
+    *pqwCurrentPosition = file->tellg();
 
     return S_OK;
 }

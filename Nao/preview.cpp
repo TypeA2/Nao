@@ -9,6 +9,7 @@
 #include "right_window.h"
 #include "list_view.h"
 #include "push_button.h"
+#include "audio_player.h"
 
 #include "utils.h"
 #include "dimensions.h"
@@ -221,6 +222,8 @@ bool audio_player_preview::wm_create(CREATESTRUCTW*) {
 
     _m_toggle_button = std::make_unique<push_button>(this, _m_play_icon);
 
+    _m_player = std::make_unique<audio_player>(provider->get_stream(), provider->get_path(), controller);
+
     return true;
 }
 
@@ -231,5 +234,26 @@ void audio_player_preview::wm_size(int, int width, int height) {
 }
 
 LRESULT audio_player_preview::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
+    switch (msg) {
+        case WM_COMMAND: {
+            HWND target = reinterpret_cast<HWND>(lparam);
+
+            if (target == _m_toggle_button->handle()) {
+                _m_player->toggle_playback();
+
+                switch (_m_player->state()) {
+                    case STATE_PAUSED:
+                        _m_toggle_button->set_icon(_m_play_icon);
+                        break;
+
+                    case STATE_PLAYING:
+                        _m_toggle_button->set_icon(_m_pause_icon);
+                        break;
+
+                    default: break;
+                }
+            }
+        }
+    }
     return DefWindowProcW(hwnd, msg, wparam, lparam);
 }

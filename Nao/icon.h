@@ -12,7 +12,7 @@ class icon {
     icon(icon&& other) noexcept;
 
     icon& operator=(const icon&) = delete;
-    icon& operator=(icon&& other);
+    icon& operator=(icon&& other) noexcept;
 
     ~icon();
 

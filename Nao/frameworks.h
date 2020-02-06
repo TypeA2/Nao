@@ -9,4 +9,9 @@
 #include <Uxtheme.h>
 #include <shellapi.h>
 #include <ShlObj.h>
+
+#include <Shlwapi.h>
+
 #include <mfidl.h>
+#include <mfapi.h>
+#include <Mferror.h>
