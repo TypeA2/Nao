@@ -213,6 +213,7 @@
     <ClInclude Include="push_button.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="right_window.h" />
+    <ClInclude Include="slider.h" />
     <ClInclude Include="steam_utils.h" />
     <ClInclude Include="thread_pool.h" />
     <ClInclude Include="ui_element.h" />
@@ -245,6 +246,7 @@
     <ClCompile Include="preview.cpp" />
     <ClCompile Include="push_button.cpp" />
     <ClCompile Include="right_window.cpp" />
+    <ClCompile Include="slider.cpp" />
     <ClCompile Include="steam_utils.cpp" />
     <ClCompile Include="thread_pool.cpp" />
     <ClCompile Include="ui_element.cpp" />

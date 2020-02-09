@@ -70,7 +70,7 @@ bool left_window::wm_create(CREATESTRUCTW* create) {
 
     _m_browse = std::make_unique<push_button>(this, "Browse...", shell32.load_icon_scaled(4, 16, 16));
 
-    defer_window_pos<2>()
+    defer_window_pos()
         .move(_m_up, { dims::gutter_size, dims::gutter_size,
             dims::control_button_width, dims::control_height + 2 })
         .move(_m_refresh, { dims::control_button_width + 2 * dims::gutter_size, dims::gutter_size,
@@ -82,7 +82,7 @@ bool left_window::wm_create(CREATESTRUCTW* create) {
 void left_window::wm_size(int type, int width, int height) {
     (void) type;
 
-    defer_window_pos<3>()
+    defer_window_pos()
         .move(_m_path, { dims::path_x_offset, dims::gutter_size + 1,
             width - dims::path_x_offset - dims::browse_button_width - dims::gutter_size * 2, dims::control_height })
         .move(_m_list, { 0, dims::control_height + (dims::gutter_size * 2),

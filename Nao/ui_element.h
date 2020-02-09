@@ -7,7 +7,6 @@
 
 #include <memory>
 #include <functional>
-#include <type_traits>
 
 struct coords {
     long x;
@@ -81,9 +80,9 @@ class ui_element : public std::enable_shared_from_this<ui_element> {
     virtual void set_enabled(bool enabled = true);
 
     // Manually send or post messages
-    virtual LRESULT send_message(UINT msg, WPARAM wparam, LPARAM lparam) const;
+    virtual [[maybe_unused]] LRESULT send_message(UINT msg, WPARAM wparam = 0, LPARAM lparam = 0) const;
     template <concepts::pointer_or_integral W, concepts::pointer_or_integral L>
-    LRESULT send_message(UINT msg, W wparam, L lparam) const {
+    [[maybe_unused]] LRESULT send_message(UINT msg, W wparam, L lparam) const {
         static_assert(sizeof(WPARAM) == sizeof(void*) && sizeof(LPARAM) == sizeof(void*));
 
         WPARAM _wparam;
@@ -173,29 +172,32 @@ class ui_element : public std::enable_shared_from_this<ui_element> {
     bool _m_created;
 };
 
-template <int window_count>
 class defer_window_pos {
+    struct move_entry {
+        dimensions to;
+        ui_element* ptr;
+    };
 
-    HDWP _m_dwp;
-    bool _m_committed;
+    std::vector<move_entry> _m_entries;
 
     public:
-    defer_window_pos() : _m_dwp(BeginDeferWindowPos(window_count)), _m_committed(false) { }
-    ~defer_window_pos() { commit(); }
+    defer_window_pos() = default;
+    ~defer_window_pos() {
+        HDWP dwp = BeginDeferWindowPos(static_cast<int>(_m_entries.size()));
 
-    void commit() {
-        if (!_m_committed) {
-            EndDeferWindowPos(_m_dwp);
-            _m_committed = true;
+        for (const move_entry& entry : _m_entries) {
+            entry.ptr->move_dwp(dwp, entry.to.x, entry.to.y, entry.to.width, entry.to.height);
         }
+
+        EndDeferWindowPos(dwp);
     }
 
     defer_window_pos& move(ui_element* element, const dimensions& at) {
-        element->move_dwp(_m_dwp, at.x, at.y, at.width, at.height);
+        _m_entries.push_back({ .to = at, .ptr = element });
         return *this;
     }
 
-    template <concepts::smart_pointer Ptr>
+    template <concepts::smart_pointer Ptr> requires std::derived_from<typename Ptr::element_type, ui_element>
     auto move(const Ptr& element, const dimensions& at) {
         return move(element.get(), at);
     }

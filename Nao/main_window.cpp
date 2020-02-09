@@ -75,7 +75,7 @@ void main_window::wm_size(int type, int width, int height) {
     (void) type;
     int window_width = (width - dims::gutter_size) / 2;
 
-    defer_window_pos<2>()
+    defer_window_pos()
         .move(_m_left, { 0, 0, window_width, height })
         .move(_m_right, { window_width + dims::gutter_size, 0, window_width, height });
 }

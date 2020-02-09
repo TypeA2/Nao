@@ -3,6 +3,7 @@
 #include "utils.h"
 
 #include "nao_controller.h"
+#include <bitset>
 
 audio_player::audio_player(const istream_ptr& stream, const std::string& path, nao_controller& controller)
     : controller(controller), _m_ref_count { 1 }, _m_stream { stream }, _m_path { path }
@@ -41,6 +42,8 @@ audio_player::audio_player(const istream_ptr& stream, const std::string& path, n
 }
 
 audio_player::~audio_player() {
+    HRESULT(_default_endpoint_volume->UnregisterControlChangeNotify(this));
+
     HRESULT hr = S_OK;
     if (_m_session) {
         _m_playback_state = STATE_CLOSING;
@@ -71,7 +74,6 @@ audio_player::~audio_player() {
 
 void audio_player::toggle_playback() {
     ASSERT(_m_session && _m_source);
-    utils::coutln("toggling from", _m_playback_state);
     switch (_m_playback_state) {
         case STATE_PAUSED: {
             PROPVARIANT var;
@@ -120,6 +122,7 @@ ULONG audio_player::Release() {
 HRESULT audio_player::QueryInterface(const IID& riid, void** ppvObject) {
     static const QITAB qit[] = {
         QITABENT(audio_player, IMFAsyncCallback),
+        QITABENT(audio_player, IAudioEndpointVolumeCallback),
         { }
     };
 
@@ -151,6 +154,18 @@ HRESULT audio_player::Invoke(IMFAsyncResult* pAsyncResult) {
     return S_OK;
 }
 
+HRESULT audio_player::OnNotify(PAUDIO_VOLUME_NOTIFICATION_DATA pNotify) {
+    utils::coutln("notify", pNotify->bMuted, pNotify->fMasterVolume, pNotify->nChannels);
+
+    _m_volume_scalar = pNotify->fMasterVolume;
+
+    return S_OK;
+}
+
+void audio_player::set_volume_percent(float val) const {
+    HASSERT(_m_volume->SetMasterVolume(val * _m_volume_scalar));
+}
+
 void audio_player::_handle_event(IMFMediaEvent* event, MediaEventType type) {
     if (!event) {
         return /* E_POINTER */;
@@ -169,6 +184,27 @@ void audio_player::_handle_event(IMFMediaEvent* event, MediaEventType type) {
 
             if (_status == MF_TOPOSTATUS_READY) {
                 _m_playback_state = STATE_PAUSED;
+
+                HASSERT(MFGetService(_m_session, MR_POLICY_VOLUME_SERVICE, IID_PPV_ARGS(&_m_volume)));
+
+                // Get default volume if needed
+                if (!_default_endpoint_volume) {
+                    IMMDeviceEnumerator* enumerator = nullptr;
+                    HASSERT(CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL, IID_PPV_ARGS(&enumerator)));
+
+                    IMMDevice* device = nullptr;
+                    HASSERT(enumerator->GetDefaultAudioEndpoint(eRender, eConsole, &device));
+                    HASSERT(device->Activate(__uuidof(IAudioEndpointVolume), CLSCTX_ALL, nullptr,
+                        reinterpret_cast<void**>(&_default_endpoint_volume)));
+
+                    device->Release();
+                    enumerator->Release();
+                } else {
+                    _default_endpoint_volume->AddRef();
+                }
+
+                HASSERT(_default_endpoint_volume->RegisterControlChangeNotify(this));
+                HASSERT(_default_endpoint_volume->GetMasterVolumeLevelScalar(&_m_volume_scalar));
             }
             break;
         }
@@ -197,6 +233,11 @@ void audio_player::_handle_event(IMFMediaEvent* event, MediaEventType type) {
             break;
         }
 
+        case MEAudioSessionVolumeChanged: {
+            utils::coutln("volume changed");
+            break;
+        }
+
         default: break;
     }
 
@@ -211,37 +252,6 @@ IMFTopology* audio_player::_create_topology(IMFPresentationDescriptor* pd) {
     DWORD stream_count;
     HASSERT(pd->GetStreamDescriptorCount(&stream_count));
 
-    auto create_sink = [](IMFStreamDescriptor* sd, IMFActivate** activate) {
-        IMFMediaTypeHandler* handler = nullptr;
-
-        HASSERT(sd->GetMediaTypeHandler(&handler));
-
-        GUID major_type;
-        HASSERT(handler->GetMajorType(&major_type));
-
-        if (major_type == MFMediaType_Audio) {
-            HASSERT(MFCreateAudioRendererActivate(activate));
-        }
-
-        handler->Release();
-    };
-
-    auto add_source = [this, pd, topology](IMFStreamDescriptor* sd, IMFTopologyNode** node) {
-        HASSERT(MFCreateTopologyNode(MF_TOPOLOGY_SOURCESTREAM_NODE, node));
-        HASSERT((*node)->SetUnknown(MF_TOPONODE_SOURCE, _m_source));
-        HASSERT((*node)->SetUnknown(MF_TOPONODE_PRESENTATION_DESCRIPTOR, pd));
-        HASSERT((*node)->SetUnknown(MF_TOPONODE_STREAM_DESCRIPTOR, sd));
-        HASSERT(topology->AddNode(*node));
-    };
-
-    auto add_output = [topology](IMFActivate* activate, IMFTopologyNode** node) {
-        HASSERT(MFCreateTopologyNode(MF_TOPOLOGY_OUTPUT_NODE, node));
-        HASSERT((*node)->SetObject(activate));
-        HASSERT((*node)->SetUINT32(MF_TOPONODE_STREAMID, 0));
-        HASSERT((*node)->SetUINT32(MF_TOPONODE_NOSHUTDOWN_ON_REMOVE, false));
-        HASSERT(topology->AddNode(*node));
-    };
-
     for (DWORD i = 0; i < stream_count; ++i) {
         IMFStreamDescriptor* sd = nullptr;
         BOOL selected = false;
@@ -250,9 +260,32 @@ IMFTopology* audio_player::_create_topology(IMFPresentationDescriptor* pd) {
         IMFActivate* activate = nullptr;
         IMFTopologyNode* source_node = nullptr, * output_node = nullptr;
         if (selected) {
-            create_sink(sd, &activate);
-            add_source(sd, &source_node);
-            add_output(activate, &output_node);
+            // Create sink
+            IMFMediaTypeHandler* handler = nullptr;
+
+            HASSERT(sd->GetMediaTypeHandler(&handler));
+
+            GUID major_type;
+            HASSERT(handler->GetMajorType(&major_type));
+
+            if (major_type == MFMediaType_Audio) {
+                HASSERT(MFCreateAudioRendererActivate(&activate));
+            }
+            handler->Release();
+
+            // Add source node
+            HASSERT(MFCreateTopologyNode(MF_TOPOLOGY_SOURCESTREAM_NODE, &source_node));
+            HASSERT(source_node->SetUnknown(MF_TOPONODE_SOURCE, _m_source));
+            HASSERT(source_node->SetUnknown(MF_TOPONODE_PRESENTATION_DESCRIPTOR, pd));
+            HASSERT(source_node->SetUnknown(MF_TOPONODE_STREAM_DESCRIPTOR, sd));
+            HASSERT(topology->AddNode(source_node));
+            
+            // Add output node
+            HASSERT(MFCreateTopologyNode(MF_TOPOLOGY_OUTPUT_NODE, &output_node));
+            HASSERT(output_node->SetObject(activate));
+            HASSERT(output_node->SetUINT32(MF_TOPONODE_STREAMID, 0));
+            HASSERT(output_node->SetUINT32(MF_TOPONODE_NOSHUTDOWN_ON_REMOVE, false));
+            HASSERT(topology->AddNode(output_node));
 
             source_node->ConnectOutput(0, output_node, 0);
         }
@@ -265,3 +298,5 @@ IMFTopology* audio_player::_create_topology(IMFPresentationDescriptor* pd) {
 
     return topology;
 }
+
+IAudioEndpointVolume* audio_player::_default_endpoint_volume { };

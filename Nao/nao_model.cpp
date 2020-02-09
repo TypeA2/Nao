@@ -34,6 +34,18 @@ void nao_model::move_to(std::string path) {
         }
     }
 
+    // Is the path even supported?
+    if (item_provider_ptr p = _provider_for(path); p != nullptr) {
+        switch (p->preview_type()) {
+            case PREVIEW_LIST_VIEW:
+                break;
+
+            default: return;
+        }
+    } else {
+        return;
+    }
+
     utils::coutln("move from", old_path, "to", path);
 
     _create_tree(path);
@@ -103,11 +115,11 @@ const item_provider_ptr& nao_model::parent_provider() const {
 
 bool nao_model::can_open(item_data* data) {
     if (data->drive) {
-        if (item_provider_ptr p = _provider_for({ data->drive_letter, ':', '\\' }); p) {
+        if (item_provider_ptr p = _provider_for({ data->drive_letter, ':', '\\' }); p != nullptr) {
             return true;
         }
     } else {
-        if (item_provider_ptr p = _provider_for(data->provider->get_path() + data->name); p) {
+        if (item_provider_ptr p = _provider_for(data->provider->get_path() + data->name); p != nullptr) {
             return true;
         }
     }
@@ -166,7 +178,7 @@ void nao_model::_create_tree(const std::string& to) {
 
 item_provider_ptr nao_model::_provider_for(std::string path) {
     // If a preview is set, it should just be the next element
-    if (_m_preview_provider && path == _m_preview_provider->get_path()) {
+    if (_m_preview_provider != nullptr && path == _m_preview_provider->get_path()) {
         auto p = _m_preview_provider;
 
         clear_preview();

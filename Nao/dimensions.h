@@ -13,4 +13,7 @@ namespace dims {
         control_button_width * 2 + gutter_size * 3;
 
     static constexpr int play_button_size = 32;
+
+    static constexpr int volume_slider_width = 160;
+    static constexpr int volume_display_width = 34;
 }

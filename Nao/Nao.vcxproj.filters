@@ -160,6 +160,9 @@
     <ClInclude Include="audio_player.h">
       <Filter>Header Files\Win32</Filter>
     </ClInclude>
+    <ClInclude Include="slider.h">
+      <Filter>Header Files\UI\Generic</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="nao.cpp">
@@ -248,6 +251,9 @@
     </ClCompile>
     <ClCompile Include="audio_player.cpp">
       <Filter>Source Files\Win32</Filter>
+    </ClCompile>
+    <ClCompile Include="slider.cpp">
+      <Filter>Source Files\UI\Generic</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

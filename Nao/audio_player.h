@@ -15,7 +15,7 @@ enum playback_state {
 
 class nao_controller;
 
-class audio_player : IMFAsyncCallback {
+class audio_player : IMFAsyncCallback, IAudioEndpointVolumeCallback {
     public:
     explicit audio_player(const istream_ptr& stream, const std::string& path, nao_controller& controller);
     virtual ~audio_player();
@@ -29,6 +29,10 @@ class audio_player : IMFAsyncCallback {
 
     STDMETHODIMP GetParameters(DWORD* pdwFlags, DWORD* pdwQueue) override;
     STDMETHODIMP Invoke(IMFAsyncResult* pAsyncResult) override;
+
+    STDMETHODIMP OnNotify(PAUDIO_VOLUME_NOTIFICATION_DATA pNotify) override;
+
+    void set_volume_percent(float val) const;
 
     private:
     void _handle_event(IMFMediaEvent* event, MediaEventType type);
@@ -46,4 +50,9 @@ class audio_player : IMFAsyncCallback {
     playback_state _m_playback_state;
     IMFMediaSession* _m_session;
     IMFMediaSource* _m_source;
+    IMFSimpleAudioVolume* _m_volume;
+
+    float _m_volume_scalar;
+
+    static IAudioEndpointVolume* _default_endpoint_volume;
 };

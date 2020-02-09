@@ -49,7 +49,7 @@ void right_window::wm_size(int type, int width, int height) {
     (void) type;
 
     if (_m_preview) {
-        defer_window_pos<1>()
+        defer_window_pos()
             .move(_m_preview, { 0, 0, width, height });
     }
 }

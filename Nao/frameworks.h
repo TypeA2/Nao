@@ -15,3 +15,8 @@
 #include <mfidl.h>
 #include <mfapi.h>
 #include <Mferror.h>
+#include <mfmediaengine.h>
+#include <Audioclient.h>
+#include <mmdeviceapi.h>
+
+#include <endpointvolume.h>

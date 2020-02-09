@@ -8,7 +8,7 @@ push_button::push_button(ui_element* parent) : ui_element(parent) {
     ASSERT(handle);
 
     set_handle(handle);
-    set_font(stock_object<HFONT>(DEFAULT_GUI_FONT));
+    set_font(this->stock_object<HFONT>(DEFAULT_GUI_FONT));
 }
 push_button::push_button(ui_element* parent, const std::string& text) : push_button(parent) {
     set_text(text);

@@ -7,8 +7,12 @@
 
 #include "main_window.h"
 #include "right_window.h"
+
 #include "list_view.h"
 #include "push_button.h"
+#include "slider.h"
+#include "line_edit.h"
+
 #include "audio_player.h"
 
 #include "utils.h"
@@ -108,7 +112,7 @@ bool list_view_preview::wm_create(CREATESTRUCTW*) {
 
 void list_view_preview::wm_size(int, int width, int height) {
     
-    defer_window_pos<1>()
+    defer_window_pos()
         .move(_m_list, { 0, 0, width, height });
 }
 
@@ -221,6 +225,11 @@ bool audio_player_preview::wm_create(CREATESTRUCTW*) {
     _m_pause_icon = mmcndmgr.load_icon_scaled(30531, dims::play_button_size, dims::play_button_size);
 
     _m_toggle_button = std::make_unique<push_button>(this, _m_play_icon);
+    _m_volume_slider = std::make_unique<slider>(this, 0, 100);
+    _m_volume_slider->set_position(100);
+
+    _m_volume_display = std::make_unique<line_edit>(this, "100%");
+    _m_volume_display->set_style(WS_DISABLED);
 
     _m_player = std::make_unique<audio_player>(provider->get_stream(), provider->get_path(), controller);
 
@@ -228,9 +237,13 @@ bool audio_player_preview::wm_create(CREATESTRUCTW*) {
 }
 
 void audio_player_preview::wm_size(int, int width, int height) {
-    defer_window_pos<1>()
+    defer_window_pos()
         .move(_m_toggle_button, { ((width - 2 * dims::gutter_size) / 2) - (dims::play_button_size / 2),
-            dims::gutter_size, dims::play_button_size, dims::play_button_size });
+            dims::gutter_size, dims::play_button_size, dims::play_button_size })
+        .move(_m_volume_slider, { width - dims::volume_slider_width - dims::gutter_size,
+            dims::gutter_size, dims::volume_slider_width, dims::play_button_size })
+        .move(_m_volume_display, { width - dims::volume_slider_width - (dims::gutter_size * 2) - dims::volume_display_width,
+            dims::gutter_size, dims::volume_display_width, dims::control_height });
 }
 
 LRESULT audio_player_preview::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
@@ -253,7 +266,37 @@ LRESULT audio_player_preview::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPAR
                     default: break;
                 }
             }
+
+            break;
         }
+
+        case WM_HSCROLL: {
+            switch (LOWORD(wparam)) {
+                case SB_THUMBPOSITION:
+                case SB_THUMBTRACK:
+                case SB_LINERIGHT:
+                case SB_LINELEFT:
+                case SB_PAGERIGHT:
+                case SB_PAGELEFT:
+                case SB_RIGHT:
+                case SB_LEFT: {
+                    // Slider moved
+                    int64_t new_pos = _m_volume_slider->get_position();
+                    _m_player->set_volume_percent(new_pos / 100.f);
+                    _m_volume_display->set_text(std::to_string(new_pos) + "%");
+                    break;
+                }
+
+                default: break;
+            }
+            break;
+        }
+
+        case WM_CTLCOLORSTATIC:
+            return COLOR_WINDOW + 1;
+
+        default: return DefWindowProcW(hwnd, msg, wparam, lparam);
     }
-    return DefWindowProcW(hwnd, msg, wparam, lparam);
+
+    return 0;
 }
