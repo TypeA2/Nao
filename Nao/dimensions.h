@@ -15,5 +15,5 @@ namespace dims {
     static constexpr int play_button_size = 32;
 
     static constexpr int volume_slider_width = 160;
-    static constexpr int volume_display_width = 34;
+    static constexpr int volume_slider_height = 32;
 }

@@ -11,7 +11,8 @@
 #include "list_view.h"
 #include "push_button.h"
 #include "slider.h"
-#include "line_edit.h"
+#include "label.h"
+#include "seekable_progress_bar.h"
 
 #include "audio_player.h"
 
@@ -20,8 +21,6 @@
 #include "dynamic_library.h"
 
 #include <algorithm>
-#include <unordered_set>
-
 
 preview::preview(nao_view& view, item_provider* provider)
     : ui_element(view.window()->right())
@@ -30,30 +29,6 @@ preview::preview(nao_view& view, item_provider* provider)
 }
 
 preview::~preview() { }
-
-std::wstring preview::register_once(int id) {
-    static std::unordered_set<int> registered_classes;
-
-    std::wstring class_name = load_wstring(id);
-
-    if (!registered_classes.contains(id)) {
-        WNDCLASSEXW wcx {
-            .cbSize = sizeof(WNDCLASSEXW),
-            .style = CS_HREDRAW | CS_VREDRAW,
-            .lpfnWndProc = wnd_proc_fwd,
-            .hInstance = instance(),
-            .hCursor = LoadCursorW(nullptr, IDC_ARROW),
-            .hbrBackground = HBRUSH(COLOR_WINDOW + 1),
-            .lpszClassName = class_name.c_str()
-        };
-
-        ASSERT(RegisterClassExW(&wcx) != 0);
-
-        registered_classes.insert(id);
-    }
-
-    return class_name;
-}
 
 list_view_preview::list_view_preview(nao_view& view, item_provider* provider) : preview(view, provider)
     , _m_sort_order(nao_view::list_view_default_sort()), _m_selected_column(KEY_NAME) {
@@ -205,8 +180,11 @@ LRESULT list_view_preview::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM 
 
 
 
+audio_player_preview::audio_player_preview(nao_view& view, item_provider* provider) : preview(view, provider)
+    , _m_duration { 0 }
+    , _m_volume_display_size { }, _m_progress_size {  }, _m_duration_size { }
+    , _m_resume_after_seek { false } {
 
-audio_player_preview::audio_player_preview(nao_view& view, item_provider* provider) : preview(view, provider) {
     std::wstring class_name = register_once(IDS_AUDIO_PLAYER_PREVIEW);
 
     auto [x, y, width, height] = parent()->dimensions();
@@ -228,22 +206,89 @@ bool audio_player_preview::wm_create(CREATESTRUCTW*) {
     _m_volume_slider = std::make_unique<slider>(this, 0, 100);
     _m_volume_slider->set_position(100);
 
-    _m_volume_display = std::make_unique<line_edit>(this, "100%");
-    _m_volume_display->set_style(WS_DISABLED);
+    _m_volume_display = std::make_unique<label>(this, "", LABEL_CENTER);
+    _m_progress_display = std::make_unique<label>(this, "", LABEL_LEFT);
+    _m_duration_display = std::make_unique<label>(this, "", LABEL_RIGHT);
 
     _m_player = std::make_unique<audio_player>(provider->get_stream(), provider->get_path(), controller);
+
+    int64_t volume = static_cast<int64_t>(_m_player->get_volume_scaled() * 100.);
+    _m_volume_slider->set_position(volume);
+    _m_volume_display->set_text(std::to_string(volume) + "%");
+
+    _m_duration = _m_player->get_duration();
+    _m_duration_display->set_text(utils::format_minutes(_m_duration, false));
+
+    _m_progress_bar = std::make_unique<seekable_progress_bar>(this, 0, 1000);
+
+    _m_volume_display_size = _m_volume_display->text_extent_point();
+    _m_duration_size = _m_duration_display->text_extent_point();
+    _m_progress_size = _m_progress_display->text_extent_point();
+
+    _set_progress(std::chrono::nanoseconds(0));
+
+    std::function<void()> timer_start_func = [this] {
+        SetTimer(handle(), 0, 100, nullptr);
+    };
+
+    std::function<void()> timer_stop_func = [this] {
+        KillTimer(handle(), 0);
+    };
+
+    _m_player->add_event(EVENT_START, timer_start_func);
+    _m_player->add_event(EVENT_RESTART, timer_start_func);
+
+    _m_player->add_event(EVENT_PAUSE, timer_stop_func);
+    _m_player->add_event(EVENT_STOP, timer_stop_func);
+    _m_player->add_event(EVENT_STOP, [this] {
+        _m_toggle_button->set_icon(_m_play_icon);
+        });
 
     return true;
 }
 
 void audio_player_preview::wm_size(int, int width, int height) {
+    // Use 70% of width for full-width controls
+    long partial_width = static_cast<long>(width * 0.7);
+    long partial_offset = static_cast<long>(width * 0.15);
+
     defer_window_pos()
-        .move(_m_toggle_button, { ((width - 2 * dims::gutter_size) / 2) - (dims::play_button_size / 2),
-            dims::gutter_size, dims::play_button_size, dims::play_button_size })
-        .move(_m_volume_slider, { width - dims::volume_slider_width - dims::gutter_size,
-            dims::gutter_size, dims::volume_slider_width, dims::play_button_size })
-        .move(_m_volume_display, { width - dims::volume_slider_width - (dims::gutter_size * 2) - dims::volume_display_width,
-            dims::gutter_size, dims::volume_display_width, dims::control_height });
+        .move(_m_progress_bar, {
+                .x = partial_offset,
+                .y = dims::gutter_size,
+                .width = partial_width,
+                .height = dims::control_height })
+
+        .move(_m_toggle_button, {
+                .x = (width / 2) - (dims::play_button_size / 2),
+                .y = 2 * dims::control_height + 3 * dims::gutter_size,
+                .width = dims::play_button_size,
+                .height = dims::play_button_size })
+
+        .move(_m_volume_slider, {
+                .x = (width / 2) - (dims::volume_slider_width / 2),
+                .y = 2 * dims::control_height + dims::play_button_size + 4 * dims::gutter_size,
+                .width = dims::volume_slider_width,
+                .height = dims::volume_slider_height })
+
+        .move(_m_volume_display, {
+                .x = (width / 2) - (_m_volume_display_size.width / 2),
+                .y = 2 * dims::control_height + dims::play_button_size + dims::volume_slider_height + 5 * dims::gutter_size,
+                .width = _m_volume_display_size.width,
+                .height = _m_volume_display_size.height })
+
+        .move(_m_progress_display, {
+                .x = partial_offset,
+                .y = dims::control_height + 2 * dims::gutter_size,
+                .width = _m_progress_size.width,
+                .height = _m_progress_size.height })
+
+        .move(_m_duration_display, {
+                .x = partial_offset + (partial_width - _m_duration_size.width),
+                .y = dims::control_height + 2 * dims::gutter_size,
+                .width = _m_duration_size.width,
+                .height = _m_duration_size.height
+            });
 }
 
 LRESULT audio_player_preview::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
@@ -282,7 +327,7 @@ LRESULT audio_player_preview::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPAR
                 case SB_LEFT: {
                     // Slider moved
                     int64_t new_pos = _m_volume_slider->get_position();
-                    _m_player->set_volume_percent(new_pos / 100.f);
+                    _m_player->set_volume_scaled(new_pos / 100.f);
                     _m_volume_display->set_text(std::to_string(new_pos) + "%");
                     break;
                 }
@@ -295,8 +340,48 @@ LRESULT audio_player_preview::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPAR
         case WM_CTLCOLORSTATIC:
             return COLOR_WINDOW + 1;
 
+        case WM_TIMER:
+            if (wparam == 0) {
+                auto current = _m_player->get_current_time();
+                _set_progress(current);
+                _m_progress_bar->set_progress(
+                    static_cast<uintmax_t>(round((current.count() / static_cast<double>(_m_duration.count())) * 1000)));
+
+            }
+            break;
+
+        case PB_CAPTURE:
+            // If audio is playing, pause it
+            if (_m_player->state() == STATE_PLAYING) {
+                _m_resume_after_seek = true;
+                _m_player->toggle_playback();
+            } else {
+                _m_resume_after_seek  = false;
+            }
+            break;
+
+        case PB_SEEK:
+        case PB_RELEASE: {
+            double promille = wparam / 1000.;
+            auto progress_ns = static_cast<std::chrono::nanoseconds::rep>(round(promille * _m_duration.count()));
+
+            if (msg == PB_SEEK) {
+                _set_progress(std::chrono::nanoseconds(progress_ns));
+            } else {
+                _m_player->seek(std::chrono::nanoseconds(progress_ns), _m_resume_after_seek);
+            }
+
+            break;
+        }
+
         default: return DefWindowProcW(hwnd, msg, wparam, lparam);
     }
 
     return 0;
+}
+
+void audio_player_preview::_set_progress(std::chrono::nanoseconds progress) {
+    _m_progress_display->set_text(utils::format_minutes(progress, false));
+
+    _m_progress_size = _m_progress_display->text_extent_point();
 }

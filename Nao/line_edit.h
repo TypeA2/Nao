@@ -10,6 +10,5 @@ class line_edit : public ui_element {
     line_edit(ui_element* parent, const std::string& text);
 
     void set_text(const std::string& text) const;
-    void set_font(HFONT font) const;
 };
 

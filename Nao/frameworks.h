@@ -20,3 +20,5 @@
 #include <mmdeviceapi.h>
 
 #include <endpointvolume.h>
+
+#include <Windowsx.h>

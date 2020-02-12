@@ -163,6 +163,12 @@
     <ClInclude Include="slider.h">
       <Filter>Header Files\UI\Generic</Filter>
     </ClInclude>
+    <ClInclude Include="label.h">
+      <Filter>Header Files\UI\Generic</Filter>
+    </ClInclude>
+    <ClInclude Include="seekable_progress_bar.h">
+      <Filter>Header Files\UI\Generic</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="nao.cpp">
@@ -253,6 +259,12 @@
       <Filter>Source Files\Win32</Filter>
     </ClCompile>
     <ClCompile Include="slider.cpp">
+      <Filter>Source Files\UI\Generic</Filter>
+    </ClCompile>
+    <ClCompile Include="label.cpp">
+      <Filter>Source Files\UI\Generic</Filter>
+    </ClCompile>
+    <ClCompile Include="seekable_progress_bar.cpp">
       <Filter>Source Files\UI\Generic</Filter>
     </ClCompile>
   </ItemGroup>

@@ -81,6 +81,49 @@ namespace utils {
         return conv;
     }
 
+    std::string format_hours(std::chrono::nanoseconds ns, bool ms) {
+        std::stringstream ss;
+        ss.fill('0');
 
+        auto hours = std::chrono::duration_cast<std::chrono::hours>(ns);
+        ns -= hours;
+        auto minutes = std::chrono::duration_cast<std::chrono::minutes>(ns);
+        ns -= minutes;
+        auto seconds = std::chrono::duration_cast<std::chrono::seconds>(ns);
+        
 
+        ss << hours.count() << ':'
+            << std::setw(2)
+            << minutes.count() << ':'
+            << seconds.count();
+
+        if (ms) {
+            ns -= seconds;
+            auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(ns);
+
+            ss << '.' << std::setw(3) << milliseconds.count();
+        }
+
+        return ss.str();
+    }
+
+    std::string format_minutes(std::chrono::nanoseconds ns, bool ms) {
+        std::stringstream ss;
+        ss.fill('0');
+
+        auto minutes = std::chrono::duration_cast<std::chrono::minutes>(ns);
+        ns -= minutes;
+        auto seconds = std::chrono::duration_cast<std::chrono::seconds>(ns);
+        ss << minutes.count() << ':'
+            << std::setw(2) << seconds.count();
+
+        if (ms) {
+            ns -= seconds;
+            auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(ns);
+
+            ss << '.' << std::setw(3) << milliseconds.count();
+        }
+
+        return ss.str();
+    }
 }

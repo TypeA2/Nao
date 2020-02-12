@@ -13,6 +13,11 @@ struct coords {
     long y;
 };
 
+struct size {
+    long width;
+    long height;
+};
+
 struct dimensions {
     long x;
     long y;
@@ -61,6 +66,9 @@ class ui_element : public std::enable_shared_from_this<ui_element> {
 
     ui_element* parent() const;
     HWND handle() const;
+    HDC device_context() const;
+
+    virtual size text_extent_point(const std::string& str) const;
 
     virtual long width() const;
     virtual long height() const;
@@ -75,6 +83,9 @@ class ui_element : public std::enable_shared_from_this<ui_element> {
 
     // Set the window style
     virtual void set_style(DWORD style, bool enable = true);
+
+    // Set window font
+    virtual void set_font(HFONT font) const;
 
     // Specifically enable or disable
     virtual void set_enabled(bool enabled = true);
@@ -127,6 +138,10 @@ class ui_element : public std::enable_shared_from_this<ui_element> {
 
     protected:
     void set_handle(HWND handle);
+
+    static std::wstring register_once(int id);
+    static std::wstring register_once(WNDCLASSEXW wcx);
+
 
     // Overridable message handlers
     virtual bool wm_create(CREATESTRUCTW* create);

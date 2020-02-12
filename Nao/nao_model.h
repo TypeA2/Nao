@@ -7,6 +7,8 @@
 class nao_view;
 class nao_controller;
 
+class provider_for_wrapper;
+
 class nao_model {
     std::string _m_path;
     public:
@@ -40,6 +42,12 @@ class nao_model {
     private:
     void _create_tree(const std::string& to);
     item_provider_ptr _provider_for(std::string path);
+    bool _has_provider_for(std::string path);
+
+    item_provider_ptr _preview_for(std::string path);
+    bool _has_preview_for(std::string path);
+
+    friend class provider_for_wrapper;
 
     protected:
     nao_view& view;

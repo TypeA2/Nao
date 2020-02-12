@@ -1,6 +1,7 @@
 #pragma once
 
 #include <sstream>
+#include <chrono>
 
 #define LINE_STRINGIFY(x) LINE_STRINGIFY2(x)
 #define LINE_STRINGIFY2(x) #x
@@ -68,7 +69,10 @@ namespace utils {
     std::string utf8(const std::wstring& str);
     std::wstring utf16(const std::string& str);
 
-    constexpr uint64_t make_quad(uint32_t low, uint32_t high) {
+    static constexpr uint64_t make_quad(uint32_t low, uint32_t high) {
         return (static_cast<uint64_t>(high) << 32) | low;
     }
+
+    std::string format_hours(std::chrono::nanoseconds ns, bool ms = true);
+    std::string format_minutes(std::chrono::nanoseconds ns, bool ms = true);
 }

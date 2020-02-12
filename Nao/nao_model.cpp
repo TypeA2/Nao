@@ -72,6 +72,11 @@ void nao_model::move_down(item_data* to) {
 }
 
 void nao_model::fetch_preview(item_data* item) {
+    // Do nothing if preview is already shown
+    if (_m_preview_provider && _m_preview_provider->get_path() == item->path()) {
+        return;
+    }
+
     const std::vector<item_data>& items = _m_tree.back()->data();
 
     auto find_func = [&item](const item_data& data) {
@@ -82,9 +87,19 @@ void nao_model::fetch_preview(item_data* item) {
         throw std::runtime_error("element not child of current provider");
     }
 
-    item_provider_ptr p = _provider_for(item->path());
+    if (!_has_preview_for(item->path())) {
+        _m_preview_provider.reset();
+    } else {
+        utils::coutln("Creating preview provider for", item->path());
+        item_provider_ptr p = _preview_for(item->path());
 
-    _m_preview_provider = std::move(p);
+        // Nothing changed
+        if (_m_preview_provider && p == _m_preview_provider) {
+            return;
+        }
+
+        _m_preview_provider = std::move(p);
+    }
     controller.post_message(TM_PREVIEW_CHANGED, 0, item);
 }
 
@@ -176,54 +191,139 @@ void nao_model::_create_tree(const std::string& to) {
     // Tree should be done
 }
 
+namespace detail {
+    template <bool dry>
+    struct return_wrapper { };
+
+    template <>
+    struct return_wrapper<true> { using type = bool; };
+
+    template <>
+    struct return_wrapper<false> { using type = item_provider_ptr; };
+
+    template <bool dry>
+    using return_t = typename return_wrapper<dry>::type;
+}
+
+class provider_for_wrapper {
+    friend class nao_model;
+
+    template <bool check_support, bool check_preview = false>
+    static detail::return_t<check_support> provider_for(nao_model* _this, std::string path) {
+        // If a preview is set, it should just be the next element
+        if (_this->_m_preview_provider != nullptr && path == _this->_m_preview_provider->get_path()) {
+
+            if constexpr (check_support) {
+                return true;
+            } else {
+                return _this->_m_preview_provider;
+            }
+        }
+        // Requesting root
+        if (path == "\\" && !_this->_m_tree.empty()) {
+            if constexpr (check_support) {
+
+                if constexpr (check_preview) { // Whether this provider provides any kind of preview
+                    return _this->_m_tree.front()->preview_type() != PREVIEW_NONE;
+                } else {
+                    return true;
+                }
+            } else {
+                return _this->_m_tree.front();
+            }
+        }
+
+        // If the element was already created and present at the back
+        if (!_this->_m_tree.empty() && _this->_m_tree.back()
+            && _this->_m_tree.back()->get_path() == path) {
+            if constexpr (check_support) {
+                if constexpr (check_preview) { // Whether this provider provides any kind of preview
+                    return _this->_m_tree.back()->preview_type() != PREVIEW_NONE;
+                } else {
+                    return true;
+                }
+            } else {
+                return _this->_m_tree.back();
+            }
+        }
+
+        file_info info(path);
+
+        // If the path was not found
+        if (!info) {
+            // It may be a file that was hidden by the trailing separator
+            if (path.back() == '\\') {
+                path.pop_back();
+                info = file_info(path);
+            }
+
+            // If not, it may be virtual
+        }
+
+        if (info.invalid()) {
+            // Virtual (in-archive) file
+        } else {
+            if (info.directory()) {
+                // file_info considers "\" a directory as well, so that is included in this
+
+                size_t id;
+                if constexpr (check_preview) {
+                    id = item_provider_factory::preview(nullptr, path);
+                } else {
+                    id = item_provider_factory::provide(nullptr, path);
+                }
+
+                if (id != item_provider_factory::npos) {
+                    if constexpr (check_support) {
+                        return true;
+                    } else {
+                        return item_provider_factory::create(id, nullptr, path);
+                    }
+                }
+            } else {
+
+                // Create file stream
+                auto stream = std::make_shared<nao_model::istream_type::element_type>(path);
+
+                if (stream->good()) {
+                    size_t id;
+                    if constexpr (check_preview) {
+                        id = item_provider_factory::preview(stream, path);
+                    } else {
+                        id = item_provider_factory::provide(stream, path);
+                    }
+
+                    if (id != item_provider_factory::npos) {
+                        if constexpr (check_support) {
+                            return true;
+                        } else {
+                            return item_provider_factory::create(id, stream, path);
+                        }
+                    }
+                }
+            }
+        }
+
+        if constexpr (check_support) {
+            return false;
+        } else {
+            return nullptr;
+        }
+    }
+};
+
 item_provider_ptr nao_model::_provider_for(std::string path) {
-    // If a preview is set, it should just be the next element
-    if (_m_preview_provider != nullptr && path == _m_preview_provider->get_path()) {
-        auto p = _m_preview_provider;
+    return provider_for_wrapper::provider_for<false, false>(this, std::move(path));
+}
 
-        clear_preview();
+bool nao_model::_has_provider_for(std::string path) {
+    return provider_for_wrapper::provider_for<true, false>(this, std::move(path));
+}
 
-        return p;
-    }
-    // Requesting root
-    if (path == "\\" && !_m_tree.empty()) {
-        return _m_tree.front();
-    }
+item_provider_ptr nao_model::_preview_for(std::string path) {
+    return provider_for_wrapper::provider_for<false, true>(this, std::move(path));
+}
 
-    // If the element was already created and present at the back
-    if (!_m_tree.empty() && _m_tree.back()
-        && _m_tree.back()->get_path() == path) {
-        return _m_tree.back();
-    }
-
-    file_info info(path);
-
-    // If the path was not found
-    if (!info) {
-        // It may be a file that was hidden by the trailing separator
-        if (path.back() == '\\') {
-            path.pop_back();
-            info = file_info(path);
-        }
-        
-        // If not, it may be virtual
-    }
-
-    if (info.invalid()) {
-        // Virtual (in-archive) file
-    } else {
-        if (info.directory()) {
-            // file_info considers "\" a directory as well, so that is included in this
-            return item_provider_factory::create(nullptr, path);
-        }
-
-        // Create file stream
-        istream_type stream = std::make_shared<istream_type::element_type>(path);
-
-        if (stream->good()) {
-            return item_provider_factory::create(stream, path);
-        }
-    }
-
-    return nullptr;
+bool nao_model::_has_preview_for(std::string path) {
+    return provider_for_wrapper::provider_for<true, true>(this, std::move(path));
 }

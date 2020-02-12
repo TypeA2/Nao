@@ -198,6 +198,7 @@
     <ClInclude Include="filesystem_utils.h" />
     <ClInclude Include="file_info.h" />
     <ClInclude Include="icon.h" />
+    <ClInclude Include="label.h" />
     <ClInclude Include="left_window.h" />
     <ClInclude Include="line_edit.h" />
     <ClInclude Include="list_view.h" />
@@ -213,6 +214,7 @@
     <ClInclude Include="push_button.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="right_window.h" />
+    <ClInclude Include="seekable_progress_bar.h" />
     <ClInclude Include="slider.h" />
     <ClInclude Include="steam_utils.h" />
     <ClInclude Include="thread_pool.h" />
@@ -233,6 +235,7 @@
     <ClCompile Include="file_info.cpp" />
     <ClCompile Include="icon.cpp" />
     <ClCompile Include="item_data.cpp" />
+    <ClCompile Include="label.cpp" />
     <ClCompile Include="left_window.cpp" />
     <ClCompile Include="line_edit.cpp" />
     <ClCompile Include="list_view.cpp" />
@@ -246,6 +249,7 @@
     <ClCompile Include="preview.cpp" />
     <ClCompile Include="push_button.cpp" />
     <ClCompile Include="right_window.cpp" />
+    <ClCompile Include="seekable_progress_bar.cpp" />
     <ClCompile Include="slider.cpp" />
     <ClCompile Include="steam_utils.cpp" />
     <ClCompile Include="thread_pool.cpp" />

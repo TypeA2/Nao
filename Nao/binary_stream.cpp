@@ -77,7 +77,7 @@ HRESULT binary_istream::QueryInterface(const IID& riid, void** ppvObject) {
 
 HRESULT binary_istream::GetCapabilities(DWORD* pdwCapabilities) {
     if (!pdwCapabilities) {
-        return E_INVALIDARG;
+        return E_POINTER;
     }
 
     *pdwCapabilities = MFBYTESTREAM_IS_READABLE | MFBYTESTREAM_IS_SEEKABLE | MFBYTESTREAM_DOES_NOT_USE_NETWORK;
@@ -93,7 +93,7 @@ HRESULT binary_istream::GetLength(QWORD* pqwLength) {
     }
 
     if (!pqwLength) {
-        return E_INVALIDARG;
+        return E_POINTER;
     }
 
     auto current = file->tellg();
@@ -116,7 +116,7 @@ HRESULT binary_istream::GetCurrentPosition(QWORD* pqwPosition) {
     }
 
     if (!pqwPosition) {
-        return E_INVALIDARG;
+        return E_POINTER;
     }
 
     *pqwPosition = file->tellg();
@@ -133,7 +133,7 @@ HRESULT binary_istream::SetCurrentPosition(QWORD qwPosition) {
 
     file->seekg(qwPosition);
 
-    return file->good() ? S_OK : E_ABORT;
+    return S_OK;
 }
 
 HRESULT binary_istream::IsEndOfStream(BOOL* pfEndOfStream) {
@@ -144,7 +144,7 @@ HRESULT binary_istream::IsEndOfStream(BOOL* pfEndOfStream) {
     }
 
     if (!pfEndOfStream) {
-        return E_INVALIDARG;
+        return E_POINTER;
     }
 
     *pfEndOfStream = file->eof();
@@ -159,7 +159,11 @@ HRESULT binary_istream::Read(BYTE* pb, ULONG cb, ULONG* pcbRead) {
         return E_ABORT;
     }
 
-    if (!pb || cb == 0 || !pcbRead) {
+    if (!pb || !pcbRead) {
+        return E_POINTER;
+    }
+
+    if (cb == 0) {
         return E_INVALIDARG;
     }
 
@@ -178,15 +182,19 @@ HRESULT binary_istream::BeginRead(BYTE* pb, ULONG cb, IMFAsyncCallback* pCallbac
         return E_ABORT;
     }
 
-    if (!pb || cb == 0 || !pCallback) {
+    if (!pb || !pCallback) {
+        return E_POINTER;
+    }
+    
+    if (cb == 0) {
         return E_INVALIDARG;
     }
 
     IMFAsyncResult* result = nullptr;
     auto obj = new async_result(pb, cb);
-    ASSERT(SUCCEEDED(MFCreateAsyncResult(obj, pCallback, punkState, &result)));
+    HASSERT(MFCreateAsyncResult(obj, pCallback, punkState, &result));
     
-    ASSERT(SUCCEEDED(MFPutWorkItem(MFASYNC_CALLBACK_QUEUE_MULTITHREADED, this, result)));
+    HASSERT(MFPutWorkItem(MFASYNC_CALLBACK_QUEUE_MULTITHREADED, this, result));
     result->Release();
 
     return S_OK;
@@ -194,21 +202,19 @@ HRESULT binary_istream::BeginRead(BYTE* pb, ULONG cb, IMFAsyncCallback* pCallbac
 
 HRESULT binary_istream::EndRead(IMFAsyncResult* pResult, ULONG* pcbRead) {
     if (!pResult || !pcbRead) {
-        return E_INVALIDARG;
+        return E_POINTER;
     }
 
-    if (HRESULT hr = pResult->GetStatus();  FAILED(hr)) {
+    if (HRESULT hr = pResult->GetStatus(); FAILED(hr)) {
         return hr;
     }
 
     IUnknown* unk = nullptr;
-    ASSERT(SUCCEEDED(pResult->GetObjectW(&unk)));
+    HASSERT(pResult->GetObjectW(&unk));
 
     async_result* res = dynamic_cast<async_result*>(unk);
 
     *pcbRead = res->read;
-
-    unk->Release();
 
     return S_OK;
 
@@ -238,7 +244,7 @@ HRESULT binary_istream::Seek(MFBYTESTREAM_SEEK_ORIGIN SeekOrigin, LONGLONG llSee
     }
 
     if (!pqwCurrentPosition) {
-        return E_INVALIDARG;
+        return E_POINTER;
     }
 
     switch (SeekOrigin) {
@@ -278,26 +284,32 @@ HRESULT binary_istream::Invoke(IMFAsyncResult* pAsyncResult) {
     }
 
     if (!pAsyncResult) {
-        return E_INVALIDARG;
+        return E_POINTER;
     }
 
     IUnknown* unk_state = nullptr;
-    ASSERT(SUCCEEDED(pAsyncResult->GetState(&unk_state)));
+    HASSERT(pAsyncResult->GetState(&unk_state));
 
     IMFAsyncResult* operation_result = nullptr;
-    ASSERT(SUCCEEDED(unk_state->QueryInterface(&operation_result)));
+    HASSERT(unk_state->QueryInterface(&operation_result));
 
     IUnknown* unk_result = nullptr;
-    ASSERT(SUCCEEDED(operation_result->GetObjectW(&unk_result)));
+    HASSERT(operation_result->GetObjectW(&unk_result));
 
     async_result* result = dynamic_cast<async_result*>(unk_result);
 
     auto start = file->tellg();
     file->read(reinterpret_cast<char*>(result->buf), result->count);
+
+    if (file->eof()) {
+        file->clear();
+    }
+
     result->read = static_cast<ULONG>(file->tellg() - start);
 
     if (operation_result) {
-        operation_result->SetStatus(file->good() ? S_OK : E_ABORT);
+        operation_result->SetStatus(file->good() ? S_OK : E_FAIL);
+
         MFInvokeCallback(operation_result);
     }
 

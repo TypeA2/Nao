@@ -1,6 +1,7 @@
 #include "ui_element.h"
 
 #include "utils.h"
+#include <unordered_set>
 
 HINSTANCE ui_element::_instance = nullptr;
 
@@ -73,6 +74,18 @@ HWND ui_element::handle() const {
     return _m_handle;
 }
 
+HDC ui_element::device_context() const {
+    return GetDC(_m_handle);
+}
+
+size ui_element::text_extent_point(const std::string& str) const {
+    std::wstring wide = utils::utf16(str);
+    SIZE size;
+    ASSERT(GetTextExtentPoint32W(device_context(), wide.c_str(), static_cast<int>(wide.size()), &size));
+
+    return { .width = size.cx, .height = size.cy };
+}
+
 long ui_element::width() const {
     RECT rect;
     bool res = GetWindowRect(handle(), &rect);
@@ -128,6 +141,10 @@ void ui_element::set_style(DWORD style, bool enable) {
     }
 }
 
+void ui_element::set_font(HFONT font) const {
+    send_message(WM_SETFONT, WPARAM(font), true);
+}
+
 void ui_element::set_enabled(bool enabled) {
     EnableWindow(handle(), enabled);
 }
@@ -144,6 +161,32 @@ void ui_element::set_handle(HWND handle) {
     ASSERT(!_m_handle && handle);
 
     _m_handle = handle;
+}
+
+std::wstring ui_element::register_once(int id) {
+    std::wstring class_name = load_wstring(id);
+
+    return register_once({
+        .cbSize = sizeof(WNDCLASSEXW),
+        .style = CS_HREDRAW | CS_VREDRAW,
+        .lpfnWndProc = wnd_proc_fwd,
+        .hInstance = instance(),
+        .hCursor = LoadCursorW(nullptr, IDC_ARROW),
+        .hbrBackground = HBRUSH(COLOR_WINDOW + 1),
+        .lpszClassName = class_name.c_str()
+        });
+}
+
+std::wstring ui_element::register_once(WNDCLASSEXW wcx) {
+    static std::unordered_set<std::wstring> registered_classes;
+
+    if (!registered_classes.contains(wcx.lpszClassName)) {
+        ASSERT(RegisterClassExW(&wcx) != 0);
+
+        registered_classes.insert(wcx.lpszClassName);
+    }
+
+    return wcx.lpszClassName;
 }
 
 bool ui_element::wm_create(CREATESTRUCTW* create) {

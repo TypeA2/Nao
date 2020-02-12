@@ -78,15 +78,20 @@ std::unique_ptr<preview> filesystem_provider::make_preview(nao_view& view) {
 }
 
 static item_provider_ptr create(const item_provider::istream_type&, const std::string& path) {
-    file_info finfo(path);
-
-    if (!finfo.invalid() && finfo.directory()) {
-        return std::make_shared<filesystem_provider>(path);
-    }
-
-    return nullptr;
+    return std::make_shared<filesystem_provider>(path);
 }
 
-static size_t id = item_provider_factory::register_class(create, "filesystem");
+static bool provide(const item_provider::istream_type&, const std::string& path) {
+    file_info finfo(path);
+
+    return !finfo.invalid() && finfo.directory();
+}
+
+static size_t id = item_provider_factory::register_class({
+    .creator = create,
+    .provide = provide,
+    .preview = provide,
+    .name = "filesystem"
+});
 
 

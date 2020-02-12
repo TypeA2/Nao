@@ -16,6 +16,7 @@
 #define IDI_SMALL                       108
 #define IDS_AUDIO_PLAYER_PREVIEW        108
 #define IDC_NAO                         109
+#define IDS_PROGRESS_BAR                110
 #define IDR_MAINFRAME                   128
 #define ID_FILE_OPEN                    32772
 #define IDC_STATIC                      -1

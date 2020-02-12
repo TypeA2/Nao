@@ -18,6 +18,10 @@ std::unique_ptr<preview> wav_provider::make_preview(nao_view& view) {
 }
 
 static item_provider_ptr create(const item_provider::istream_type& stream, const std::string& path) {
+    return std::make_shared<wav_provider>(stream, path);
+}
+
+static bool preview(const item_provider::istream_type& stream, const std::string& path) {
     if (path.substr(path.size() - 4) == ".wav") {
         std::string fcc(4, '\0');
         stream->read(fcc);
@@ -28,11 +32,15 @@ static item_provider_ptr create(const item_provider::istream_type& stream, const
         stream->rseek(-16);
 
         if (fcc == "RIFF" && wavefmt == "WAVEfmt ") {
-            return std::make_shared<wav_provider>(stream, path);
+            return true;
         }
     }
 
-    return nullptr;
+    return false;
 }
 
-static size_t id = item_provider_factory::register_class(create, "wav");
+static size_t id = item_provider_factory::register_class({
+    .creator = create,
+    .preview = preview,
+    .name = "wav"
+});

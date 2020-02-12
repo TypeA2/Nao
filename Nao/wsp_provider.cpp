@@ -74,7 +74,11 @@ std::unique_ptr<preview> wsp_provider::make_preview(nao_view& view) {
     return std::make_unique<list_view_preview>(view, this);
 }
 
-item_provider_ptr create(const item_provider::istream_type& stream, const std::string& path) {
+static item_provider_ptr create(const item_provider::istream_type& stream, const std::string& path) {
+    return std::make_shared<wsp_provider>(stream, path);
+}
+
+static bool provide(const item_provider::istream_type& stream, const std::string& path) {
     if (path.substr(path.size() - 4) == ".wsp") {
 
         std::string fcc(4, '\0');
@@ -82,11 +86,16 @@ item_provider_ptr create(const item_provider::istream_type& stream, const std::s
         stream->seekg(-4, std::ios::cur);
 
         if (fcc == "RIFF") {
-            return std::make_shared<wsp_provider>(stream, path);
+            return true;
         }
     }
 
-    return nullptr;
+    return false;
 }
 
-static size_t id = item_provider_factory::register_class(create, "wsp");
+static size_t id = item_provider_factory::register_class({
+    .creator = create,
+    .provide = provide,
+    .preview = provide,
+    .name = "wsp"
+});

@@ -3,6 +3,8 @@
 #include "ui_element.h"
 #include "nao_view.h"
 
+#include <chrono>
+
 class nao_controller;
 
 // Wrapper class for preview elements
@@ -12,9 +14,6 @@ class preview : public ui_element {
     virtual ~preview();
 
     protected:
-
-    static std::wstring register_once(int id);
-
     nao_view& view;
     nao_controller& controller;
     item_provider* provider;
@@ -46,7 +45,8 @@ class list_view_preview : public preview {
 
 class push_button;
 class slider;
-class line_edit;
+class label;
+class seekable_progress_bar;
 
 class audio_player;
 
@@ -62,12 +62,26 @@ class audio_player_preview : public preview {
     private:
     LRESULT _wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
+    void _set_progress(std::chrono::nanoseconds progress);
+
     icon _m_play_icon;
     icon _m_pause_icon;
 
+    std::unique_ptr<seekable_progress_bar> _m_progress_bar;
     std::unique_ptr<push_button> _m_toggle_button;
     std::unique_ptr<slider> _m_volume_slider;
-    std::unique_ptr<line_edit> _m_volume_display;
+    std::unique_ptr<label> _m_volume_display;
+    std::unique_ptr<label> _m_progress_display;
+    std::unique_ptr<label> _m_duration_display;
 
     std::unique_ptr<audio_player> _m_player;
+
+    std::chrono::nanoseconds _m_duration;
+
+    size _m_volume_display_size;
+
+    size _m_progress_size;
+    size _m_duration_size;
+
+    bool _m_resume_after_seek;
 };
