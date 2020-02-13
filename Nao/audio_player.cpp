@@ -138,12 +138,21 @@ void audio_player::set_volume_scaled(float val) const {
     HASSERT(_m_volume->SetMasterVolume(val));
 }
 
+void audio_player::set_volume_log(float orig, float curve) const {
+    set_volume_scaled(pow(orig, curve));
+}
+
 float audio_player::get_volume_scaled() const {
     float volume = 0.f;
     HASSERT(_m_volume->GetMasterVolume(&volume));
 
     return volume;
 }
+
+float audio_player::get_volume_log(float curve) const {
+    return pow(get_volume_scaled(), 1 / curve);
+}
+
 
 std::chrono::nanoseconds audio_player::get_duration() const {
     return _m_duration;

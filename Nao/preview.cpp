@@ -212,7 +212,7 @@ bool audio_player_preview::wm_create(CREATESTRUCTW*) {
 
     _m_player = std::make_unique<audio_player>(provider->get_stream(), provider->get_path(), controller);
 
-    int64_t volume = static_cast<int64_t>(_m_player->get_volume_scaled() * 100.);
+    int64_t volume = static_cast<int64_t>(round(_m_player->get_volume_log() * 100.));
     _m_volume_slider->set_position(volume);
     _m_volume_display->set_text(std::to_string(volume) + "%");
 
@@ -327,7 +327,7 @@ LRESULT audio_player_preview::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPAR
                 case SB_LEFT: {
                     // Slider moved
                     int64_t new_pos = _m_volume_slider->get_position();
-                    _m_player->set_volume_scaled(new_pos / 100.f);
+                    _m_player->set_volume_log(new_pos / 100.f);
                     _m_volume_display->set_text(std::to_string(new_pos) + "%");
                     break;
                 }

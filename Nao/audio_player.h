@@ -35,7 +35,9 @@ class audio_player : IMFAsyncCallback, IMFClockStateSink {
     playback_state state() const;
 
     void set_volume_scaled(float val) const;
+    void set_volume_log(float orig, float curve = 2.f) const;
     float get_volume_scaled() const;
+    float get_volume_log(float curve = 2.f) const;
 
     std::chrono::nanoseconds get_duration() const;
     std::chrono::nanoseconds get_current_time() const;

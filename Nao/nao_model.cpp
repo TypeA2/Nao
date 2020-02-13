@@ -208,7 +208,7 @@ namespace detail {
 class provider_for_wrapper {
     friend class nao_model;
 
-    template <bool check_support, bool check_preview = false>
+    template <bool check_support, bool check_preview>
     static detail::return_t<check_support> provider_for(nao_model* _this, std::string path) {
         // If a preview is set, it should just be the next element
         if (_this->_m_preview_provider != nullptr && path == _this->_m_preview_provider->get_path()) {
