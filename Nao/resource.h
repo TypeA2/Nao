@@ -18,6 +18,7 @@
 #define IDC_NAO                         109
 #define IDS_PROGRESS_BAR                110
 #define IDR_MAINFRAME                   128
+#define IDC_TPL_LINK                    1010
 #define ID_FILE_OPEN                    32772
 #define IDC_STATIC                      -1
 
@@ -28,7 +29,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        130
 #define _APS_NEXT_COMMAND_VALUE         32773
-#define _APS_NEXT_CONTROL_VALUE         1000
+#define _APS_NEXT_CONTROL_VALUE         1011
 #define _APS_NEXT_SYMED_VALUE           110
 #endif
 #endif

@@ -11,6 +11,7 @@
 #include "push_button.h"
 
 #include <clocale>
+#include <filesystem>
 
 main_window::main_window(nao_view* view) : ui_element(nullptr) {
     // CRT locale
@@ -88,20 +89,52 @@ void main_window::wm_command(WPARAM wparam, LPARAM lparam) {
                     // Simpler
                     switch (msg) {
                         case WM_INITDIALOG:
-                            return 1;
+                            return true;
 
+                        case WM_NOTIFY: {
+                            NMHDR* nm = reinterpret_cast<NMHDR*>(lparam);
+                            if (nm->idFrom == IDC_TPL_LINK && nm->code == NM_CLICK) {
+                                // License link clicked
+
+                                WCHAR path[MAX_PATH];
+                                DWORD len = GetModuleFileNameW(nullptr, path, MAX_PATH);
+
+                                std::filesystem::path fs_path = std::filesystem::path(path).parent_path().string() + "\\license\\third-party";
+                                LPITEMIDLIST idl = ILCreateFromPathW(fs_path.c_str());
+
+                                // Find first in tree
+                                while (!idl && fs_path.string().length() >= len) {
+                                    fs_path = fs_path.parent_path();
+
+                                    idl = ILCreateFromPathW(fs_path.c_str());
+                                }
+
+                                if (idl) {
+                                    // I don't even know what the API is doing at this point
+                                    ShellExecuteA(hwnd, "open", fs_path.string().c_str(), nullptr, utils::utf8(path).c_str(), SW_SHOW);
+                                    ILFree(idl);
+                                }
+                            }
+                            break;
+                        }
+                           
                         case WM_COMMAND:
-                            if (LOWORD(wparam) == IDOK || LOWORD(wparam) == IDCANCEL) {
-                                EndDialog(hwnd, LOWORD(wparam));
-                                return 1;
+                            if (!(LOWORD(wparam) == IDOK || LOWORD(wparam) == IDCANCEL)) {
+                                break;
                             }
 
-                        default:
-                            return DefWindowProcW(hwnd, msg, wparam, lparam);
+                        case WM_DESTROY: 
+                            EndDialog(hwnd, LOWORD(wparam));
+                            return 0;
+                        
+                        default: break;
                     }
-                };
 
+                    return DefWindowProcW(hwnd, msg, wparam, lparam);
+                    
+                };
             DialogBoxW(instance(), MAKEINTRESOURCEW(IDD_ABOUTBOX), handle(), _about);
+            SetFocus(handle());
             break;
         }
 
