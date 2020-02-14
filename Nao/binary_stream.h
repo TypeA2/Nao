@@ -61,10 +61,20 @@ class binary_istream : IMFAsyncCallback, public IMFByteStream {
 
     virtual bool good() const;
 
+    virtual std::streamsize gcount() const;
+
+    virtual void clear();
+
     // Seek with std::ios::cur
     binary_istream& rseek(pos_type pos);
 
     virtual binary_istream& read(char* buf, std::streamsize count);
+
+    // Read count elements, each size bytes, into buf
+    template <concepts::pointer P>
+    binary_istream& read(P buf, std::streamsize size, std::streamsize count) {
+        return read(reinterpret_cast<char*>(buf), count* size);
+    }
 
     // Read an arithmetic (integer or floating-point) value array
     template <concepts::arithmetic T>

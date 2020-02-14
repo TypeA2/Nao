@@ -345,6 +345,7 @@ std::streampos binary_istream::tellg() const {
 
 class binary_istream& binary_istream::seekg(pos_type pos) {
     std::unique_lock lock(mutex);
+
     file->seekg(pos);
 
     return *this;
@@ -352,6 +353,7 @@ class binary_istream& binary_istream::seekg(pos_type pos) {
 
 binary_istream& binary_istream::seekg(pos_type pos, seekdir dir) {
     std::unique_lock lock(mutex);
+
     file->seekg(pos, dir);
 
     return *this;
@@ -374,6 +376,17 @@ bool binary_istream::good() const {
     return file->good();
 }
 
+std::streamsize binary_istream::gcount() const {
+    std::unique_lock lock(mutex);
+
+    return file->gcount();
+}
+
+void binary_istream::clear() {
+    std::unique_lock lock(mutex);
+    file->clear();
+}
+
 class binary_istream& binary_istream::rseek(pos_type pos) {
     std::unique_lock lock(mutex);
     file->seekg(pos, std::ios::cur);
@@ -385,5 +398,6 @@ binary_istream& binary_istream::read(char* buf, std::streamsize count) {
     std::unique_lock lock(mutex);
     file->read(buf, count);
 
+    //utils::coutln("read", count, file->gcount());
     return *this;
 }

@@ -172,6 +172,9 @@
     <ClInclude Include="frameworks.h">
       <Filter>Header Files\Win32</Filter>
     </ClInclude>
+    <ClInclude Include="ogg_provider.h">
+      <Filter>Header Files\Providers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="nao.cpp">
@@ -272,6 +275,9 @@
     </ClCompile>
     <ClCompile Include="separator.cpp">
       <Filter>Source Files\UI\Generic</Filter>
+    </ClCompile>
+    <ClCompile Include="ogg_provider.cpp">
+      <Filter>Source Files\Providers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
