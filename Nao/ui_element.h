@@ -84,6 +84,9 @@ class ui_element : public std::enable_shared_from_this<ui_element> {
     // Set the window style
     virtual void set_style(DWORD style, bool enable = true);
 
+    // Set an extended style
+    virtual void set_ex_style(DWORD style, bool enable = true);
+
     // Set window font
     virtual void set_font(HFONT font) const;
 

@@ -131,7 +131,7 @@ HDWP& ui_element::move_dwp(HDWP& dwp, int x, int y, int width, int height) {
 }
 
 void ui_element::set_style(DWORD style, bool enable) {
-    DWORD old_style = DWORD(GetWindowLongPtrW(handle(), GWL_STYLE));
+    DWORD old_style = static_cast<DWORD>(GetWindowLongPtrW(handle(), GWL_STYLE));
 
     // Don't re-apply style
     if (enable && !(old_style & style)) {
@@ -140,6 +140,17 @@ void ui_element::set_style(DWORD style, bool enable) {
         SetWindowLongPtrW(handle(), GWL_STYLE, old_style & ~style);
     }
 }
+
+void ui_element::set_ex_style(DWORD style, bool enable) {
+    DWORD old_ex_style = static_cast<DWORD>(GetWindowLongPtrW(handle(), GWL_EXSTYLE));
+
+    if (enable && !(old_ex_style & style)) {
+        SetWindowLongPtrW(handle(), GWL_EXSTYLE, old_ex_style | style);
+    } else if (!enable && (old_ex_style & style)) {
+        SetWindowLongPtrW(handle(), GWL_EXSTYLE, old_ex_style & ~style);
+    }
+}
+
 
 void ui_element::set_font(HFONT font) const {
     send_message(WM_SETFONT, WPARAM(font), true);

@@ -215,6 +215,7 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="right_window.h" />
     <ClInclude Include="seekable_progress_bar.h" />
+    <ClInclude Include="separator.h" />
     <ClInclude Include="slider.h" />
     <ClInclude Include="steam_utils.h" />
     <ClInclude Include="thread_pool.h" />
@@ -250,6 +251,7 @@
     <ClCompile Include="push_button.cpp" />
     <ClCompile Include="right_window.cpp" />
     <ClCompile Include="seekable_progress_bar.cpp" />
+    <ClCompile Include="separator.cpp" />
     <ClCompile Include="slider.cpp" />
     <ClCompile Include="steam_utils.cpp" />
     <ClCompile Include="thread_pool.cpp" />

@@ -47,6 +47,8 @@ class push_button;
 class slider;
 class label;
 class seekable_progress_bar;
+class separator;
+class line_edit;
 
 class audio_player;
 
@@ -73,6 +75,17 @@ class audio_player_preview : public preview {
     std::unique_ptr<label> _m_volume_display;
     std::unique_ptr<label> _m_progress_display;
     std::unique_ptr<label> _m_duration_display;
+
+    std::unique_ptr<separator> _m_separator1;
+
+    std::unique_ptr<label> _m_mime_type_label;
+    std::unique_ptr<line_edit> _m_mime_type_edit;
+
+    std::unique_ptr<label> _m_duration_label;
+    std::unique_ptr<line_edit> _m_duration_edit;
+
+    std::unique_ptr<label> _m_bitrate_label;
+    std::unique_ptr<line_edit> _m_bitrate_edit;
 
     std::unique_ptr<audio_player> _m_player;
 

@@ -13,6 +13,8 @@
 #include "slider.h"
 #include "label.h"
 #include "seekable_progress_bar.h"
+#include "separator.h"
+#include "line_edit.h"
 
 #include "audio_player.h"
 
@@ -210,6 +212,10 @@ bool audio_player_preview::wm_create(CREATESTRUCTW*) {
     _m_progress_display = std::make_unique<label>(this, "", LABEL_LEFT);
     _m_duration_display = std::make_unique<label>(this, "", LABEL_RIGHT);
 
+    _m_separator1 = std::make_unique<separator>(this, SEPARATOR_HORIZONTAL);
+
+    _m_progress_bar = std::make_unique<seekable_progress_bar>(this, 0, 1000);
+
     _m_player = std::make_unique<audio_player>(provider->get_stream(), provider->get_path(), controller);
 
     int64_t volume = static_cast<int64_t>(round(_m_player->get_volume_log() * 100.));
@@ -218,8 +224,6 @@ bool audio_player_preview::wm_create(CREATESTRUCTW*) {
 
     _m_duration = _m_player->get_duration();
     _m_duration_display->set_text(utils::format_minutes(_m_duration, false));
-
-    _m_progress_bar = std::make_unique<seekable_progress_bar>(this, 0, 1000);
 
     _m_volume_display_size = _m_volume_display->text_extent_point();
     _m_duration_size = _m_duration_display->text_extent_point();
@@ -242,7 +246,23 @@ bool audio_player_preview::wm_create(CREATESTRUCTW*) {
     _m_player->add_event(EVENT_STOP, timer_stop_func);
     _m_player->add_event(EVENT_STOP, [this] {
         _m_toggle_button->set_icon(_m_play_icon);
-        });
+    });
+
+    _m_mime_type_label = std::make_unique<label>(this, "MIME type:", LABEL_LEFT);
+    _m_mime_type_edit = std::make_unique<line_edit>(this, _m_player->get_mime_type());
+    _m_mime_type_edit->set_read_only(true);
+    _m_mime_type_edit->set_ex_style(WS_EX_CLIENTEDGE, false);
+
+    _m_duration_label = std::make_unique<label>(this, "Duration:", LABEL_LEFT);
+    _m_duration_edit = std::make_unique<line_edit>(this,
+        utils::format_minutes(_m_duration) + "\t(" + std::to_string(static_cast<int64_t>(_m_duration.count() / 1e6)) + " ms)");
+    _m_duration_edit->set_read_only(true);
+    _m_duration_edit->set_ex_style(WS_EX_CLIENTEDGE, false);
+
+    _m_bitrate_label = std::make_unique<label>(this, "Bitrate:", LABEL_LEFT);
+    _m_bitrate_edit = std::make_unique<line_edit>(this, utils::bits(_m_player->get_bitrate()) + " / s");
+    _m_bitrate_edit->set_read_only(true);
+    _m_bitrate_edit->set_ex_style(WS_EX_CLIENTEDGE, false);
 
     return true;
 }
@@ -251,6 +271,10 @@ void audio_player_preview::wm_size(int, int width, int height) {
     // Use 70% of width for full-width controls
     long partial_width = static_cast<long>(width * 0.7);
     long partial_offset = static_cast<long>(width * 0.15);
+
+    long controls_height = 3 * dims::control_height + dims::play_button_size + dims::volume_slider_height + 6 * dims::gutter_size;
+    long info_offset = controls_height + 2 + (dims::control_height / 2) + dims::gutter_size;
+    long info_element_height = dims::control_height + dims::gutter_size;
 
     defer_window_pos()
         .move(_m_progress_bar, {
@@ -288,6 +312,50 @@ void audio_player_preview::wm_size(int, int width, int height) {
                 .y = dims::control_height + 2 * dims::gutter_size,
                 .width = _m_duration_size.width,
                 .height = _m_duration_size.height
+            })
+
+        .move(_m_separator1, {
+                .x = partial_offset,
+                .y = controls_height,
+                .width = partial_width,
+                .height = 2
+            })
+
+        .move(_m_mime_type_label, {
+                .x = partial_offset,
+                .y = info_offset,
+                .width = partial_width / 5,
+                .height = dims::control_height
+            })
+        .move(_m_mime_type_edit, {
+                .x = partial_offset + (partial_width / 5),
+                .y = info_offset - 1,
+                .width = 4 * (partial_width / 5),
+                .height = dims::control_height
+            })
+        .move(_m_duration_label, {
+                .x = partial_offset,
+                .y = info_offset + info_element_height,
+                .width = partial_width / 5,
+                .height = dims::control_height
+            })
+        .move(_m_duration_edit, {
+                .x = partial_offset + (partial_width / 5),
+                .y = info_offset + info_element_height - 1,
+                .width = 4 * (partial_width / 5),
+                .height = dims::control_height
+            })
+        .move(_m_bitrate_label, {
+                .x = partial_offset,
+                .y = info_offset + 2 * info_element_height,
+                .width = partial_width / 5,
+                .height = dims::control_height
+            })
+        .move(_m_bitrate_edit, {
+                .x = partial_offset + (partial_width / 5),
+                .y = info_offset + 2 * info_element_height - 1,
+                .width = 4 * (partial_width / 5),
+                .height = dims::control_height
             });
 }
 

@@ -169,6 +169,9 @@
     <ClInclude Include="seekable_progress_bar.h">
       <Filter>Header Files\UI\Generic</Filter>
     </ClInclude>
+    <ClInclude Include="separator.h">
+      <Filter>Header Files\UI\Generic</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="nao.cpp">
@@ -265,6 +268,9 @@
       <Filter>Source Files\UI\Generic</Filter>
     </ClCompile>
     <ClCompile Include="seekable_progress_bar.cpp">
+      <Filter>Source Files\UI\Generic</Filter>
+    </ClCompile>
+    <ClCompile Include="separator.cpp">
       <Filter>Source Files\UI\Generic</Filter>
     </ClCompile>
   </ItemGroup>

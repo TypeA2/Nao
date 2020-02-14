@@ -20,3 +20,7 @@ line_edit::line_edit(ui_element* parent, const std::string& text) : line_edit(pa
 void line_edit::set_text(const std::string& text) const {
     (void) send_message(WM_SETTEXT, 0, utils::utf16(text).c_str());
 }
+
+void line_edit::set_read_only(bool readonly) const {
+    (void) send_message(EM_SETREADONLY, readonly);
+}

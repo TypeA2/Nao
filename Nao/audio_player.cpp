@@ -43,13 +43,24 @@ audio_player::audio_player(const istream_ptr& stream, const std::string& path, n
 
     DWORD caps;
     _m_session->GetSessionCapabilities(&caps);
-    ASSERT(caps& MFSESSIONCAP_SEEK);
+    ASSERT(caps & MFSESSIONCAP_SEEK);
 
     int64_t duration;
     HASSERT(source_pd->GetUINT64(MF_PD_DURATION, reinterpret_cast<uint64_t*>(&duration)));
 
     using namespace std::chrono_literals;
     _m_duration = duration * 100ns;
+
+    {
+        uint32_t length;
+        HASSERT(source_pd->GetStringLength(MF_PD_MIME_TYPE, &length));
+
+        std::wstring tmp(length, L'\0');
+        HASSERT(source_pd->GetString(MF_PD_MIME_TYPE, tmp.data(), length + 1, nullptr));
+        _m_mime_type = utils::utf8(tmp);
+    }
+
+    HASSERT(source_pd->GetUINT32(MF_PD_AUDIO_ENCODING_BITRATE, &_m_bitrate));
 
     source_pd->Release();
     topology->Release();
@@ -153,7 +164,6 @@ float audio_player::get_volume_log(float curve) const {
     return pow(get_volume_scaled(), 1 / curve);
 }
 
-
 std::chrono::nanoseconds audio_player::get_duration() const {
     return _m_duration;
 }
@@ -163,6 +173,14 @@ std::chrono::nanoseconds audio_player::get_current_time() const {
     HASSERT(_m_clock->GetTime(&time));
     
     return time * std::chrono::nanoseconds(100);
+}
+
+const std::string& audio_player::get_mime_type() const {
+    return _m_mime_type;
+}
+
+uint32_t audio_player::get_bitrate() const {
+    return _m_bitrate;
 }
 
 void audio_player::seek(std::chrono::nanoseconds to, bool resume) {
@@ -183,7 +201,6 @@ void audio_player::seek(std::chrono::nanoseconds to, bool resume) {
         toggle_playback();
     }
 }
-
 
 void audio_player::add_event(event_type type, const std::function<void()>& func) {
     if (func) {

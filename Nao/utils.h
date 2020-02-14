@@ -63,6 +63,8 @@ namespace utils {
     std::string bytes(int64_t n);
     std::wstring wbytes(int64_t n);
 
+    std::string bits(int64_t n);
+
     std::string perc(double p);
     std::wstring wperc(double p);
 

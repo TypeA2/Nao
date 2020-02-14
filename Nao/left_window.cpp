@@ -58,7 +58,7 @@ bool left_window::wm_create(CREATESTRUCTW* create) {
     _m_list->set_column_alignment(2, list_view::Right);
 
     _m_path = std::make_unique<line_edit>(this);
-    _m_path->set_style(WS_DISABLED);
+    _m_path->set_read_only(true);
 
     // Button icons
     dynamic_library shell32("shell32.dll");

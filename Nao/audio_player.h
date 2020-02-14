@@ -42,6 +42,9 @@ class audio_player : IMFAsyncCallback, IMFClockStateSink {
     std::chrono::nanoseconds get_duration() const;
     std::chrono::nanoseconds get_current_time() const;
 
+    const std::string& get_mime_type() const;
+    uint32_t get_bitrate() const;
+
     void seek(std::chrono::nanoseconds to, bool resume = true);
 
     void add_event(event_type type, const std::function<void()>& func);
@@ -87,6 +90,9 @@ class audio_player : IMFAsyncCallback, IMFClockStateSink {
     // Used to wait untill basic setup is finished
     std::mutex _m_mutex;
     std::condition_variable _m_condition;
+
+    std::string _m_mime_type;
+    uint32_t _m_bitrate;
 
     static IAudioEndpointVolume* _default_endpoint_volume;
 };
