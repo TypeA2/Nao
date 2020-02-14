@@ -118,9 +118,6 @@
     <ClInclude Include="resource.h">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="frameworks.h">
-      <Filter>Header Files\Utils</Filter>
-    </ClInclude>
     <ClInclude Include="dimensions.h">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
@@ -171,6 +168,9 @@
     </ClInclude>
     <ClInclude Include="separator.h">
       <Filter>Header Files\UI\Generic</Filter>
+    </ClInclude>
+    <ClInclude Include="frameworks.h">
+      <Filter>Header Files\Win32</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

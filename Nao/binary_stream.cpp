@@ -190,12 +190,11 @@ HRESULT binary_istream::BeginRead(BYTE* pb, ULONG cb, IMFAsyncCallback* pCallbac
         return E_INVALIDARG;
     }
 
-    IMFAsyncResult* result = nullptr;
+    com_ptr<IMFAsyncResult> result;
     auto obj = new async_result(pb, cb);
     HASSERT(MFCreateAsyncResult(obj, pCallback, punkState, &result));
     
     HASSERT(MFPutWorkItem(MFASYNC_CALLBACK_QUEUE_MULTITHREADED, this, result));
-    result->Release();
 
     return S_OK;
 }
@@ -287,16 +286,17 @@ HRESULT binary_istream::Invoke(IMFAsyncResult* pAsyncResult) {
         return E_POINTER;
     }
 
-    IUnknown* unk_state = nullptr;
+    com_ptr<IUnknown> unk_state;
     HASSERT(pAsyncResult->GetState(&unk_state));
 
-    IMFAsyncResult* operation_result = nullptr;
+    com_ptr<IMFAsyncResult> operation_result;
     HASSERT(unk_state->QueryInterface(&operation_result));
 
-    IUnknown* unk_result = nullptr;
+    com_ptr<IUnknown> unk_result;
     HASSERT(operation_result->GetObjectW(&unk_result));
 
-    async_result* result = dynamic_cast<async_result*>(unk_result);
+    com_ptr<async_result> result;
+    HASSERT(unk_result->QueryInterface(&result));
 
     auto start = file->tellg();
     file->read(reinterpret_cast<char*>(result->buf), result->count);
@@ -312,10 +312,6 @@ HRESULT binary_istream::Invoke(IMFAsyncResult* pAsyncResult) {
 
         MFInvokeCallback(operation_result);
     }
-
-    unk_state->Release();
-    unk_result->Release();
-    operation_result->Release();
 
     return S_OK;
 }

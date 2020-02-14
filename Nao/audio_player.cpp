@@ -8,12 +8,11 @@ audio_player::audio_player(const istream_ptr& stream, const std::string& path, n
     : controller(controller), _m_ref_count { 1 }, _m_stream { stream }, _m_path { path }
     , _m_playback_state { STATE_STOPPED } {
     ASSERT(MFStartup(MF_VERSION) == S_OK);
-
     HASSERT(MFCreateMediaSession(nullptr, &_m_session));
     
     HASSERT(_m_session->BeginGetEvent(this, nullptr));
 
-    IMFSourceResolver* resolver = nullptr;
+    IMFSourceResolver* resolver;
     HASSERT(MFCreateSourceResolver(&resolver));
 
     IUnknown* unk = nullptr;
@@ -25,13 +24,10 @@ audio_player::audio_player(const istream_ptr& stream, const std::string& path, n
 
     HASSERT(unk->QueryInterface(&_m_source));
 
-    resolver->Release();
-    unk->Release();
-
-    IMFPresentationDescriptor* source_pd = nullptr;
+    com_ptr<IMFPresentationDescriptor> source_pd = nullptr;
     HASSERT(_m_source->CreatePresentationDescriptor(&source_pd));
 
-    IMFTopology* topology = _create_topology(source_pd);
+    com_ptr<IMFTopology> topology = _create_topology(source_pd);
     HASSERT(_m_session->SetTopology(0, topology));
 
     _m_playback_state = STATE_PENDING;
@@ -62,13 +58,9 @@ audio_player::audio_player(const istream_ptr& stream, const std::string& path, n
 
     HASSERT(source_pd->GetUINT32(MF_PD_AUDIO_ENCODING_BITRATE, &_m_bitrate));
 
-    source_pd->Release();
-    topology->Release();
-
-    IMFClock* _clock;
+    com_ptr<IMFClock> _clock;
     HASSERT(_m_session->GetClock(&_clock));
     HASSERT(_clock->QueryInterface(&_m_clock));
-    _clock->Release();
 
     _m_clock->AddClockStateSink(this);
 }
@@ -91,21 +83,8 @@ audio_player::~audio_player() {
         }
     }
 
-    if (_m_session) {
-        _m_session->Release();
-    }
-
-    if (_m_source) {
-        _m_source->Release();
-    }
-
-    if (_m_volume) {
-        _m_volume->Release();
-    }
-
     if (_m_clock) {
         _m_clock->RemoveClockStateSink(this);
-        _m_clock->Release();
     }
 
     MFShutdown();
@@ -186,7 +165,7 @@ uint32_t audio_player::get_bitrate() const {
 void audio_player::seek(std::chrono::nanoseconds to, bool resume) {
     ASSERT(to >= std::chrono::nanoseconds(0) && to <= _m_duration);
     ASSERT(_m_playback_state == STATE_PAUSED);
-    utils::coutln("seek to", to.count() / 1e6, "ms");
+    
     PROPVARIANT var {
         .vt = VT_I8,
         .hVal = LARGE_INTEGER {
@@ -218,7 +197,7 @@ void audio_player::trigger_event(event_type type) const {
     }
 }
 
-void audio_player::_handle_event(IMFMediaEvent* event, MediaEventType type) {
+void audio_player::_handle_event(const com_ptr<IMFMediaEvent>& event, MediaEventType type) {
     if (!event) {
         return /* E_POINTER */;
     }
@@ -246,34 +225,12 @@ void audio_player::_handle_event(IMFMediaEvent* event, MediaEventType type) {
             _m_playback_state = STATE_STOPPED;
             break;
 
-        case MENewPresentation: {
-            IMFPresentationDescriptor* pd = nullptr;
-
-            PROPVARIANT var;
-            HASSERT(event->GetValue(&var));
-            ASSERT(var.vt == VT_UNKNOWN);
-
-            var.punkVal->QueryInterface(&pd);
-            PropVariantClear(&var);
-
-            IMFTopology* topology = _create_topology(pd);
-            HASSERT(_m_session->SetTopology(0, topology));
-
-            _m_playback_state = STATE_PENDING;
-
-            topology->Release();
-            pd->Release();
-            break;
-        }
-
         default: break;
     }
-
-    event->Release();
 }
 
-IMFTopology* audio_player::_create_topology(IMFPresentationDescriptor* pd) const {
-    IMFTopology* topology = nullptr;
+com_ptr<IMFTopology> audio_player::_create_topology(const com_ptr<IMFPresentationDescriptor>& pd) const {
+    com_ptr<IMFTopology> topology;
 
     HASSERT(MFCreateTopology(&topology));
 
@@ -281,15 +238,16 @@ IMFTopology* audio_player::_create_topology(IMFPresentationDescriptor* pd) const
     HASSERT(pd->GetStreamDescriptorCount(&stream_count));
 
     for (DWORD i = 0; i < stream_count; ++i) {
-        IMFStreamDescriptor* sd = nullptr;
+        com_ptr<IMFStreamDescriptor> sd;
         BOOL selected = false;
         HASSERT(pd->GetStreamDescriptorByIndex(i, &selected, &sd));
 
-        IMFActivate* activate = nullptr;
-        IMFTopologyNode* source_node = nullptr, * output_node = nullptr;
+        com_ptr<IMFActivate> activate;
+        com_ptr<IMFTopologyNode> source_node;
+        com_ptr<IMFTopologyNode> output_node;
         if (selected) {
             // Create sink
-            IMFMediaTypeHandler* handler = nullptr;
+            com_ptr<IMFMediaTypeHandler> handler;
 
             HASSERT(sd->GetMediaTypeHandler(&handler));
 
@@ -299,7 +257,6 @@ IMFTopology* audio_player::_create_topology(IMFPresentationDescriptor* pd) const
             if (major_type == MFMediaType_Audio) {
                 HASSERT(MFCreateAudioRendererActivate(&activate));
             }
-            handler->Release();
 
             // Add source node
             HASSERT(MFCreateTopologyNode(MF_TOPOLOGY_SOURCESTREAM_NODE, &source_node));
@@ -317,11 +274,6 @@ IMFTopology* audio_player::_create_topology(IMFPresentationDescriptor* pd) const
 
             source_node->ConnectOutput(0, output_node, 0);
         }
-
-        sd->Release();
-        activate->Release();
-        source_node->Release();
-        output_node->Release();
     }
 
     return topology;
@@ -357,7 +309,7 @@ HRESULT audio_player::GetParameters(DWORD*, DWORD*) {
 }
 
 HRESULT audio_player::Invoke(IMFAsyncResult* pAsyncResult) {
-    IMFMediaEvent* event = nullptr;
+    com_ptr<IMFMediaEvent> event;
     if (FAILED(_m_session->EndGetEvent(pAsyncResult, &event))) {
         return S_OK;
     }
@@ -366,13 +318,10 @@ HRESULT audio_player::Invoke(IMFAsyncResult* pAsyncResult) {
     HASSERT(event->GetType(&type));
 
     if (FAILED(_m_session->BeginGetEvent(this, nullptr))) {
-        event->Release();
         return S_OK;
     }
 
     if (_m_playback_state != STATE_CLOSING) {
-        event->AddRef();
-
         if (type == MESessionTopologyStatus) {
             // Don't process this setup message on the main thread
             _handle_event(event, type);
@@ -383,7 +332,6 @@ HRESULT audio_player::Invoke(IMFAsyncResult* pAsyncResult) {
         }
     }
 
-    event->Release();
     return S_OK;
 }
 
@@ -412,4 +360,4 @@ HRESULT audio_player::OnClockStop(MFTIME) {
     return S_OK;
 }
 
-IAudioEndpointVolume* audio_player::_default_endpoint_volume { };
+com_ptr<IAudioEndpointVolume> audio_player::_default_endpoint_volume { };

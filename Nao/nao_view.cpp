@@ -119,23 +119,17 @@ void nao_view::button_clicked(view_button_type which) const {
 
     switch (which) {
         case BUTTON_BROWSE: {
-            IFileOpenDialog* dialog;
-            HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, nullptr,
-                CLSCTX_ALL, IID_PPV_ARGS(&dialog));
-
-            if (FAILED(hr)) {
-                utils::coutln("Failed to create FileOpenDialog");
-                return;
-            }
+            com_ptr<IFileOpenDialog> dialog;
+            HASSERT(dialog.CreateInstance(CLSID_FileOpenDialog));
 
             FILEOPENDIALOGOPTIONS options;
-            hr = dialog->GetOptions(&options);
+            HRESULT hr = dialog->GetOptions(&options);
             if (SUCCEEDED(hr)) {
                 dialog->SetOptions(options | FOS_PICKFOLDERS);
 
                 hr = dialog->Show(_m_main_window->handle());
                 if (SUCCEEDED(hr)) {
-                    IShellItem* item;
+                    com_ptr<IShellItem> item;
                     hr = dialog->GetResult(&item);
                     if (SUCCEEDED(hr)) {
                         LPWSTR path;
@@ -145,13 +139,9 @@ void nao_view::button_clicked(view_button_type which) const {
                         } else {
                             controller.move_to(utils::utf8(path));
                         }
-
-                        item->Release();
                     }
                 }
             }
-
-            dialog->Release();
             return;
         }
 

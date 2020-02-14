@@ -51,8 +51,8 @@ class audio_player : IMFAsyncCallback, IMFClockStateSink {
     void trigger_event(event_type type) const;
 
     private:
-    void _handle_event(IMFMediaEvent* event, MediaEventType type);
-    IMFTopology* _create_topology(IMFPresentationDescriptor* pd) const;
+    void _handle_event(const com_ptr<IMFMediaEvent>& event, MediaEventType type);
+    com_ptr<IMFTopology> _create_topology(const com_ptr<IMFPresentationDescriptor>& pd) const;
 
     STDMETHODIMP_(ULONG) AddRef() override;
     STDMETHODIMP_(ULONG) Release() override;
@@ -80,10 +80,10 @@ class audio_player : IMFAsyncCallback, IMFClockStateSink {
     std::string _m_path;
     
     playback_state _m_playback_state;
-    IMFMediaSession* _m_session;
-    IMFMediaSource* _m_source;
-    IMFSimpleAudioVolume* _m_volume;
-    IMFPresentationClock* _m_clock;
+    com_ptr<IMFMediaSession> _m_session;
+    com_ptr<IMFMediaSource> _m_source;
+    com_ptr<IMFSimpleAudioVolume> _m_volume;
+    com_ptr<IMFPresentationClock> _m_clock;
 
     std::chrono::nanoseconds _m_duration;
 
@@ -94,5 +94,5 @@ class audio_player : IMFAsyncCallback, IMFClockStateSink {
     std::string _m_mime_type;
     uint32_t _m_bitrate;
 
-    static IAudioEndpointVolume* _default_endpoint_volume;
+    static com_ptr<IAudioEndpointVolume> _default_endpoint_volume;
 };

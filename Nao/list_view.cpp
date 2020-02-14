@@ -24,19 +24,12 @@ list_view::list_view(ui_element* parent) : ui_element(parent), _m_image_list(nul
     set_handle(handle);
 }
 
-list_view::list_view(ui_element* parent, const std::vector<std::string>& hdr,
-    IImageList* list) : list_view(parent) {
+list_view::list_view(ui_element* parent, const std::vector<std::string>& hdr, const com_ptr<IImageList>& list) : list_view(parent) {
 
     set_columns(hdr);
 
     if (list) {
         set_image_list(list);
-    }
-}
-
-list_view::~list_view() {
-    if (_m_image_list) {
-        _m_image_list->Release();
     }
 }
 
@@ -69,12 +62,12 @@ void list_view::set_columns(const std::vector<std::string>& hdr) const {
     }
 }
 
-void list_view::set_image_list(IImageList* list) {
+void list_view::set_image_list(const com_ptr<IImageList>& list) {
     ASSERT(list && handle());
 
     _m_image_list = list;
     
-    ListView_SetImageList(handle(), list, LVSIL_SMALL);
+    ListView_SetImageList(handle(), list.GetInterfacePtr(), LVSIL_SMALL);
 }
 
 int list_view::column_count() const {

@@ -22,3 +22,7 @@
 #include <endpointvolume.h>
 
 #include <Windowsx.h>
+#include <comip.h>
+
+template <typename Interface>
+using com_ptr = _com_ptr_t<_com_IIID<Interface, &__uuidof(Interface)>>;

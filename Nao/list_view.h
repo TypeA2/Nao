@@ -24,12 +24,12 @@ class list_view : public ui_element {
 
     explicit list_view(ui_element* parent);
     explicit list_view(ui_element* parent,
-        const std::vector<std::string>& hdr, IImageList* list = nullptr);
+        const std::vector<std::string>& hdr, const com_ptr<IImageList>& list = nullptr);
     list_view() = delete;
 
-    ~list_view();
+    ~list_view() override = default;
     void set_columns(const std::vector<std::string>& hdr) const;
-    void set_image_list(IImageList* list);
+    void set_image_list(const com_ptr<IImageList>& list);
 
     int column_count() const;
     int item_count() const;
@@ -62,6 +62,6 @@ class list_view : public ui_element {
     void clear(const std::function<void(void*)>& deleter = { }) const;
 
     private:
-    IImageList* _m_image_list;
+    com_ptr<IImageList> _m_image_list;
 };
 
