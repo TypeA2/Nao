@@ -118,7 +118,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)lib\libogg\include;$(SolutionDir)lib\libvorbis\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)lib\libogg\include;$(SolutionDir)lib\libvorbis\include;$(SolutionDir)lib\portaudio\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>6388;6387;26712;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -126,8 +126,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LargeAddressAware>true</LargeAddressAware>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>comctl32.lib;uxtheme.lib;mf.lib;mfplat.lib;mfuuid.lib;Shlwapi.lib;comsupp.lib;libogg.lib;libvorbis.lib;libvorbisfile.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)lib\libogg\$(Configuration);$(SolutionDir)lib\libvorbis\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>comctl32.lib;uxtheme.lib;mf.lib;mfplat.lib;mfuuid.lib;Shlwapi.lib;comsupp.lib;libogg.lib;libvorbis.lib;libvorbisfile.lib;portaudio_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)lib\libogg\$(Configuration);$(SolutionDir)lib\libvorbis\$(Configuration);$(SolutionDir)lib\portaudio\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <ResourceCompile>
       <AdditionalIncludeDirectories>
@@ -166,7 +166,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)lib\libogg\include;$(SolutionDir)lib\libvorbis\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)lib\libogg\include;$(SolutionDir)lib\libvorbis\include;$(SolutionDir)lib\portaudio\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <DisableSpecificWarnings>6388;6387;26712;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -179,8 +179,8 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <LargeAddressAware>true</LargeAddressAware>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>comctl32.lib;uxtheme.lib;mf.lib;mfplat.lib;mfuuid.lib;Shlwapi.lib;comsupp.lib;libogg.lib;libvorbis.lib;libvorbisfile.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)lib\libogg\$(Configuration);$(SolutionDir)lib\libvorbis\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>comctl32.lib;uxtheme.lib;mf.lib;mfplat.lib;mfuuid.lib;Shlwapi.lib;comsupp.lib;libogg.lib;libvorbis.lib;libvorbisfile.lib;portaudio_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)lib\libogg\$(Configuration);$(SolutionDir)lib\libvorbis\$(Configuration);$(SolutionDir)lib\portaudio\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <ResourceCompile>
       <AdditionalIncludeDirectories>

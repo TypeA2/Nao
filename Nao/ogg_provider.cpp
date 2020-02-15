@@ -6,10 +6,18 @@
 #include "preview.h"
 
 #include <vorbis/vorbisfile.h>
+#include <portaudio.h>
 
 #include <fstream>
 
 ogg_provider::ogg_provider(const istream_type& stream, const std::string& path) : item_provider(stream, path) {
+    auto err = Pa_Initialize();
+    if (err != paNoError) {
+        throw std::runtime_error("Pa_Initialize error");
+    }
+
+    
+
     utils::coutln("[OGG] creating for", path);
 
     static ov_callbacks callbacks {
@@ -23,25 +31,6 @@ ogg_provider::ogg_provider(const istream_type& stream, const std::string& path) 
 
             stream->read(ptr, size, nmemb);
             return stream->gcount();
-        },/*
-        .seek_func = [](void* source, ogg_int64_t offset, int whence) -> int {
-            return -1;
-            ogg_provider* provider = static_cast<ogg_provider*>(source);
-            auto& stream = provider->stream;
-
-            switch (whence) {
-                case SEEK_SET: stream->seekg(offset, std::ios::beg); break;
-                case SEEK_CUR: stream->seekg(offset, std::ios::cur); break;
-                case SEEK_END: stream->seekg(offset, std::ios::end); break;
-                default: break;
-            }
-
-            stream->clear();
-
-            return 0;
-        },*/
-        .tell_func = [](void* source) -> long {
-            return static_cast<long>(static_cast<ogg_provider*>(source)->stream->tellg());
         }
     };
 
@@ -50,6 +39,7 @@ ogg_provider::ogg_provider(const istream_type& stream, const std::string& path) 
     OggVorbis_File vf;
     
     if (ov_open_callbacks(this, &vf, nullptr, 0, callbacks) < 0) {
+        Pa_Terminate();
         throw std::runtime_error("invalid ogg stream");
     }
 
@@ -65,7 +55,62 @@ ogg_provider::ogg_provider(const istream_type& stream, const std::string& path) 
         << "Window bitrate: " << info->bitrate_window << std::endl;
     utils::coutln(ss.str());
 
+    PaStream* pa_stream;
+
+    int default_device = Pa_GetDefaultOutputDevice();
+    auto default_info = Pa_GetDeviceInfo(default_device);
+    PaStreamParameters params {
+        .device = default_device,
+        .channelCount = info->channels,
+        .sampleFormat = paInt16,
+        .suggestedLatency = default_info->defaultHighOutputLatency
+    };
+
+    err = Pa_OpenStream(&pa_stream, nullptr, &params, default_info->defaultSampleRate, 1024, paClipOff, nullptr, nullptr);
+    if (err != paNoError) {
+        utils::coutln("PA error", Pa_GetErrorText(err));
+        Pa_Terminate();
+        throw std::runtime_error("Pa_OpenDefaultStream error");
+    }
+
+    err = Pa_StartStream(pa_stream);
+    if (err != paNoError) {
+        utils::coutln("PA error", Pa_GetErrorText(err));
+        Pa_Terminate();
+        throw std::runtime_error("Pa_StartStream error");
+    }
+
+    char pcm[4096];
+    while (true) {
+        int bitstream;
+        long size = ov_read(&vf, pcm, sizeof(pcm), 0, 2, 1, &bitstream);
+        if (size == 0) {
+            break;
+        }
+
+        if (size < 0) {
+            Pa_Terminate();
+            throw std::runtime_error("decode error");
+        }
+
+        err = Pa_WriteStream(pa_stream, pcm, size / 2 / info->channels);
+        if (err) {
+            utils::coutln("error!");
+            break;
+        }
+    }
+
+    err = Pa_CloseStream(pa_stream);
+    if (err != paNoError) {
+        utils::coutln("PA close err");
+    }
+
     ov_clear(&vf);
+
+    err = Pa_Terminate();
+    if (err != paNoError) {
+        throw std::runtime_error("Pa_Terminate error");
+    }
 }
 
 preview_element_type ogg_provider::preview_type() const {
