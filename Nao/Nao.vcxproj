@@ -118,7 +118,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)lib\libogg\include;$(SolutionDir)lib\libvorbis\include;$(SolutionDir)lib\portaudio\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)lib\libogg\include;$(SolutionDir)lib\libvorbis\include;$(SolutionDir)lib\portaudio\include;$(SolutionDir)lib\libsamplerate\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>6388;6387;26712;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -126,8 +126,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LargeAddressAware>true</LargeAddressAware>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>comctl32.lib;uxtheme.lib;mf.lib;mfplat.lib;mfuuid.lib;Shlwapi.lib;comsupp.lib;libogg.lib;libvorbis.lib;libvorbisfile.lib;portaudio_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)lib\libogg\$(Configuration);$(SolutionDir)lib\libvorbis\$(Configuration);$(SolutionDir)lib\portaudio\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>comctl32.lib;uxtheme.lib;mf.lib;mfplat.lib;mfuuid.lib;Shlwapi.lib;comsupp.lib;libogg.lib;libvorbis.lib;libvorbisfile.lib;portaudio_x64.lib;libsamplerate-0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)lib\libogg\$(Configuration);$(SolutionDir)lib\libvorbis\$(Configuration);$(SolutionDir)lib\portaudio\$(Configuration);$(SolutionDir)lib\libsamplerate\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <ResourceCompile>
       <AdditionalIncludeDirectories>
@@ -166,7 +166,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)lib\libogg\include;$(SolutionDir)lib\libvorbis\include;$(SolutionDir)lib\portaudio\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)lib\libogg\include;$(SolutionDir)lib\libvorbis\include;$(SolutionDir)lib\portaudio\include;$(SolutionDir)lib\libsamplerate\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <DisableSpecificWarnings>6388;6387;26712;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -179,8 +179,8 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <LargeAddressAware>true</LargeAddressAware>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>comctl32.lib;uxtheme.lib;mf.lib;mfplat.lib;mfuuid.lib;Shlwapi.lib;comsupp.lib;libogg.lib;libvorbis.lib;libvorbisfile.lib;portaudio_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)lib\libogg\$(Configuration);$(SolutionDir)lib\libvorbis\$(Configuration);$(SolutionDir)lib\portaudio\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>comctl32.lib;uxtheme.lib;mf.lib;mfplat.lib;mfuuid.lib;Shlwapi.lib;comsupp.lib;libogg.lib;libvorbis.lib;libvorbisfile.lib;portaudio_x64.lib;libsamplerate-0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)lib\libogg\$(Configuration);$(SolutionDir)lib\libvorbis\$(Configuration);$(SolutionDir)lib\portaudio\$(Configuration);$(SolutionDir)lib\libsamplerate\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <ResourceCompile>
       <AdditionalIncludeDirectories>
@@ -217,7 +217,9 @@
     <ClInclude Include="item_provider.h" />
     <ClInclude Include="item_provider_factory.h" />
     <ClInclude Include="nao_view.h" />
+    <ClInclude Include="ogg_pcm_provider.h" />
     <ClInclude Include="ogg_provider.h" />
+    <ClInclude Include="pcm_provider.h" />
     <ClInclude Include="preview.h" />
     <ClInclude Include="push_button.h" />
     <ClInclude Include="resource.h" />
@@ -255,7 +257,9 @@
     <ClCompile Include="item_provider_factory.cpp" />
     <ClCompile Include="nao.cpp" />
     <ClCompile Include="nao_view.cpp" />
+    <ClCompile Include="ogg_pcm_provider.cpp" />
     <ClCompile Include="ogg_provider.cpp" />
+    <ClCompile Include="pcm_provider.cpp" />
     <ClCompile Include="preview.cpp" />
     <ClCompile Include="push_button.cpp" />
     <ClCompile Include="right_window.cpp" />

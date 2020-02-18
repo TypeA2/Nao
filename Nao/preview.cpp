@@ -22,6 +22,8 @@
 #include "dimensions.h"
 #include "dynamic_library.h"
 
+#include "ogg_pcm_provider.h"
+
 #include <algorithm>
 
 preview::preview(nao_view& view, item_provider* provider)
@@ -216,13 +218,13 @@ bool audio_player_preview::wm_create(CREATESTRUCTW*) {
 
     _m_progress_bar = std::make_unique<seekable_progress_bar>(this, 0, 1000);
 
-    _m_player = std::make_unique<audio_player>(provider->get_stream(), provider->get_path(), controller);
+    _m_player = std::make_unique<audio_player>(std::make_shared<ogg_pcm_provider>(provider->get_stream()));
 
-    int64_t volume = static_cast<int64_t>(round(_m_player->get_volume_log() * 100.));
+    int64_t volume = static_cast<int64_t>(round(_m_player->volume_log() * 100.));
     _m_volume_slider->set_position(volume);
     _m_volume_display->set_text(std::to_string(volume) + "%");
 
-    _m_duration = _m_player->get_duration();
+    _m_duration = _m_player->duration();
     _m_duration_display->set_text(utils::format_minutes(_m_duration, false));
 
     _m_volume_display_size = _m_volume_display->text_extent_point();
@@ -232,24 +234,20 @@ bool audio_player_preview::wm_create(CREATESTRUCTW*) {
     _set_progress(std::chrono::nanoseconds(0));
 
     std::function<void()> timer_start_func = [this] {
+        _m_toggle_button->set_icon(_m_pause_icon);
         SetTimer(handle(), 0, 100, nullptr);
     };
 
     std::function<void()> timer_stop_func = [this] {
+        _m_toggle_button->set_icon(_m_play_icon);
         KillTimer(handle(), 0);
     };
 
     _m_player->add_event(EVENT_START, timer_start_func);
-    _m_player->add_event(EVENT_RESTART, timer_start_func);
-
-    _m_player->add_event(EVENT_PAUSE, timer_stop_func);
     _m_player->add_event(EVENT_STOP, timer_stop_func);
-    _m_player->add_event(EVENT_STOP, [this] {
-        _m_toggle_button->set_icon(_m_play_icon);
-    });
 
     _m_mime_type_label = std::make_unique<label>(this, "MIME type:", LABEL_LEFT);
-    _m_mime_type_edit = std::make_unique<line_edit>(this, _m_player->get_mime_type());
+    _m_mime_type_edit = std::make_unique<line_edit>(this, "" /*_m_player->get_mime_type()*/);
     _m_mime_type_edit->set_read_only(true);
     _m_mime_type_edit->set_ex_style(WS_EX_CLIENTEDGE, false);
 
@@ -260,7 +258,7 @@ bool audio_player_preview::wm_create(CREATESTRUCTW*) {
     _m_duration_edit->set_ex_style(WS_EX_CLIENTEDGE, false);
 
     _m_bitrate_label = std::make_unique<label>(this, "Bitrate:", LABEL_LEFT);
-    _m_bitrate_edit = std::make_unique<line_edit>(this, utils::bits(_m_player->get_bitrate()) + " / s");
+    _m_bitrate_edit = std::make_unique<line_edit>(this, utils::bits(0 /*_m_player->get_bitrate()*/) + " / s");
     _m_bitrate_edit->set_read_only(true);
     _m_bitrate_edit->set_ex_style(WS_EX_CLIENTEDGE, false);
 
@@ -365,18 +363,14 @@ LRESULT audio_player_preview::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPAR
             HWND target = reinterpret_cast<HWND>(lparam);
 
             if (target == _m_toggle_button->handle()) {
-                _m_player->toggle_playback();
+                if (_m_player->paused()) {
+                    if (_m_player->eof()) {
+                        _m_player->reset();
+                    }
 
-                switch (_m_player->state()) {
-                    case STATE_PAUSED:
-                        _m_toggle_button->set_icon(_m_play_icon);
-                        break;
-
-                    case STATE_PLAYING:
-                        _m_toggle_button->set_icon(_m_pause_icon);
-                        break;
-
-                    default: break;
+                    _m_player->play();
+                } else {
+                    _m_player->pause();
                 }
             }
 
@@ -410,7 +404,7 @@ LRESULT audio_player_preview::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPAR
 
         case WM_TIMER:
             if (wparam == 0) {
-                auto current = _m_player->get_current_time();
+                auto current = _m_player->pos();
                 _set_progress(current);
                 _m_progress_bar->set_progress(
                     static_cast<uintmax_t>(round((current.count() / static_cast<double>(_m_duration.count())) * 1000)));
@@ -420,9 +414,9 @@ LRESULT audio_player_preview::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPAR
 
         case PB_CAPTURE:
             // If audio is playing, pause it
-            if (_m_player->state() == STATE_PLAYING) {
+            if (!_m_player->paused()) {
                 _m_resume_after_seek = true;
-                _m_player->toggle_playback();
+                _m_player->pause();
             } else {
                 _m_resume_after_seek  = false;
             }
@@ -431,12 +425,16 @@ LRESULT audio_player_preview::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPAR
         case PB_SEEK:
         case PB_RELEASE: {
             double promille = wparam / 1000.;
-            auto progress_ns = static_cast<std::chrono::nanoseconds::rep>(round(promille * _m_duration.count()));
+            auto progress_ns = std::chrono::nanoseconds(
+                static_cast<std::chrono::nanoseconds::rep>(round(promille * _m_duration.count())));
 
             if (msg == PB_SEEK) {
-                _set_progress(std::chrono::nanoseconds(progress_ns));
+                _set_progress(progress_ns);
             } else {
-                _m_player->seek(std::chrono::nanoseconds(progress_ns), _m_resume_after_seek);
+                _m_player->seek(progress_ns);
+                if (_m_resume_after_seek) {
+                    _m_player->play();
+                }
             }
 
             break;

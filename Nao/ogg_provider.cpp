@@ -5,20 +5,18 @@
 #include "utils.h"
 #include "preview.h"
 
-#include <vorbis/vorbisfile.h>
-#include <portaudio.h>
-
-#include <fstream>
+#include "audio_player.h"
 
 ogg_provider::ogg_provider(const istream_type& stream, const std::string& path) : item_provider(stream, path) {
-    auto err = Pa_Initialize();
+    utils::coutln("[OGG] creating for", path);
+    /*auto err = Pa_Initialize();
     if (err != paNoError) {
         throw std::runtime_error("Pa_Initialize error");
     }
 
     
 
-    utils::coutln("[OGG] creating for", path);
+    
 
     static ov_callbacks callbacks {
         .read_func = [](void* ptr, size_t size, size_t nmemb, void* source) -> size_t {
@@ -62,7 +60,7 @@ ogg_provider::ogg_provider(const istream_type& stream, const std::string& path) 
     PaStreamParameters params {
         .device = default_device,
         .channelCount = info->channels,
-        .sampleFormat = paInt16,
+        .sampleFormat = paFloat32,
         .suggestedLatency = default_info->defaultHighOutputLatency
     };
 
@@ -80,12 +78,19 @@ ogg_provider::ogg_provider(const istream_type& stream, const std::string& path) 
         throw std::runtime_error("Pa_StartStream error");
     }
 
-    char pcm[4096];
-    while (true) {
+    cb_state state {
+        .file = &vf,
+        .info = info
+    };
+
+    static src_callback_t cb = [](void* data, float** buf) -> long {
+        auto state = static_cast<cb_state*>(data);
+        char pcm[4096];
         int bitstream;
-        long size = ov_read(&vf, pcm, sizeof(pcm), 0, 2, 1, &bitstream);
+        // Get bytes read
+        long size = ov_read(state->file, pcm, sizeof(pcm), 0, 2, 1, &bitstream);
         if (size == 0) {
-            break;
+            return 0;
         }
 
         if (size < 0) {
@@ -93,7 +98,25 @@ ogg_provider::ogg_provider(const istream_type& stream, const std::string& path) 
             throw std::runtime_error("decode error");
         }
 
-        err = Pa_WriteStream(pa_stream, pcm, size / 2 / info->channels);
+        long frames = size / 2 / state->info->channels;
+        short* pcm_sht = reinterpret_cast<short*>(pcm);
+        *buf = new float[frames * state->info->channels];
+        src_short_to_float_array(pcm_sht, *buf, frames * state->info->channels);
+
+        return frames;
+    };
+    int src_err;
+    SRC_STATE* src_state = src_callback_new(cb, SRC_SINC_MEDIUM_QUALITY, info->channels, &src_err, &state);
+
+
+    double ratio = default_info->defaultSampleRate / static_cast<double>(info->rate);
+
+    float pcm_flt[4096];
+    while (true) {
+        
+        long frames = src_callback_read(src_state, ratio, 1024, pcm_flt);
+
+        err = Pa_WriteStream(pa_stream, pcm_flt, frames);
         if (err) {
             utils::coutln("error!");
             break;
@@ -107,19 +130,20 @@ ogg_provider::ogg_provider(const istream_type& stream, const std::string& path) 
 
     ov_clear(&vf);
 
+    src_delete(src_state);
+
     err = Pa_Terminate();
     if (err != paNoError) {
         throw std::runtime_error("Pa_Terminate error");
-    }
+    }*/
 }
 
 preview_element_type ogg_provider::preview_type() const {
-    return PREVIEW_LIST_VIEW;
+    return PREVIEW_PLAY_AUDIO;
 }
 
 std::unique_ptr<preview> ogg_provider::make_preview(nao_view& view) {
-    //return std::make_unique<audio_player_preview>(view, this);
-    return nullptr;
+    return std::make_unique<audio_player_preview>(view, this);
 }
 
 static item_provider_ptr create(const item_provider::istream_type& stream, const std::string& path) {

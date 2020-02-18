@@ -19,6 +19,8 @@ class thread_pool {
     explicit thread_pool(size_t n_threads, const std::function<void()>& before, const std::function<void()>& after = {});
     ~thread_pool();
 
+    size_t queue_size() const;
+
     // Push a function with arguments, return the packaged task
     template <typename Func, typename... Args>
     [[maybe_unused]] auto push(Func&& f, Args&&... args) {
@@ -55,7 +57,7 @@ class thread_pool {
     std::vector<std::unique_ptr<std::thread>> _m_threads;
 
     std::queue<std::function<void()>*> _m_queue;
-    std::mutex _m_queue_mutex;
+    mutable std::mutex _m_queue_mutex;
     std::mutex _m_mutex;
     std::condition_variable _m_condition;
     std::atomic<bool> _m_stop;

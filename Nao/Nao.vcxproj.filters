@@ -49,6 +49,18 @@
     <Filter Include="Source Files\Win32">
       <UniqueIdentifier>{54b97e0b-875d-4ad2-855a-538aeb08c40e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\AV">
+      <UniqueIdentifier>{415411cb-3be5-418a-85b6-20ce4f2d382e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\AV\PCM">
+      <UniqueIdentifier>{611a37e7-7889-455c-88c7-5a08b6ab7667}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\AV">
+      <UniqueIdentifier>{c0bb5c46-0cd2-44c6-9faf-80ca93dd1fd6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\AV\PCM">
+      <UniqueIdentifier>{f2149310-c12a-47dd-8aef-7445531fe63a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Nao.rc">
@@ -154,9 +166,6 @@
     <ClInclude Include="preview.h">
       <Filter>Header Files\UI</Filter>
     </ClInclude>
-    <ClInclude Include="audio_player.h">
-      <Filter>Header Files\Win32</Filter>
-    </ClInclude>
     <ClInclude Include="slider.h">
       <Filter>Header Files\UI\Generic</Filter>
     </ClInclude>
@@ -174,6 +183,15 @@
     </ClInclude>
     <ClInclude Include="ogg_provider.h">
       <Filter>Header Files\Providers</Filter>
+    </ClInclude>
+    <ClInclude Include="pcm_provider.h">
+      <Filter>Header Files\AV\PCM</Filter>
+    </ClInclude>
+    <ClInclude Include="ogg_pcm_provider.h">
+      <Filter>Header Files\AV\PCM</Filter>
+    </ClInclude>
+    <ClInclude Include="audio_player.h">
+      <Filter>Header Files\AV</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -261,9 +279,6 @@
     <ClCompile Include="preview.cpp">
       <Filter>Source Files\UI</Filter>
     </ClCompile>
-    <ClCompile Include="audio_player.cpp">
-      <Filter>Source Files\Win32</Filter>
-    </ClCompile>
     <ClCompile Include="slider.cpp">
       <Filter>Source Files\UI\Generic</Filter>
     </ClCompile>
@@ -278,6 +293,15 @@
     </ClCompile>
     <ClCompile Include="ogg_provider.cpp">
       <Filter>Source Files\Providers</Filter>
+    </ClCompile>
+    <ClCompile Include="pcm_provider.cpp">
+      <Filter>Source Files\AV\PCM</Filter>
+    </ClCompile>
+    <ClCompile Include="ogg_pcm_provider.cpp">
+      <Filter>Source Files\AV\PCM</Filter>
+    </ClCompile>
+    <ClCompile Include="audio_player.cpp">
+      <Filter>Source Files\AV</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

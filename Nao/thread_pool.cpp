@@ -95,3 +95,10 @@ thread_pool::thread_pool(size_t n_threads, const std::function<void()>& before,
         _m_threads[i].reset(new std::thread(loop_fun));
     }
 }
+
+size_t thread_pool::queue_size() const {
+    std::unique_lock lock(_m_queue_mutex);
+
+    return _m_queue.size();
+}
+

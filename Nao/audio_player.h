@@ -1,31 +1,71 @@
 #pragma once
 
-#include "binary_stream.h"
-#include "frameworks.h"
-
-#include <functional>
-#include <map>
-
-enum playback_state {
-    STATE_STOPPED,
-    STATE_PENDING,
-
-    STATE_PAUSED,
-    STATE_PLAYING,
-
-    STATE_CLOSING
-};
+#include "pcm_provider.h"
+#include "thread_pool.h"
 
 enum event_type {
-    EVENT_PAUSE,
-    EVENT_RESTART,
-    EVENT_SET_RATE,
     EVENT_START,
     EVENT_STOP
 };
 
-class nao_controller;
+class audio_player_pa_lock;
 
+class audio_player {
+    public:
+    using event_handler = std::function<void()>;
+
+    explicit audio_player(pcm_provider_ptr provider);
+    ~audio_player();
+
+    std::chrono::nanoseconds duration() const;
+    std::chrono::nanoseconds pos() const;
+    void seek(std::chrono::nanoseconds pos) const;
+
+    bool paused() const;
+    bool eof() const;
+    void pause();
+    void play();
+    void reset();
+
+    void set_volume_scaled(float val);
+    void set_volume_log(float orig, float curve = 2.f);
+    float volume_scaled() const;
+    float volume_log(float curve = 2.f) const;
+
+    void add_event(event_type type, const event_handler& handler);
+    void trigger_event(event_type type) const;
+
+    private:
+    void _playback_loop_passthrough(sample_type output_format);
+    void _playback_loop_resample(const PaDeviceInfo* info);
+    void _write_samples(void* samples, int64_t frames, int64_t channels, sample_type type) const;
+
+    std::unique_ptr<audio_player_pa_lock> _d;
+
+    pcm_provider_ptr _m_provider;
+    thread_pool _m_player;
+
+    bool _m_convert_rate;
+    bool _m_convert_format;
+
+    bool _m_quit;
+    bool _m_pause;
+    bool _m_eof;
+    std::mutex _m_pause_mutex;
+    std::condition_variable _m_pause_condition;
+
+    std::mutex _m_startup_mutex;
+    std::condition_variable _m_startup_condition;
+    std::atomic<bool> _m_startup_done;
+
+    float _m_volume;
+
+    PaStream* _m_stream;
+
+    std::unordered_map<event_type, std::vector<event_handler>> _m_events;
+};
+
+/*
 class audio_player : IMFAsyncCallback, IMFClockStateSink {
     public:
     explicit audio_player(const istream_ptr& stream, const std::string& path, nao_controller& controller);
@@ -96,3 +136,4 @@ class audio_player : IMFAsyncCallback, IMFClockStateSink {
 
     static com_ptr<IAudioEndpointVolume> _default_endpoint_volume;
 };
+*/

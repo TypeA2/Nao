@@ -1,363 +1,317 @@
 #include "audio_player.h"
 
-#include "utils.h"
+#include "thread_pool.h"
 
-#include "nao_controller.h"
+#include <portaudio.h>
+#include <samplerate.h>
 
-audio_player::audio_player(const istream_ptr& stream, const std::string& path, nao_controller& controller)
-    : controller(controller), _m_ref_count { 1 }, _m_stream { stream }, _m_path { path }
-    , _m_playback_state { STATE_STOPPED } {
-    ASSERT(MFStartup(MF_VERSION) == S_OK);
-    HASSERT(MFCreateMediaSession(nullptr, &_m_session));
-    
-    HASSERT(_m_session->BeginGetEvent(this, nullptr));
-
-    IMFSourceResolver* resolver;
-    HASSERT(MFCreateSourceResolver(&resolver));
-
-    IUnknown* unk = nullptr;
-    MF_OBJECT_TYPE type = MF_OBJECT_INVALID;
-    HASSERT(resolver->CreateObjectFromByteStream(
-        _m_stream.get(), utils::utf16(_m_path).c_str(),
-        MF_RESOLUTION_MEDIASOURCE | MF_RESOLUTION_KEEP_BYTE_STREAM_ALIVE_ON_FAIL,
-        nullptr, &type, &unk));
-
-    HASSERT(unk->QueryInterface(&_m_source));
-
-    com_ptr<IMFPresentationDescriptor> source_pd = nullptr;
-    HASSERT(_m_source->CreatePresentationDescriptor(&source_pd));
-
-    com_ptr<IMFTopology> topology = _create_topology(source_pd);
-    HASSERT(_m_session->SetTopology(0, topology));
-
-    _m_playback_state = STATE_PENDING;
-
-    {
-        std::unique_lock lock(_m_mutex);
-        _m_condition.wait(lock, [this] { return _m_volume != nullptr; });
+class audio_player_pa_lock {
+    public:
+    explicit audio_player_pa_lock() {
+        if (Pa_Initialize() != paNoError) {
+            throw std::runtime_error("Pa_Initialize error");
+        }
     }
 
-    DWORD caps;
-    _m_session->GetSessionCapabilities(&caps);
-    ASSERT(caps & MFSESSIONCAP_SEEK);
-
-    int64_t duration;
-    HASSERT(source_pd->GetUINT64(MF_PD_DURATION, reinterpret_cast<uint64_t*>(&duration)));
-
-    using namespace std::chrono_literals;
-    _m_duration = duration * 100ns;
-
-    {
-        uint32_t length;
-        HASSERT(source_pd->GetStringLength(MF_PD_MIME_TYPE, &length));
-
-        std::wstring tmp(length, L'\0');
-        HASSERT(source_pd->GetString(MF_PD_MIME_TYPE, tmp.data(), length + 1, nullptr));
-        _m_mime_type = utils::utf8(tmp);
+    ~audio_player_pa_lock() {
+        if (Pa_Terminate() != paNoError) {
+            utils::coutln("Pa_Terminate error");
+        }
     }
+};
 
-    HASSERT(source_pd->GetUINT32(MF_PD_AUDIO_ENCODING_BITRATE, &_m_bitrate));
-
-    com_ptr<IMFClock> _clock;
-    HASSERT(_m_session->GetClock(&_clock));
-    HASSERT(_clock->QueryInterface(&_m_clock));
-
-    _m_clock->AddClockStateSink(this);
+audio_player::audio_player(pcm_provider_ptr provider) : _d { std::make_unique<audio_player_pa_lock>() }
+    , _m_provider { std::move(provider) }, _m_player(1)
+    , _m_convert_rate { false }
+    , _m_quit { false }, _m_pause { true }, _m_eof { false }
+    , _m_volume { 1.f } {
+   
+    reset();
 }
 
 audio_player::~audio_player() {
-    HRESULT hr = S_OK;
-    if (_m_session) {
-        _m_playback_state = STATE_CLOSING;
+    _m_quit = true;
+    _m_pause = false;
+    _m_pause_condition.notify_all();
 
-        hr = _m_session->Close();
+    trigger_event(EVENT_STOP);
+}
+
+std::chrono::nanoseconds audio_player::duration() const {
+    return _m_provider->duration();
+}
+
+std::chrono::nanoseconds audio_player::pos() const {
+    return _m_provider->pos();
+}
+
+void audio_player::seek(std::chrono::nanoseconds pos) const {
+    _m_provider->seek(pos);
+}
+
+bool audio_player::paused() const {
+    return _m_pause;
+}
+
+bool audio_player::eof() const {
+    return _m_eof;
+}
+
+void audio_player::pause() {
+    _m_pause = true;
+}
+
+void audio_player::play() {
+    _m_pause = false;
+    _m_pause_condition.notify_all();
+}
+
+void audio_player::reset() {
+    _m_eof = false;
+    _m_pause = true;
+
+    _m_provider->seek(std::chrono::nanoseconds(0));
+
+    PaDeviceIndex device = Pa_GetDefaultOutputDevice();
+    auto info = Pa_GetDeviceInfo(device);
+
+    sample_type supported_samples = _m_provider->types();
+    sample_type output_format = _m_provider->preferred_type();
+
+    // If we need to convert the sample rate
+    if (_m_provider->rate() != info->defaultSampleRate) {
+        if (!(supported_samples & SAMPLE_FLOAT32)) {
+            // float32 output is not supported, first convert it, then just output the float32 to PortAudio
+            _m_convert_format = true;
+        }
+        _m_convert_rate = true;
+        output_format = SAMPLE_FLOAT32;
     }
 
-    if (SUCCEEDED(hr)) {
-        if (_m_source) {
-            _m_source->Shutdown();
-        }
-
-        if (_m_session) {
-            _m_session->Shutdown();
-        }
-    }
-
-    if (_m_clock) {
-        _m_clock->RemoveClockStateSink(this);
-    }
-
-    MFShutdown();
-}
-
-void audio_player::toggle_playback() {
-    ASSERT(_m_session && _m_source);
-    switch (_m_playback_state) {
-        case STATE_STOPPED:
-        case STATE_PAUSED: {
-            PROPVARIANT var;
-            PropVariantInit(&var);
-
-            HRESULT hr = _m_session->Start(&GUID_NULL, &var);
-
-            if (SUCCEEDED(hr)) {
-                _m_playback_state = STATE_PLAYING;
-            }
-
-            PropVariantClear(&var);
-            HASSERT(hr);
-
-            break;
-        }
-
-        case STATE_PLAYING: {
-            HASSERT(_m_session->Pause());
-            _m_playback_state = STATE_PAUSED;
-            break;
-        }
-
-        default: break;
-    }
-}
-
-playback_state audio_player::state() const {
-    return _m_playback_state;
-}
-
-void audio_player::set_volume_scaled(float val) const {
-    HASSERT(_m_volume->SetMasterVolume(val));
-}
-
-void audio_player::set_volume_log(float orig, float curve) const {
-    set_volume_scaled(pow(orig, curve));
-}
-
-float audio_player::get_volume_scaled() const {
-    float volume = 0.f;
-    HASSERT(_m_volume->GetMasterVolume(&volume));
-
-    return volume;
-}
-
-float audio_player::get_volume_log(float curve) const {
-    return pow(get_volume_scaled(), 1 / curve);
-}
-
-std::chrono::nanoseconds audio_player::get_duration() const {
-    return _m_duration;
-}
-
-std::chrono::nanoseconds audio_player::get_current_time() const {
-    MFTIME time;
-    HASSERT(_m_clock->GetTime(&time));
-    
-    return time * std::chrono::nanoseconds(100);
-}
-
-const std::string& audio_player::get_mime_type() const {
-    return _m_mime_type;
-}
-
-uint32_t audio_player::get_bitrate() const {
-    return _m_bitrate;
-}
-
-void audio_player::seek(std::chrono::nanoseconds to, bool resume) {
-    ASSERT(to >= std::chrono::nanoseconds(0) && to <= _m_duration);
-    ASSERT(_m_playback_state == STATE_PAUSED);
-    
-    PROPVARIANT var {
-        .vt = VT_I8,
-        .hVal = LARGE_INTEGER {
-            .QuadPart = to.count() / 100
-        }
+    PaStreamParameters params {
+        .device = device,
+        .channelCount = static_cast<int>(_m_provider->channels()),
+        .sampleFormat = pcm_provider::pa_format(output_format),
+        .suggestedLatency = info->defaultHighOutputLatency
     };
 
-    HASSERT(_m_session->Start(&GUID_NULL, &var));
-    _m_playback_state = STATE_PLAYING;
+    ASSERT(paNoError == Pa_OpenStream(&_m_stream, nullptr, &params, info->defaultSampleRate, paFramesPerBufferUnspecified, paClipOff, nullptr, nullptr));
+    ASSERT(paNoError == Pa_StartStream(_m_stream));
 
-    if (!resume) {
-        toggle_playback();
+    _m_startup_done = false;
+
+    if (_m_convert_rate) {
+        _m_player.push(&audio_player::_playback_loop_resample, this, info);
+    } else {
+        // No sample rate conversion, basic playback
+        _m_player.push(&audio_player::_playback_loop_passthrough, this, output_format);
     }
+
+    std::unique_lock lock(_m_startup_mutex);
+    _m_startup_condition.wait(lock, [this]() -> bool { return _m_startup_done; });
 }
 
-void audio_player::add_event(event_type type, const std::function<void()>& func) {
-    if (func) {
-        _m_event_handlers[type].push_back(func);
+void audio_player::set_volume_scaled(float val) {
+    _m_volume = std::clamp(val, 0.f, 1.f);
+}
+
+void audio_player::set_volume_log(float orig, float curve) {
+    _m_volume = std::clamp(pow(orig, curve), 0.f, 1.f);
+}
+
+float audio_player::volume_scaled() const {
+    return _m_volume;
+}
+
+float audio_player::volume_log(float curve) const {
+    return std::clamp(pow(_m_volume, 1.f / curve), 0.f, 1.f);
+}
+
+void audio_player::add_event(event_type type, const event_handler& handler) {
+    if (handler) {
+        _m_events[type].push_back(handler);
     }
 }
 
 void audio_player::trigger_event(event_type type) const {
-    if (_m_event_handlers.find(type) == _m_event_handlers.end()) {
+    if (_m_events.find(type) == _m_events.end()) {
         return;
     }
 
-    for (const auto& func : _m_event_handlers.at(type)) {
+    for (const event_handler& func : _m_events.at(type)) {
         func();
     }
 }
 
-void audio_player::_handle_event(const com_ptr<IMFMediaEvent>& event, MediaEventType type) {
-    if (!event) {
-        return /* E_POINTER */;
-    }
+void audio_player::_playback_loop_passthrough(sample_type output_format) {
+    const auto channels = _m_provider->channels();
 
-    HRESULT status = 0;
-    HASSERT(event->GetStatus(&status));
-
-    HASSERT(status);
-    
-    switch (type) {
-        case MESessionTopologyStatus: {
-            // Ready status?
-            UINT32 _status;
-            HASSERT(event->GetUINT32(MF_EVENT_TOPOLOGY_STATUS, &_status));
-            if (_status == MF_TOPOSTATUS_READY) {
-                _m_playback_state = STATE_PAUSED;
-
-                HASSERT(MFGetService(_m_session, MR_POLICY_VOLUME_SERVICE, IID_PPV_ARGS(&_m_volume)));
-                _m_condition.notify_one();
+    while (true) {
+        // Wait until pause is over
+        if (_m_pause) {
+            if (!_m_startup_done) {
+                _m_startup_done = true;
+                _m_startup_condition.notify_all();
+            } else {
+                trigger_event(EVENT_STOP);
             }
+
+            std::unique_lock lock(_m_pause_mutex);
+            _m_pause_condition.wait(lock, [this] { return !_m_pause; });
+
+            if (!_m_quit) {
+                trigger_event(EVENT_START);
+            }
+        }
+
+        if (_m_quit) {
             break;
         }
 
-        case MEEndOfPresentation:
-            _m_playback_state = STATE_STOPPED;
+        void* samples;
+        int64_t frames = _m_provider->get_samples(samples, output_format);
+        if (frames <= 0) {
             break;
-
-        default: break;
-    }
-}
-
-com_ptr<IMFTopology> audio_player::_create_topology(const com_ptr<IMFPresentationDescriptor>& pd) const {
-    com_ptr<IMFTopology> topology;
-
-    HASSERT(MFCreateTopology(&topology));
-
-    DWORD stream_count;
-    HASSERT(pd->GetStreamDescriptorCount(&stream_count));
-
-    for (DWORD i = 0; i < stream_count; ++i) {
-        com_ptr<IMFStreamDescriptor> sd;
-        BOOL selected = false;
-        HASSERT(pd->GetStreamDescriptorByIndex(i, &selected, &sd));
-
-        com_ptr<IMFActivate> activate;
-        com_ptr<IMFTopologyNode> source_node;
-        com_ptr<IMFTopologyNode> output_node;
-        if (selected) {
-            // Create sink
-            com_ptr<IMFMediaTypeHandler> handler;
-
-            HASSERT(sd->GetMediaTypeHandler(&handler));
-
-            GUID major_type;
-            HASSERT(handler->GetMajorType(&major_type));
-
-            if (major_type == MFMediaType_Audio) {
-                HASSERT(MFCreateAudioRendererActivate(&activate));
-            }
-
-            // Add source node
-            HASSERT(MFCreateTopologyNode(MF_TOPOLOGY_SOURCESTREAM_NODE, &source_node));
-            HASSERT(source_node->SetUnknown(MF_TOPONODE_SOURCE, _m_source));
-            HASSERT(source_node->SetUnknown(MF_TOPONODE_PRESENTATION_DESCRIPTOR, pd));
-            HASSERT(source_node->SetUnknown(MF_TOPONODE_STREAM_DESCRIPTOR, sd));
-            HASSERT(topology->AddNode(source_node));
-            
-            // Add output node
-            HASSERT(MFCreateTopologyNode(MF_TOPOLOGY_OUTPUT_NODE, &output_node));
-            HASSERT(output_node->SetObject(activate));
-            HASSERT(output_node->SetUINT32(MF_TOPONODE_STREAMID, 0));
-            HASSERT(output_node->SetUINT32(MF_TOPONODE_NOSHUTDOWN_ON_REMOVE, false));
-            HASSERT(topology->AddNode(output_node));
-
-            source_node->ConnectOutput(0, output_node, 0);
         }
+
+        _write_samples(samples, frames, channels, output_format);
+        pcm_provider::delete_samples(samples, output_format);
     }
 
-    return topology;
-}
+    _m_pause = true;
+    _m_eof = true;
 
-ULONG audio_player::AddRef() {
-    return InterlockedIncrement(&_m_ref_count);
-}
-
-ULONG audio_player::Release() {
-    auto count = InterlockedDecrement(&_m_ref_count);
-
-    if (count == 0) {
-        delete this;
+    if (!_m_quit) {
+        trigger_event(EVENT_STOP);
     }
 
-    return count;
+    if (_m_stream) {
+        ASSERT(paNoError == Pa_CloseStream(_m_stream));
+    }
 }
 
-HRESULT audio_player::QueryInterface(const IID& riid, void** ppvObject) {
-    static const QITAB qit[] = {
-        QITABENT(audio_player, IMFAsyncCallback),
-        QITABENT(audio_player, IAudioEndpointVolumeCallback),
-        QITABENT(audio_player, IMFClockStateSink),
-        { }
+void audio_player::_playback_loop_resample(const PaDeviceInfo* info) {
+    static constexpr size_t buf_size = 2048;
+    float pcm[buf_size];
+    const double conversion_ratio = info->defaultSampleRate / static_cast<double>(_m_provider->rate());
+    const int64_t channels = _m_provider->channels();
+
+    const long frames = static_cast<long>(buf_size / channels);
+
+    struct cb_args {
+        pcm_provider* provider;
+        float* prev_buf;
+        bool convert_format;
+        sample_type src_type;
+        int64_t channels;
+    } args {
+        .provider = _m_provider.get(),
+        .convert_format = _m_convert_format,
+        .src_type = SAMPLE_FLOAT32,
+        .channels = channels
     };
 
-    return QISearch(this, qit, riid, ppvObject);
-}
-
-HRESULT audio_player::GetParameters(DWORD*, DWORD*) {
-    return E_NOTIMPL;
-}
-
-HRESULT audio_player::Invoke(IMFAsyncResult* pAsyncResult) {
-    com_ptr<IMFMediaEvent> event;
-    if (FAILED(_m_session->EndGetEvent(pAsyncResult, &event))) {
-        return S_OK;
-    }
-    
-    MediaEventType type = MEUnknown;
-    HASSERT(event->GetType(&type));
-
-    if (FAILED(_m_session->BeginGetEvent(this, nullptr))) {
-        return S_OK;
+    if (_m_convert_format) {
+        args.src_type = _m_provider->preferred_type();
     }
 
-    if (_m_playback_state != STATE_CLOSING) {
-        if (type == MESessionTopologyStatus) {
-            // Don't process this setup message on the main thread
-            _handle_event(event, type);
-        } else {
-            auto func = new std::function<void()>(std::bind(&audio_player::_handle_event, this, event, type));
+    src_callback_t src_callback = [](void* data, float** samples) -> long {
+        auto& [provider, prev_buf, convert, src_type, channels] = *static_cast<cb_args*>(data);
+        
+        void* pcm;
+        long frames = static_cast<long>(provider->get_samples(pcm, src_type));
 
-            controller.post_message(TM_EXECUTE_FUNC, 0, func);
+        if (frames == 0) {
+            return 0;
         }
+
+        pcm_provider::delete_samples(prev_buf, SAMPLE_FLOAT32);
+
+        // Convert sample rate if needed
+        if (convert) {
+            void* pcm_conv;
+            pcm_provider::convert_samples(pcm, src_type, pcm_conv, SAMPLE_FLOAT32, frames, channels);
+            pcm_provider::delete_samples(pcm, src_type);
+
+            pcm = pcm_conv;
+        }
+
+        *samples = static_cast<float*>(pcm);
+        prev_buf = *samples;
+        return frames;
+    };
+
+    int conversion_err;
+    SRC_STATE* state = src_callback_new(src_callback, SRC_SINC_MEDIUM_QUALITY,
+        static_cast<int>(channels), &conversion_err, &args);
+
+    while (true) {
+        // Wait until pause is over
+        if (_m_pause) {
+            if (!_m_startup_done) {
+                _m_startup_done = true;
+                _m_startup_condition.notify_all();
+            } else {
+                trigger_event(EVENT_STOP);
+            }
+
+            std::unique_lock lock(_m_pause_mutex);
+            _m_pause_condition.wait(lock, [this] { return !_m_pause; });
+
+            if (!_m_quit) {
+                trigger_event(EVENT_START);
+            }
+        }
+
+        if (_m_quit) {
+            break;
+        }
+
+        // Convert sample rate
+        long frames_converted = src_callback_read(state, conversion_ratio, frames, pcm);
+        if (frames_converted <= 0) {
+            break;
+        }
+
+        _write_samples(pcm, frames_converted, channels, SAMPLE_FLOAT32);
     }
 
-    return S_OK;
+    _m_pause = true;
+    _m_eof = true;
+
+    if (!_m_quit) {
+        trigger_event(EVENT_STOP);
+    }
+
+    if (_m_stream) {
+        ASSERT(paNoError == Pa_CloseStream(_m_stream));
+    }
+
+    src_delete(state);
 }
 
-HRESULT audio_player::OnClockPause(MFTIME) {
-    trigger_event(EVENT_PAUSE);
-    return S_OK;
-}
+inline void audio_player::_write_samples(void* samples, int64_t frames, int64_t channels, sample_type type) const {
+    int64_t sample_count = frames * channels;
 
-HRESULT audio_player::OnClockRestart(MFTIME) {
-    trigger_event(EVENT_RESTART);
-    return S_OK;
-}
+    // Apply volume scaling
+    switch (type) {
+        case SAMPLE_INT16: {
+            short* data = static_cast<short*>(samples);
+            for (int64_t i = 0; i < sample_count; ++i) {
+                data[i] = static_cast<short>(static_cast<float>(data[i]) * _m_volume);
+            }
+            break;
+        }
 
-HRESULT audio_player::OnClockSetRate(MFTIME, float) {
-    trigger_event(EVENT_SET_RATE);
-    return S_OK;
-}
+        case SAMPLE_FLOAT32: {
+            float* data = static_cast<float*>(samples);
+            for (int64_t i = 0; i < sample_count; ++i) {
+                data[i] *= _m_volume;
+            }
+            break;
+        }
+        case SAMPLE_NONE: break;
+    }
 
-HRESULT audio_player::OnClockStart(MFTIME, LONGLONG) {
-    trigger_event(EVENT_START);
-    return S_OK;
+    Pa_WriteStream(_m_stream, samples, static_cast<int>(frames));
 }
-
-HRESULT audio_player::OnClockStop(MFTIME) {
-    trigger_event(EVENT_STOP);
-    return S_OK;
-}
-
-com_ptr<IAudioEndpointVolume> audio_player::_default_endpoint_volume { };
