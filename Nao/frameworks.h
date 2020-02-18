@@ -10,17 +10,6 @@
 #include <shellapi.h>
 #include <ShlObj.h>
 
-#include <Shlwapi.h>
-
-#include <mfidl.h>
-#include <mfapi.h>
-#include <Mferror.h>
-#include <mfmediaengine.h>
-#include <Audioclient.h>
-#include <mmdeviceapi.h>
-
-#include <endpointvolume.h>
-
 #include <Windowsx.h>
 #include <comip.h>
 

@@ -24,8 +24,8 @@ audio_player::audio_player(pcm_provider_ptr provider) : _d { std::make_unique<au
     , _m_provider { std::move(provider) }, _m_player(1)
     , _m_convert_rate { false }
     , _m_quit { false }, _m_pause { true }, _m_eof { false }
-    , _m_volume { 1.f } {
-   
+    , _m_volume { 0.5f } {
+    set_volume_log(0.5);
     reset();
 }
 

@@ -3,6 +3,7 @@
 #include "file_handler_factory.h"
 #include "binary_stream.h"
 #include "utils.h"
+#include "frameworks.h"
 
 wsp_handler::wsp_handler(const istream_ptr& stream, const std::string& path)
     : file_handler(stream, path), item_file_handler(stream, path) {

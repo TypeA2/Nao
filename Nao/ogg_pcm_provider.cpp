@@ -56,7 +56,7 @@ class ogg_pcm_provider_impl {
     };
 };
 
-ogg_pcm_provider::ogg_pcm_provider(istream_ptr stream) : pcm_provider(std::move(stream))
+ogg_pcm_provider::ogg_pcm_provider(const istream_ptr& stream) : pcm_provider(stream)
     , _d { std::make_unique<ogg_pcm_provider_impl>() } {
 
     auto start = this->stream->tellg();
@@ -215,9 +215,6 @@ void ogg_pcm_provider::_validate_open() const {
             case TYPE_VORBIS: {
                 ov_clear(&_d->vorb.vf);
 
-                if (!stream->good()) {
-                    stream->clear();
-                }
                 stream->seekg(0);
 
                 ASSERT(ov_open_callbacks(stream.get(), &_d->vorb.vf, nullptr, 0, detail::callbacks) == 0);

@@ -4,41 +4,9 @@
 #include <mutex>
 #include <filesystem>
 
-#include "frameworks.h"
 #include "concepts.h"
 
-class binary_istream : IMFAsyncCallback, public IMFByteStream {
-#pragma region IMF interfaces
-    public:
-    STDMETHODIMP_(ULONG) AddRef() override;
-    STDMETHODIMP_(ULONG) Release() override;
-
-    STDMETHODIMP QueryInterface(const IID& riid, void** ppvObject) override;
-
-    STDMETHODIMP GetCapabilities(DWORD* pdwCapabilities) override;
-    STDMETHODIMP GetLength(QWORD* pqwLength) override;
-    STDMETHODIMP SetLength(QWORD qwLength) override;
-    STDMETHODIMP GetCurrentPosition(QWORD* pqwPosition) override;
-    STDMETHODIMP SetCurrentPosition(QWORD qwPosition) override;
-    STDMETHODIMP IsEndOfStream(BOOL* pfEndOfStream) override;
-    STDMETHODIMP Read(BYTE* pb, ULONG cb, ULONG* pcbRead) override;
-    STDMETHODIMP BeginRead(BYTE* pb, ULONG cb, IMFAsyncCallback* pCallback, IUnknown* punkState) override;
-    STDMETHODIMP EndRead(IMFAsyncResult* pResult, ULONG* pcbRead) override;
-    STDMETHODIMP Write(const BYTE* pb, ULONG cb, ULONG* pcbWritten) override;
-    STDMETHODIMP BeginWrite(const BYTE* pb, ULONG cb, IMFAsyncCallback* pCallback, IUnknown* punkState) override;
-    STDMETHODIMP EndWrite(IMFAsyncResult* pResult, ULONG* pcbWritten) override;
-    STDMETHODIMP Seek(MFBYTESTREAM_SEEK_ORIGIN SeekOrigin, LONGLONG llSeekOffset, DWORD dwSeekFlags, QWORD* pqwCurrentPosition) override;
-    STDMETHODIMP Flush() override;
-    STDMETHODIMP Close() override;
-
-    STDMETHODIMP GetParameters(DWORD* pdwFlags, DWORD* pdwQueue) override;
-    STDMETHODIMP Invoke(IMFAsyncResult* pAsyncResult) override;
-
-    private:
-    volatile uint32_t _m_refcount;
-
-#pragma endregion
-
+class binary_istream {
     public:
     using pos_type = std::istream::pos_type;
 
@@ -52,7 +20,7 @@ class binary_istream : IMFAsyncCallback, public IMFByteStream {
 
     virtual ~binary_istream() = default;
 
-    virtual std::streampos tellg() const;
+    virtual pos_type tellg() const;
     virtual binary_istream& seekg(pos_type pos);
     virtual binary_istream& seekg(pos_type pos, seekdir dir);
     virtual bool eof() const;
@@ -71,18 +39,18 @@ class binary_istream : IMFAsyncCallback, public IMFByteStream {
     virtual binary_istream& read(char* buf, std::streamsize count);
 
     // Read count elements, each size bytes, into buf
-    template <concepts::pointer P>
-    binary_istream& read(P buf, std::streamsize size, std::streamsize count) {
+    template <concepts::pointer T>
+    binary_istream& read(T buf, std::streamsize size, std::streamsize count = 1) {
         return read(reinterpret_cast<char*>(buf), count* size);
     }
-
-    // Read an arithmetic (integer or floating-point) value array
+    
+    // Read a POD value array
     template <concepts::arithmetic T>
-    binary_istream& read(T* buf, std::streamsize count) {
+    binary_istream& read(T* buf, std::streamsize count = 1) {
         return read(reinterpret_cast<char*>(buf), count * sizeof(T));
     }
 
-    // Read an arithmetic (integer or floating-point) C value array
+    // Read a POD value array
     template <concepts::arithmetic T, size_t size>
     binary_istream& read(T(&buf)[size]) {
         return read(buf, size * sizeof(T));

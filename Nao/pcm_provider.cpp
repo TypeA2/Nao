@@ -1,10 +1,6 @@
 #include "pcm_provider.h"
 
-inline sample_type operator|(sample_type left, sample_type right) {
-    return static_cast<sample_type>(static_cast<uintmax_t>(left) | static_cast<uintmax_t>(right));
-}
-
-pcm_provider::pcm_provider(istream_ptr stream) : stream(std::move(stream)) {
+pcm_provider::pcm_provider(const istream_ptr& stream) : stream(stream) {
     
 }
 

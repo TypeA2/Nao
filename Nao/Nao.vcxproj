@@ -126,7 +126,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LargeAddressAware>true</LargeAddressAware>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>comctl32.lib;uxtheme.lib;mf.lib;mfplat.lib;mfuuid.lib;Shlwapi.lib;comsupp.lib;libogg.lib;libvorbis.lib;libvorbisfile.lib;portaudio_x64.lib;libsamplerate-0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;uxtheme.lib;comsupp.lib;libogg.lib;libvorbis.lib;libvorbisfile.lib;portaudio_x64.lib;libsamplerate-0.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)lib\libogg\$(Configuration);$(SolutionDir)lib\libvorbis\$(Configuration);$(SolutionDir)lib\portaudio\$(Configuration);$(SolutionDir)lib\libsamplerate\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <ResourceCompile>
@@ -179,7 +179,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <LargeAddressAware>true</LargeAddressAware>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>comctl32.lib;uxtheme.lib;mf.lib;mfplat.lib;mfuuid.lib;Shlwapi.lib;comsupp.lib;libogg.lib;libvorbis.lib;libvorbisfile.lib;portaudio_x64.lib;libsamplerate-0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;uxtheme.lib;comsupp.lib;libogg.lib;libvorbis.lib;libvorbisfile.lib;portaudio_x64.lib;libsamplerate-0.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)lib\libogg\$(Configuration);$(SolutionDir)lib\libvorbis\$(Configuration);$(SolutionDir)lib\portaudio\$(Configuration);$(SolutionDir)lib\libsamplerate\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <ResourceCompile>

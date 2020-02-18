@@ -5,7 +5,7 @@
 class ogg_pcm_provider_impl;
 class ogg_pcm_provider : public pcm_provider {
     public:
-    explicit ogg_pcm_provider(istream_ptr stream);
+    explicit ogg_pcm_provider(const istream_ptr& stream);
     ~ogg_pcm_provider();
 
     int64_t get_samples(void*& data, sample_type type) override;

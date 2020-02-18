@@ -10,7 +10,9 @@ enum sample_type : uintmax_t {
     SAMPLE_FLOAT32 = 0b10
 };
 
-sample_type operator|(sample_type left, sample_type right);
+inline sample_type operator|(sample_type left, sample_type right) {
+    return static_cast<sample_type>(static_cast<uintmax_t>(left) | static_cast<uintmax_t>(right));
+}
 
 template <sample_type type>
 struct underlying_type { };
@@ -31,7 +33,7 @@ enum pcm_state : int64_t {
 
 class pcm_provider {
     public:
-    explicit pcm_provider(istream_ptr stream);
+    explicit pcm_provider(const istream_ptr& stream);
     virtual ~pcm_provider() = 0;
 
     // Retrieve some samples, return 0 for eof, negative for error

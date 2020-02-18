@@ -1,9 +1,34 @@
 #pragma once
 
 #include "pcm_provider.h"
+
+#pragma pack(push, 1)
+
+struct riff_header {
+    char header[4];
+    uint32_t size;
+};
+
+struct wave_header {
+    riff_header riff;
+    char wave[4];
+};
+
+struct fmt_chunk {
+    riff_header riff;
+    uint16_t format;
+    uint16_t channels;
+    uint32_t rate;
+    uint32_t byte_rate;
+    uint16_t align;
+    uint16_t bits;
+};
+
+#pragma pack(pop)
+
 class wav_pcm_provider : public pcm_provider {
     public:
-    explicit wav_pcm_provider(istream_ptr stream);
+    explicit wav_pcm_provider(const istream_ptr& stream);
     ~wav_pcm_provider();
 
     int64_t get_samples(void*& data, sample_type type) override;
@@ -16,4 +41,14 @@ class wav_pcm_provider : public pcm_provider {
 
     sample_type types() const override;
     sample_type preferred_type() const override;
+
+    private:
+    static constexpr size_t frames_per_block = 1024;
+
+    wave_header _m_wave;
+    fmt_chunk _m_fmt;
+    riff_header _m_data;
+
+    std::streampos _m_data_start;
+    std::chrono::nanoseconds _m_ns_per_frame;
 };

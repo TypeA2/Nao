@@ -30,4 +30,8 @@ namespace concepts {
     concept smart_pointer = requires (const Container & c) {
         { c.get() } -> pointer;
     };
+
+    // POD or arithmetic type
+    template <typename T>
+    concept pod_or_arithmetic = arithmetic<T> || std::is_pod_v<T>;
 }

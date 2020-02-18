@@ -2,13 +2,14 @@
 
 #include "file_handler_factory.h"
 #include "binary_stream.h"
+#include "wav_pcm_provider.h"
 
 file_handler_tag wav_handler::tag() const {
     return TAG_PCM;
 }
 
 pcm_provider_ptr wav_handler::make_provider() {
-    return nullptr;
+    return std::make_shared<wav_pcm_provider>(stream);
 }
 
 static file_handler_ptr create(const istream_ptr& stream, const std::string& path) {
