@@ -49,8 +49,6 @@ class nao_model {
     nao_controller& controller;
 
     private:
-    using istream_type = file_handler::istream_type;
-
     std::deque<item_file_handler_ptr> _m_tree;
     file_handler_ptr _m_preview_provider;
 };

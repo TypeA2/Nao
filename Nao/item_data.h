@@ -1,14 +1,11 @@
 #pragma once
 
-#include <string>
-#include <memory>
+#include "binary_stream.h"
 
 class binary_istream;
 class item_file_handler;
 
 struct item_data {
-    using istream_type = std::shared_ptr<binary_istream>;
-
     item_file_handler* handler;
 
     std::string name;
@@ -25,7 +22,7 @@ struct item_data {
     bool drive;
 
     char drive_letter;
-    istream_type stream;
+    istream_ptr stream;
 
     std::shared_ptr<void> data;
 

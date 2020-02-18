@@ -4,7 +4,7 @@
 
 class wsp_handler : public item_file_handler {
     public:
-    wsp_handler(const istream_type& stream, const std::string& path);
+    wsp_handler(const istream_ptr& stream, const std::string& path);
 
     file_handler_tag tag() const override;
 

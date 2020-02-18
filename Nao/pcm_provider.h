@@ -10,6 +10,8 @@ enum sample_type : uintmax_t {
     SAMPLE_FLOAT32 = 0b10
 };
 
+sample_type operator|(sample_type left, sample_type right);
+
 template <sample_type type>
 struct underlying_type { };
 

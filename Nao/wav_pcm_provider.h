@@ -1,12 +1,10 @@
 #pragma once
 
 #include "pcm_provider.h"
-
-class ogg_pcm_provider_impl;
-class ogg_pcm_provider : public pcm_provider {
+class wav_pcm_provider : public pcm_provider {
     public:
-    explicit ogg_pcm_provider(istream_ptr stream);
-    ~ogg_pcm_provider();
+    explicit wav_pcm_provider(istream_ptr stream);
+    ~wav_pcm_provider();
 
     int64_t get_samples(void*& data, sample_type type) override;
     int64_t rate() const override;
@@ -18,9 +16,4 @@ class ogg_pcm_provider : public pcm_provider {
 
     sample_type types() const override;
     sample_type preferred_type() const override;
-
-    private:
-    void _validate_open() const;
-
-    std::unique_ptr<ogg_pcm_provider_impl> _d;
 };

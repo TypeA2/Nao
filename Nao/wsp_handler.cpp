@@ -4,7 +4,7 @@
 #include "binary_stream.h"
 #include "utils.h"
 
-wsp_handler::wsp_handler(const istream_type& stream, const std::string& path)
+wsp_handler::wsp_handler(const istream_ptr& stream, const std::string& path)
     : file_handler(stream, path), item_file_handler(stream, path) {
     while (!stream->eof()) {
         wwriff_file f;
@@ -68,11 +68,11 @@ file_handler_tag wsp_handler::tag() const {
     return TAG_ITEMS;
 }
 
-static file_handler_ptr create(const file_handler::istream_type& stream, const std::string& path) {
+static file_handler_ptr create(const istream_ptr& stream, const std::string& path) {
     return std::make_shared<wsp_handler>(stream, path);
 }
 
-static bool supports(const file_handler::istream_type& stream, const std::string& path) {
+static bool supports(const istream_ptr& stream, const std::string& path) {
     if (path.substr(path.size() - 4) == ".wsp") {
 
         std::string fcc(4, '\0');

@@ -12,13 +12,13 @@ size_t file_handler_factory::register_class(const factory_entry& entry) {
     return _next_id()++;
 }
 
-file_handler_ptr file_handler_factory::create(size_t id, const istream_type& stream, const std::string& path) {
+file_handler_ptr file_handler_factory::create(size_t id, const istream_ptr& stream, const std::string& path) {
     ASSERT(id < _next_id());
 
     return _registered_classes()[id].creator(stream, path);
 }
 
-file_handler_ptr file_handler_factory::create(const std::string& name, const istream_type& stream, const std::string& path) {
+file_handler_ptr file_handler_factory::create(const std::string& name, const istream_ptr& stream, const std::string& path) {
     if (auto it = std::find_if(_registered_classes().begin(),
         _registered_classes().end(),
         [name](const factory_registry& reg) { return reg.name == name; });
@@ -29,7 +29,7 @@ file_handler_ptr file_handler_factory::create(const std::string& name, const ist
     return nullptr;
 }
 
-file_handler_ptr file_handler_factory::create(const istream_type& stream, const std::string& path) {
+file_handler_ptr file_handler_factory::create(const istream_ptr& stream, const std::string& path) {
     const bool should_reset = !!stream;
     const auto start_pos = should_reset ? stream->tellg() : std::istream::pos_type(0);
 
@@ -60,7 +60,7 @@ file_handler_ptr file_handler_factory::create(const istream_type& stream, const 
 }
 
 
-size_t file_handler_factory::supports(const istream_type& stream, const std::string& path) {
+size_t file_handler_factory::supports(const istream_ptr& stream, const std::string& path) {
     const bool should_reset = !!stream;
     const auto start_pos = should_reset ? stream->tellg() : std::istream::pos_type(0);
 
@@ -80,7 +80,7 @@ size_t file_handler_factory::supports(const istream_type& stream, const std::str
     return npos;
 }
 
-size_t file_handler_factory::supports(const istream_type& stream, const std::string& path, file_handler_tag& tag) {
+size_t file_handler_factory::supports(const istream_ptr& stream, const std::string& path, file_handler_tag& tag) {
     size_t id = supports(stream, path);
 
     if (id != npos) {

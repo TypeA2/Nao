@@ -262,7 +262,7 @@ file_handler_ptr nao_model::_provider_for(std::string path, bool* result, file_h
         } else {
 
             // Create file stream
-            auto stream = std::make_shared<istream_type::element_type>(path);
+            auto stream = std::make_shared<istream_ptr::element_type>(path);
 
             if (stream->good()) {
                 if (size_t id = file_handler_factory::supports(stream, path, _tag); id != file_handler_factory::npos) {

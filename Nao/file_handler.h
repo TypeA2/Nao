@@ -27,8 +27,6 @@ using file_handler_t = typename file_handler_type<tag>::type;
 
 class file_handler {
     public:
-    using istream_type = item_data::istream_type;
-
     template <file_handler_tag tag>
     file_handler_t<tag>* query() {
         if (!(this->tag() & tag)) {
@@ -56,18 +54,18 @@ class file_handler {
         return std::dynamic_pointer_cast<file_handler_t<tag>>(ptr);
     }
 
-    file_handler(const istream_type& stream, const std::string& path);
+    file_handler(const istream_ptr& stream, const std::string& path);
 
     virtual file_handler_tag tag() const = 0;
 
     virtual ~file_handler();
 
-    const istream_type& get_stream() const;
+    const istream_ptr& get_stream() const;
     const std::string& get_path() const;
 
     protected:
 
-    const istream_type stream;
+    const istream_ptr stream;
     const std::string path;
 };
 

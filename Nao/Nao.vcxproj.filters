@@ -193,6 +193,9 @@
     <ClInclude Include="wsp_handler.h">
       <Filter>Header Files\Handlers</Filter>
     </ClInclude>
+    <ClInclude Include="wav_pcm_provider.h">
+      <Filter>Header Files\AV\PCM</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="nao.cpp">
@@ -302,6 +305,9 @@
     </ClCompile>
     <ClCompile Include="wsp_handler.cpp">
       <Filter>Source Files\Handlers</Filter>
+    </ClCompile>
+    <ClCompile Include="wav_pcm_provider.cpp">
+      <Filter>Source Files\AV\PCM</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

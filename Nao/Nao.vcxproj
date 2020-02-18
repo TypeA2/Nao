@@ -233,6 +233,7 @@
     <ClInclude Include="utils.h" />
     <ClInclude Include="vdf_parser.h" />
     <ClInclude Include="wav_handler.h" />
+    <ClInclude Include="wav_pcm_provider.h" />
     <ClInclude Include="wsp_handler.h" />
   </ItemGroup>
   <ItemGroup>
@@ -271,6 +272,7 @@
     <ClCompile Include="ui_element.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="wav_handler.cpp" />
+    <ClCompile Include="wav_pcm_provider.cpp" />
     <ClCompile Include="wsp_handler.cpp" />
   </ItemGroup>
   <ItemGroup>

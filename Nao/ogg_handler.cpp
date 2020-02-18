@@ -11,11 +11,11 @@ pcm_provider_ptr ogg_handler::make_provider() {
     return std::make_shared<ogg_pcm_provider>(stream);
 }
 
-static file_handler_ptr create(const file_handler::istream_type& stream, const std::string& path) {
+static file_handler_ptr create(const istream_ptr& stream, const std::string& path) {
     return std::make_shared<ogg_handler>(stream, path);
 }
 
-static bool supports(const file_handler::istream_type& stream, const std::string& path) {
+static bool supports(const istream_ptr& stream, const std::string& path) {
     
     if (path.substr(path.size() - 4) == ".ogg") {
         std::string fcc(4, '\0');

@@ -72,11 +72,11 @@ file_handler_tag filesystem_handler::tag() const {
 }
 
 
-static file_handler_ptr create(const file_handler::istream_type&, const std::string& path) {
+static file_handler_ptr create(const istream_ptr&, const std::string& path) {
     return std::make_shared<filesystem_handler>(path);
 }
 
-static bool supports(const file_handler::istream_type&, const std::string& path) {
+static bool supports(const istream_ptr&, const std::string& path) {
     file_info finfo(path);
 
     return !finfo.invalid() && finfo.directory();

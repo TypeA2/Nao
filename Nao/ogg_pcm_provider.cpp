@@ -226,9 +226,3 @@ void ogg_pcm_provider::_validate_open() const {
         }
     }
 }
-
-
-sample_type operator|(sample_type left, sample_type right) {
-    return static_cast<sample_type>(static_cast<uintmax_t>(left) | static_cast<uintmax_t>(right));
-}
-

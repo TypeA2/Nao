@@ -6,7 +6,7 @@ file_handler::~file_handler() {
     utils::coutln("[FILE] Deleting for", path);
 }
 
-const file_handler::istream_type& file_handler::get_stream() const {
+const istream_ptr& file_handler::get_stream() const {
     return stream;
 }
 
@@ -14,7 +14,7 @@ const std::string& file_handler::get_path() const {
     return path;
 }
 
-file_handler::file_handler(const istream_type& stream, const std::string& path)
+file_handler::file_handler(const istream_ptr& stream, const std::string& path)
     : stream(stream), path(path) {
     utils::coutln("[FILE] Creating for", path);
 }
