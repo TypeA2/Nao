@@ -3,7 +3,6 @@
 #include "frameworks.h"
 
 #include "ui_element.h"
-#include "item_provider.h"
 
 #include <vector>
 #include <string>
@@ -48,6 +47,8 @@ struct context_menu_entry {
 };
 
 using context_menu = std::vector<context_menu_entry>;
+
+class preview;
 
 class nao_view {
     public:

@@ -1,13 +1,11 @@
-#include "wsp_provider.h"
+#include "wsp_handler.h"
 
-#include "item_provider_factory.h"
+#include "file_handler_factory.h"
 #include "binary_stream.h"
 #include "utils.h"
-#include "preview.h"
 
-wsp_provider::wsp_provider(const istream_type& stream, const std::string& path) : item_provider(stream, path) {
-    utils::coutln("[WSP] creating for", path);
-
+wsp_handler::wsp_handler(const istream_type& stream, const std::string& path)
+    : file_handler(stream, path), item_file_handler(stream, path) {
     while (!stream->eof()) {
         wwriff_file f;
         f.offset = stream->tellg();
@@ -54,31 +52,27 @@ wsp_provider::wsp_provider(const istream_type& stream, const std::string& path) 
         ss << filename << "_" << std::setfill('0') << std::setw(name_width) << i++;
 
         items.push_back(item_data {
-            .provider = this,
-            .name     = ss.str() + ".wem",
-            .type     = utils::utf8(finfo.szTypeName),
-            .size     = wwriff.size,
-            .icon     = finfo.iIcon,
-            .stream   = nullptr,
-            .data     = std::make_shared<wwriff_file>(wwriff)
+            .handler = this,
+            .name    = ss.str() + ".wem",
+            .type    = utils::utf8(finfo.szTypeName),
+            .size    = wwriff.size,
+            .icon    = finfo.iIcon,
+            .stream  = nullptr,
+            .data    = std::make_shared<wwriff_file>(wwriff)
             });
 
     }
 }
 
-preview_element_type wsp_provider::preview_type() const {
-    return PREVIEW_LIST_VIEW;
+file_handler_tag wsp_handler::tag() const {
+    return TAG_ITEMS;
 }
 
-std::unique_ptr<preview> wsp_provider::make_preview(nao_view& view) {
-    return std::make_unique<list_view_preview>(view, this);
+static file_handler_ptr create(const file_handler::istream_type& stream, const std::string& path) {
+    return std::make_shared<wsp_handler>(stream, path);
 }
 
-static item_provider_ptr create(const item_provider::istream_type& stream, const std::string& path) {
-    return std::make_shared<wsp_provider>(stream, path);
-}
-
-static bool provide(const item_provider::istream_type& stream, const std::string& path) {
+static bool supports(const file_handler::istream_type& stream, const std::string& path) {
     if (path.substr(path.size() - 4) == ".wsp") {
 
         std::string fcc(4, '\0');
@@ -93,9 +87,9 @@ static bool provide(const item_provider::istream_type& stream, const std::string
     return false;
 }
 
-static size_t id = item_provider_factory::register_class({
+[[maybe_unused]] static size_t id = file_handler_factory::register_class({
+    .tag = TAG_ITEMS,
     .creator = create,
-    .provide = provide,
-    .preview = provide,
+    .supports = supports,
     .name = "wsp"
 });

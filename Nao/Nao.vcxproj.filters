@@ -22,17 +22,11 @@
     <Filter Include="Header Files\Utils">
       <UniqueIdentifier>{c3a0f6fc-7f31-4972-9f64-782a1c2706a3}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Providers">
-      <UniqueIdentifier>{4376c9b5-a2e0-4813-81c6-719d0637ad89}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\UI">
       <UniqueIdentifier>{89003a4a-5248-4616-9afa-fb65b4280843}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\UI">
       <UniqueIdentifier>{6db671ff-731c-47aa-b4ab-45f6e107a01d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\Providers">
-      <UniqueIdentifier>{95b82214-85e9-4b06-8a41-c20073b67c70}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\Utils">
       <UniqueIdentifier>{c2161910-7b5b-4cd3-992e-ec6429a9a945}</UniqueIdentifier>
@@ -60,6 +54,12 @@
     </Filter>
     <Filter Include="Header Files\AV\PCM">
       <UniqueIdentifier>{f2149310-c12a-47dd-8aef-7445531fe63a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Handlers">
+      <UniqueIdentifier>{95b82214-85e9-4b06-8a41-c20073b67c70}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Handlers">
+      <UniqueIdentifier>{4376c9b5-a2e0-4813-81c6-719d0637ad89}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -94,15 +94,6 @@
     <ClInclude Include="vdf_parser.h">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="filesystem_provider.h">
-      <Filter>Header Files\Providers</Filter>
-    </ClInclude>
-    <ClInclude Include="wav_provider.h">
-      <Filter>Header Files\Providers</Filter>
-    </ClInclude>
-    <ClInclude Include="wsp_provider.h">
-      <Filter>Header Files\Providers</Filter>
-    </ClInclude>
     <ClInclude Include="left_window.h">
       <Filter>Header Files\UI</Filter>
     </ClInclude>
@@ -112,13 +103,7 @@
     <ClInclude Include="right_window.h">
       <Filter>Header Files\UI</Filter>
     </ClInclude>
-    <ClInclude Include="item_provider.h">
-      <Filter>Header Files\Providers</Filter>
-    </ClInclude>
     <ClInclude Include="binary_stream.h">
-      <Filter>Header Files\Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="item_provider_factory.h">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
     <ClInclude Include="item_data.h">
@@ -181,9 +166,6 @@
     <ClInclude Include="frameworks.h">
       <Filter>Header Files\Win32</Filter>
     </ClInclude>
-    <ClInclude Include="ogg_provider.h">
-      <Filter>Header Files\Providers</Filter>
-    </ClInclude>
     <ClInclude Include="pcm_provider.h">
       <Filter>Header Files\AV\PCM</Filter>
     </ClInclude>
@@ -192,6 +174,24 @@
     </ClInclude>
     <ClInclude Include="audio_player.h">
       <Filter>Header Files\AV</Filter>
+    </ClInclude>
+    <ClInclude Include="file_handler.h">
+      <Filter>Header Files\Handlers</Filter>
+    </ClInclude>
+    <ClInclude Include="file_handler_factory.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="filesystem_handler.h">
+      <Filter>Header Files\Handlers</Filter>
+    </ClInclude>
+    <ClInclude Include="ogg_handler.h">
+      <Filter>Header Files\Handlers</Filter>
+    </ClInclude>
+    <ClInclude Include="wav_handler.h">
+      <Filter>Header Files\Handlers</Filter>
+    </ClInclude>
+    <ClInclude Include="wsp_handler.h">
+      <Filter>Header Files\Handlers</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -216,18 +216,6 @@
     <ClCompile Include="right_window.cpp">
       <Filter>Source Files\UI</Filter>
     </ClCompile>
-    <ClCompile Include="filesystem_provider.cpp">
-      <Filter>Source Files\Providers</Filter>
-    </ClCompile>
-    <ClCompile Include="wav_provider.cpp">
-      <Filter>Source Files\Providers</Filter>
-    </ClCompile>
-    <ClCompile Include="wsp_provider.cpp">
-      <Filter>Source Files\Providers</Filter>
-    </ClCompile>
-    <ClCompile Include="item_provider.cpp">
-      <Filter>Source Files\Providers</Filter>
-    </ClCompile>
     <ClCompile Include="utils.cpp">
       <Filter>Source Files\Utils</Filter>
     </ClCompile>
@@ -235,9 +223,6 @@
       <Filter>Source Files\Utils</Filter>
     </ClCompile>
     <ClCompile Include="steam_utils.cpp">
-      <Filter>Source Files\Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="item_provider_factory.cpp">
       <Filter>Source Files\Utils</Filter>
     </ClCompile>
     <ClCompile Include="binary_stream.cpp">
@@ -291,9 +276,6 @@
     <ClCompile Include="separator.cpp">
       <Filter>Source Files\UI\Generic</Filter>
     </ClCompile>
-    <ClCompile Include="ogg_provider.cpp">
-      <Filter>Source Files\Providers</Filter>
-    </ClCompile>
     <ClCompile Include="pcm_provider.cpp">
       <Filter>Source Files\AV\PCM</Filter>
     </ClCompile>
@@ -302,6 +284,24 @@
     </ClCompile>
     <ClCompile Include="audio_player.cpp">
       <Filter>Source Files\AV</Filter>
+    </ClCompile>
+    <ClCompile Include="file_handler.cpp">
+      <Filter>Source Files\Handlers</Filter>
+    </ClCompile>
+    <ClCompile Include="file_handler_factory.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="filesystem_handler.cpp">
+      <Filter>Source Files\Handlers</Filter>
+    </ClCompile>
+    <ClCompile Include="ogg_handler.cpp">
+      <Filter>Source Files\Handlers</Filter>
+    </ClCompile>
+    <ClCompile Include="wav_handler.cpp">
+      <Filter>Source Files\Handlers</Filter>
+    </ClCompile>
+    <ClCompile Include="wsp_handler.cpp">
+      <Filter>Source Files\Handlers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

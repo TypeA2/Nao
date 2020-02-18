@@ -1,22 +1,35 @@
 #pragma once
 
-#include "ui_element.h"
+#include "file_handler.h"
 #include "nao_view.h"
+
+#include "audio_player.h"
 
 #include <chrono>
 
 class nao_controller;
 
 // Wrapper class for preview elements
+
 class preview : public ui_element {
     public:
-    explicit preview(nao_view& view, item_provider* provider);
-    virtual ~preview();
+    explicit preview(nao_view& view);
+    virtual ~preview() = default;
 
     protected:
     nao_view& view;
     nao_controller& controller;
-    item_provider* provider;
+};
+
+template <typename T>
+class preview_t : public preview {
+    public:
+    preview_t(nao_view& view, T* handler)
+        : preview(view), handler(handler) { }
+    virtual ~preview_t() = default;
+
+    protected:
+    T* handler;
 };
 
 using preview_ptr = std::unique_ptr<preview>;
@@ -24,9 +37,10 @@ using preview_ptr = std::unique_ptr<preview>;
 class list_view;
 
 // Multi-use list-view preview
-class list_view_preview : public preview {
+class list_view_preview : public preview_t<item_file_handler> {
     public:
-    explicit list_view_preview(nao_view& view, item_provider* provider);
+    list_view_preview(nao_view& view, item_file_handler* handler);
+
     ~list_view_preview() override = default;
 
     protected:
@@ -47,15 +61,11 @@ class push_button;
 class slider;
 class label;
 class seekable_progress_bar;
-class separator;
-class line_edit;
-
-class audio_player;
 
 // A preview which plays audio
-class audio_player_preview : public preview {
+class audio_player_preview : public preview_t<pcm_file_handler> {
     public:
-    explicit audio_player_preview(nao_view& view, item_provider* provider);
+    explicit audio_player_preview(nao_view& view, pcm_file_handler* handler);
 
     protected:
     bool wm_create(CREATESTRUCTW* create) override;
@@ -75,17 +85,6 @@ class audio_player_preview : public preview {
     std::unique_ptr<label> _m_volume_display;
     std::unique_ptr<label> _m_progress_display;
     std::unique_ptr<label> _m_duration_display;
-
-    std::unique_ptr<separator> _m_separator1;
-
-    std::unique_ptr<label> _m_mime_type_label;
-    std::unique_ptr<line_edit> _m_mime_type_edit;
-
-    std::unique_ptr<label> _m_duration_label;
-    std::unique_ptr<line_edit> _m_duration_edit;
-
-    std::unique_ptr<label> _m_bitrate_label;
-    std::unique_ptr<line_edit> _m_bitrate_edit;
 
     std::unique_ptr<audio_player> _m_player;
 

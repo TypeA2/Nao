@@ -1,6 +1,6 @@
 #pragma once
 
-#include "item_provider.h"
+#include "file_handler.h"
 
 #include <deque>
 
@@ -32,30 +32,25 @@ class nao_model {
     void clear_preview();
 
     const std::string& current_path() const;
-    const item_provider_ptr& current_provider() const;
-    const item_provider_ptr& preview_provider() const;
-    const item_provider_ptr& parent_provider() const;
+    const item_file_handler_ptr& current_provider() const;
+    const file_handler_ptr& preview_provider() const;
+    const item_file_handler_ptr& parent_provider() const;
 
     // Whether we can "open" the given item
     bool can_open(item_data* data);
 
     private:
     void _create_tree(const std::string& to);
-    item_provider_ptr _provider_for(std::string path);
-    bool _has_provider_for(std::string path);
 
-    item_provider_ptr _preview_for(std::string path);
-    bool _has_preview_for(std::string path);
-
-    friend class provider_for_wrapper;
+    file_handler_ptr _provider_for(std::string path, bool* result = nullptr, file_handler_tag* tag = nullptr);
 
     protected:
     nao_view& view;
     nao_controller& controller;
 
     private:
-    using istream_type = item_provider::istream_type;
+    using istream_type = file_handler::istream_type;
 
-    std::deque<item_provider_ptr> _m_tree;
-    item_provider_ptr _m_preview_provider;
+    std::deque<item_file_handler_ptr> _m_tree;
+    file_handler_ptr _m_preview_provider;
 };

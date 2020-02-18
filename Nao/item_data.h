@@ -4,17 +4,17 @@
 #include <memory>
 
 class binary_istream;
-class item_provider;
+class item_file_handler;
 
 struct item_data {
     using istream_type = std::shared_ptr<binary_istream>;
 
-    item_provider* provider;
+    item_file_handler* handler;
 
     std::string name;
     std::string type;
 
-    uintmax_t size;
+    std::streamsize size;
     std::string size_str;
 
     double compression;

@@ -11,8 +11,8 @@ class drive_list {
         std::string name;
         int icon;
 
-        uintmax_t total_size;
-        uintmax_t free_size;
+        std::streamsize total_size;
+        std::streamsize free_size;
     };
 
     public:

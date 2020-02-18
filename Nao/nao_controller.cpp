@@ -1,11 +1,6 @@
 #include "nao_controller.h"
-#include "utils.h"
 
-#include "frameworks.h"
-
-#include "auto_wrapper.h"
 #include "file_info.h"
-
 #include "preview.h"
 
 #include <filesystem>
@@ -312,16 +307,30 @@ void nao_controller::_refresh_view() {
     view.clear_view();
     view.clear_preview();
 
-    const item_provider_ptr& p = model.current_provider();
+    const item_file_handler_ptr& p = model.current_provider();
     view.fill_view(transform_data_to_row(p->data()));
 }
 
 void nao_controller::_refresh_preview(item_data* data) {
-    const item_provider_ptr& p = model.preview_provider();
+    const file_handler_ptr& pv = model.preview_provider();
 
-    if (p != nullptr) {
-        view.set_preview(p->make_preview(view));
-    } else {
-        view.clear_preview();
+    file_handler_tag tag;
+    if (pv && ((tag = pv->tag()))) {
+
+        std::unique_ptr<preview> preview;
+
+        if (tag & TAG_ITEMS) {
+            preview = std::make_unique<list_view_preview>(view, pv->query<TAG_ITEMS>());
+        } else if (tag & TAG_PCM) {
+            preview = std::make_unique<audio_player_preview>(view, pv->query<TAG_PCM>());
+        }
+
+
+        if (preview) {
+            view.set_preview(std::move(preview));
+            return;
+        }
     }
+
+    view.clear_preview();
 }

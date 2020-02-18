@@ -31,8 +31,8 @@ drive_list::drive_list()
                 .letter     = utils::utf8(s).front(),
                 .name       = utils::utf8(finfo.szDisplayName),
                 .icon       = finfo.iIcon,
-                .total_size = total.QuadPart,
-                .free_size  = free.QuadPart
+                .total_size = static_cast<std::streamsize>(total.QuadPart),
+                .free_size  = static_cast<std::streamsize>(free.QuadPart)
                 });
 
             s += wcslen(s) + 1;

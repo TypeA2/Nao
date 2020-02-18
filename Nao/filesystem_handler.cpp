@@ -1,6 +1,6 @@
-#include "filesystem_provider.h"
+#include "filesystem_handler.h"
 
-#include "item_provider_factory.h"
+#include "file_handler_factory.h"
 
 #include "frameworks.h"
 
@@ -10,11 +10,9 @@
 #include "utils.h"
 #include "drive_list.h"
 #include "binary_stream.h"
-#include "preview.h"
 
-filesystem_provider::filesystem_provider(const std::string& path) : item_provider(nullptr, path){
-    utils::coutln("[FILESYSTEM] creating for", path);
-    
+filesystem_handler::filesystem_handler(const std::string& path)
+    : file_handler(nullptr, path), item_file_handler(nullptr, path) {
     if (path == "\\") {
         // Devices list
 
@@ -28,7 +26,7 @@ filesystem_provider::filesystem_provider(const std::string& path) : item_provide
                 << utils::bytes(free) << " free)";
             
             items.push_back(item_data {
-                .provider     = this,
+                .handler      = this,
                 .name         = name,
                 .type         = utils::utf8(finfo.szTypeName),
                 .size         = free,
@@ -57,40 +55,37 @@ filesystem_provider::filesystem_provider(const std::string& path) : item_provide
                 SHGFI_TYPENAME | SHGFI_ICON | SHGFI_SMALLICON | SHGFI_SYSICONINDEX));
 
             items.push_back({
-                .provider     = this,
-                .name   = entry.path().filename().string(),
-                .type   = utils::utf8(finfo.szTypeName),
-                .size   = entry.is_directory() ? 0 : entry.file_size(),
-                .icon   = finfo.iIcon,
-                .dir    = entry.is_directory(),
-                .stream = entry.is_directory() ? nullptr : std::make_shared<binary_istream>(entry.path())
+                .handler = this,
+                .name    = entry.path().filename().string(),
+                .type    = utils::utf8(finfo.szTypeName),
+                .size    = entry.is_directory() ? 0 : static_cast<std::streamsize>(entry.file_size()),
+                .icon    = finfo.iIcon,
+                .dir     = entry.is_directory(),
+                .stream  = entry.is_directory() ? nullptr : std::make_shared<binary_istream>(entry.path())
             });
         }
     }
 }
 
-preview_element_type filesystem_provider::preview_type() const {
-    return PREVIEW_LIST_VIEW;
+file_handler_tag filesystem_handler::tag() const {
+    return TAG_ITEMS;
 }
 
-std::unique_ptr<preview> filesystem_provider::make_preview(nao_view& view) {
-    return std::make_unique<list_view_preview>(view, this);
+
+static file_handler_ptr create(const file_handler::istream_type&, const std::string& path) {
+    return std::make_shared<filesystem_handler>(path);
 }
 
-static item_provider_ptr create(const item_provider::istream_type&, const std::string& path) {
-    return std::make_shared<filesystem_provider>(path);
-}
-
-static bool provide(const item_provider::istream_type&, const std::string& path) {
+static bool supports(const file_handler::istream_type&, const std::string& path) {
     file_info finfo(path);
 
     return !finfo.invalid() && finfo.directory();
 }
 
-static size_t id = item_provider_factory::register_class({
+static size_t id = file_handler_factory::register_class({
+    .tag = TAG_ITEMS,
     .creator = create,
-    .provide = provide,
-    .preview = provide,
+    .supports = supports,
     .name = "filesystem"
 });
 

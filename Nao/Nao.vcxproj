@@ -79,7 +79,7 @@
     <IntDir>$(ProjectDir)obj\$(Configuration)\</IntDir>
     <CodeAnalysisRuleSet>..\MSVC.ruleset</CodeAnalysisRuleSet>
     <LibraryPath>$(LibraryPath)</LibraryPath>
-    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
+    <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -90,7 +90,7 @@
     <IntDir>$(ProjectDir)obj\$(Configuration)\</IntDir>
     <CodeAnalysisRuleSet>..\MSVC.ruleset</CodeAnalysisRuleSet>
     <LibraryPath>$(LibraryPath)</LibraryPath>
-    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
+    <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -201,7 +201,7 @@
     <ClInclude Include="dimensions.h" />
     <ClInclude Include="drive_list.h" />
     <ClInclude Include="dynamic_library.h" />
-    <ClInclude Include="filesystem_provider.h" />
+    <ClInclude Include="filesystem_handler.h" />
     <ClInclude Include="filesystem_utils.h" />
     <ClInclude Include="file_info.h" />
     <ClInclude Include="icon.h" />
@@ -214,11 +214,11 @@
     <ClInclude Include="nao_model.h" />
     <ClInclude Include="frameworks.h" />
     <ClInclude Include="item_data.h" />
-    <ClInclude Include="item_provider.h" />
-    <ClInclude Include="item_provider_factory.h" />
+    <ClInclude Include="file_handler.h" />
+    <ClInclude Include="file_handler_factory.h" />
     <ClInclude Include="nao_view.h" />
     <ClInclude Include="ogg_pcm_provider.h" />
-    <ClInclude Include="ogg_provider.h" />
+    <ClInclude Include="ogg_handler.h" />
     <ClInclude Include="pcm_provider.h" />
     <ClInclude Include="preview.h" />
     <ClInclude Include="push_button.h" />
@@ -232,8 +232,8 @@
     <ClInclude Include="ui_element.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="vdf_parser.h" />
-    <ClInclude Include="wav_provider.h" />
-    <ClInclude Include="wsp_provider.h" />
+    <ClInclude Include="wav_handler.h" />
+    <ClInclude Include="wsp_handler.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="audio_player.cpp" />
@@ -241,7 +241,7 @@
     <ClCompile Include="binary_stream.cpp" />
     <ClCompile Include="drive_list.cpp" />
     <ClCompile Include="dynamic_library.cpp" />
-    <ClCompile Include="filesystem_provider.cpp" />
+    <ClCompile Include="filesystem_handler.cpp" />
     <ClCompile Include="filesystem_utils.cpp" />
     <ClCompile Include="file_info.cpp" />
     <ClCompile Include="icon.cpp" />
@@ -253,12 +253,12 @@
     <ClCompile Include="main_window.cpp" />
     <ClCompile Include="nao_controller.cpp" />
     <ClCompile Include="nao_model.cpp" />
-    <ClCompile Include="item_provider.cpp" />
-    <ClCompile Include="item_provider_factory.cpp" />
+    <ClCompile Include="file_handler.cpp" />
+    <ClCompile Include="file_handler_factory.cpp" />
     <ClCompile Include="nao.cpp" />
     <ClCompile Include="nao_view.cpp" />
     <ClCompile Include="ogg_pcm_provider.cpp" />
-    <ClCompile Include="ogg_provider.cpp" />
+    <ClCompile Include="ogg_handler.cpp" />
     <ClCompile Include="pcm_provider.cpp" />
     <ClCompile Include="preview.cpp" />
     <ClCompile Include="push_button.cpp" />
@@ -270,8 +270,8 @@
     <ClCompile Include="thread_pool.cpp" />
     <ClCompile Include="ui_element.cpp" />
     <ClCompile Include="utils.cpp" />
-    <ClCompile Include="wav_provider.cpp" />
-    <ClCompile Include="wsp_provider.cpp" />
+    <ClCompile Include="wav_handler.cpp" />
+    <ClCompile Include="wsp_handler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="Nao.exe.manifest" />
