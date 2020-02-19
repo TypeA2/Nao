@@ -1,12 +1,14 @@
 #include "ogg_pcm_provider.h"
 
 #include <vorbis/vorbisfile.h>
+#include <opusfile.h>
+
 #include <string>
 
 #include "utils.h"
 
 namespace detail {
-    static ov_callbacks callbacks {
+    static ov_callbacks vorbis_callbacks {
         .read_func = [](void* ptr, size_t size, size_t nmemb, void* source) -> size_t {
             binary_istream& stream = *static_cast<binary_istream*>(source);
 
@@ -34,10 +36,42 @@ namespace detail {
             return static_cast<long>(static_cast<binary_istream*>(source)->tellg());
         }
     };
+
+    static OpusFileCallbacks opus_callbacks {
+        .read = [](void* source, unsigned char* data, int count) -> int {
+            binary_istream& stream = *static_cast<binary_istream*>(source);
+
+            if (!stream.good() || stream.eof()) {
+                return 0;
+            }
+
+            return static_cast<int>(stream.read(data, count).gcount());
+        },
+
+        .seek = [](void* source, opus_int64 offset, int whence) {
+            binary_istream& stream = *static_cast<binary_istream*>(source);
+
+            switch (whence) {
+                case SEEK_SET: stream.seekg(offset, std::ios::beg); break;
+                case SEEK_CUR: stream.seekg(offset, std::ios::cur); break;
+                case SEEK_END: stream.seekg(offset, std::ios::end); break;
+                default: return -1;
+            }
+
+            return 0;
+        },
+
+        .tell = [](void* source) -> opus_int64 {
+            return static_cast<binary_istream*>(source)->tellg();
+        },
+
+        .close = [](void*) -> int { return 0; }
+    };
 }
 
 enum ogg_pcm_type {
-    TYPE_VORBIS
+    TYPE_VORBIS,
+    TYPE_OPUS
 };
 
 class ogg_pcm_provider_impl {
@@ -53,6 +87,12 @@ class ogg_pcm_provider_impl {
             OggVorbis_File vf;
             vorbis_info* info;
         } vorb;
+
+        struct opus_type {
+            OggOpusFile* of;
+            OpusHead const* head;
+            std::chrono::nanoseconds ns_per_sample;
+        } opus;
     };
 };
 
@@ -62,7 +102,9 @@ ogg_pcm_provider::ogg_pcm_provider(const istream_ptr& stream) : pcm_provider(str
     auto start = this->stream->tellg();
 
     bool is_valid = false;
-    if (ov_test_callbacks(this->stream.get(), &_d->vorb.vf, nullptr, 0, detail::callbacks) == 0) {
+
+    // Check vorbis
+    if (ov_test_callbacks(this->stream.get(), &_d->vorb.vf, nullptr, 0, detail::vorbis_callbacks) == 0) {
         ov_test_open(&_d->vorb.vf);
 
         _d->vorb.info = ov_info(&_d->vorb.vf, -1);
@@ -78,6 +120,24 @@ ogg_pcm_provider::ogg_pcm_provider(const istream_ptr& stream) : pcm_provider(str
         this->stream->seekg(start);
     }
 
+    // Check opus
+    if (OggOpusFile* of = op_test_callbacks(this->stream.get(), &detail::opus_callbacks,
+        nullptr, 0, nullptr); of != nullptr) {
+
+        op_test_open(of);
+
+        _d->opus.of = of;
+        _d->opus.head = op_head(of, -1);
+        _d->opus.ns_per_sample = std::chrono::duration_cast<std::chrono::nanoseconds>(
+            std::chrono::seconds(1) / static_cast<double>(_d->opus.head->input_sample_rate));
+
+        _d->type = TYPE_OPUS;
+
+        _d->duration = op_pcm_total(of, -1) * _d->opus.ns_per_sample;
+
+        is_valid = true;
+    }
+
     if (!is_valid) {
         throw std::runtime_error("unkown ogg file type");
     }
@@ -86,15 +146,16 @@ ogg_pcm_provider::ogg_pcm_provider(const istream_ptr& stream) : pcm_provider(str
 ogg_pcm_provider::~ogg_pcm_provider() {
     switch (_d->type) {
         case TYPE_VORBIS: ov_clear(&_d->vorb.vf); break;
+        case TYPE_OPUS: op_free(_d->opus.of); break;
     }
 }
 
 int64_t ogg_pcm_provider::get_samples(void*& data, sample_type type) {
+    static constexpr size_t data_size = 4096;
+    static constexpr size_t word_size = 2;
+
     switch (_d->type) {
         case TYPE_VORBIS: {
-            static constexpr size_t data_size = 4096;
-            static constexpr size_t word_size = 2;
-
             switch (type) {
                 case SAMPLE_INT16: {
                     data = new char[data_size];
@@ -146,6 +207,46 @@ int64_t ogg_pcm_provider::get_samples(void*& data, sample_type type) {
 
                 case SAMPLE_NONE: return PCM_ERR;
             }
+            break;
+        }
+
+        case TYPE_OPUS: {
+            switch (type) {
+                case SAMPLE_INT16: {
+                    data = new char[data_size];
+
+                    int frames = op_read(_d->opus.of, static_cast<opus_int16*>(data), data_size / sizeof(opus_int16), nullptr);
+                    if (frames == 0) {
+                        _d->eof = true;
+                        return PCM_DONE;
+                    }
+
+                    if (frames < 0) {
+                        return PCM_ERR;
+                    }
+
+                    return frames;
+                }
+
+                case SAMPLE_FLOAT32: {
+                    data = new char[data_size];
+
+                    int frames = op_read_float(_d->opus.of, static_cast<float*>(data), data_size / sizeof(float), nullptr);
+                    if (frames == 0) {
+                        _d->eof = true;
+                        return PCM_DONE;
+                    }
+
+                    if (frames < 0) {
+                        return PCM_ERR;
+                    }
+
+                    return frames;
+                }
+
+                case SAMPLE_NONE: return PCM_ERR;
+            }
+            break;
         }
     }
 
@@ -155,6 +256,7 @@ int64_t ogg_pcm_provider::get_samples(void*& data, sample_type type) {
 int64_t ogg_pcm_provider::rate() const {
     switch (_d->type) {
         case TYPE_VORBIS: return _d->vorb.info->rate;
+        case TYPE_OPUS: return _d->opus.head->input_sample_rate;
     }
 
     return 0;
@@ -163,6 +265,7 @@ int64_t ogg_pcm_provider::rate() const {
 int64_t ogg_pcm_provider::channels() const {
     switch (_d->type) {
         case TYPE_VORBIS: return _d->vorb.info->channels;
+        case TYPE_OPUS: return _d->opus.head->channel_count;
     }
 
     return 0;
@@ -176,6 +279,7 @@ std::chrono::nanoseconds ogg_pcm_provider::pos() const {
     switch (_d->type) {
         case TYPE_VORBIS: return std::chrono::duration_cast<std::chrono::nanoseconds>(
             ov_time_tell(&_d->vorb.vf) * std::chrono::seconds(1));
+        case TYPE_OPUS: return op_pcm_tell(_d->opus.of) * _d->opus.ns_per_sample;
     }
 
     return std::chrono::nanoseconds(0);
@@ -187,6 +291,7 @@ void ogg_pcm_provider::seek(std::chrono::nanoseconds pos) {
     switch (_d->type) {
         case TYPE_VORBIS: ov_time_seek(&_d->vorb.vf,
             static_cast<double>(pos.count()) / std::chrono::nanoseconds::period::den); break;
+        case TYPE_OPUS: op_pcm_seek(_d->opus.of, pos / _d->opus.ns_per_sample);
     }
 }
 
@@ -194,6 +299,7 @@ void ogg_pcm_provider::seek(std::chrono::nanoseconds pos) {
 sample_type ogg_pcm_provider::types() const {
     switch (_d->type) {
         case TYPE_VORBIS: return SAMPLE_INT16 | SAMPLE_FLOAT32;
+        case TYPE_OPUS: return SAMPLE_INT16 | SAMPLE_FLOAT32;
     }
 
     return SAMPLE_NONE;
@@ -202,6 +308,7 @@ sample_type ogg_pcm_provider::types() const {
 sample_type ogg_pcm_provider::preferred_type() const {
     switch (_d->type) {
         case TYPE_VORBIS: return SAMPLE_FLOAT32;
+        case TYPE_OPUS: return SAMPLE_FLOAT32;
     }
 
     return SAMPLE_NONE;
@@ -217,8 +324,21 @@ void ogg_pcm_provider::_validate_open() const {
 
                 stream->seekg(0);
 
-                ASSERT(ov_open_callbacks(stream.get(), &_d->vorb.vf, nullptr, 0, detail::callbacks) == 0);
+                ASSERT(ov_open_callbacks(stream.get(), &_d->vorb.vf, nullptr, 0, detail::vorbis_callbacks) == 0);
                 _d->vorb.info = ov_info(&_d->vorb.vf, -1);
+                break;
+            }
+
+            case TYPE_OPUS: {
+                op_free(_d->opus.of);
+
+                stream->seekg(0);
+
+                _d->opus.of = op_open_callbacks(stream.get(), &detail::opus_callbacks, nullptr, 0, nullptr);
+                ASSERT(_d->opus.of);
+
+                _d->opus.head = op_head(_d->opus.of, -1);
+                break;
             }
         }
     }

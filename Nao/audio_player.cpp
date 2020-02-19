@@ -78,6 +78,8 @@ void audio_player::reset() {
     sample_type supported_samples = _m_provider->types();
     sample_type output_format = _m_provider->preferred_type();
 
+    ASSERT(supported_samples && output_format);
+
     // If we need to convert the sample rate
     if (_m_provider->rate() != info->defaultSampleRate) {
         if (!(supported_samples & SAMPLE_FLOAT32)) {

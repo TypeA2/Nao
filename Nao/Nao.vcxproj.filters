@@ -196,6 +196,12 @@
     <ClInclude Include="wav_pcm_provider.h">
       <Filter>Header Files\AV\PCM</Filter>
     </ClInclude>
+    <ClInclude Include="flac_handler.h">
+      <Filter>Header Files\Handlers</Filter>
+    </ClInclude>
+    <ClInclude Include="flac_pcm_provider.h">
+      <Filter>Header Files\AV\PCM</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="nao.cpp">
@@ -307,6 +313,12 @@
       <Filter>Source Files\Handlers</Filter>
     </ClCompile>
     <ClCompile Include="wav_pcm_provider.cpp">
+      <Filter>Source Files\AV\PCM</Filter>
+    </ClCompile>
+    <ClCompile Include="flac_handler.cpp">
+      <Filter>Source Files\Handlers</Filter>
+    </ClCompile>
+    <ClCompile Include="flac_pcm_provider.cpp">
       <Filter>Source Files\AV\PCM</Filter>
     </ClCompile>
   </ItemGroup>
