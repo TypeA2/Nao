@@ -4,7 +4,7 @@
 
 wav_pcm_provider::wav_pcm_provider(const istream_ptr& stream) : pcm_provider(stream)
     , _m_fmt { }, _m_data { }, _m_ns_per_frame { } {
-
+    
     // WAVE header
     stream->read(&_m_wave, sizeof(_m_wave));
     ASSERT(memcmp(_m_wave.riff.header, "RIFF", 4) == 0);

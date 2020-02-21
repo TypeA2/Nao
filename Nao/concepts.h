@@ -33,5 +33,5 @@ namespace concepts {
 
     // POD or arithmetic type
     template <typename T>
-    concept pod_or_arithmetic = arithmetic<T> || std::is_pod_v<T>;
+    concept pod = std::is_pod_v<T>;
 }

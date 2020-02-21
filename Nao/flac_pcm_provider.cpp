@@ -6,9 +6,7 @@
 
 class flac_decoder : public FLAC::Decoder::Stream {
     public:
-    explicit flac_decoder(const istream_ptr& stream) : _m_stream { stream }, _m_info { }, _m_ready { }, _m_current_header { } {
-
-    }
+    explicit flac_decoder(const istream_ptr& stream) : _m_stream { stream }, _m_info { }, _m_ready { }, _m_current_header { } { }
 
     FLAC__StreamDecoderReadStatus read_callback(FLAC__byte buffer[], size_t* bytes) override;
     FLAC__StreamDecoderSeekStatus seek_callback(FLAC__uint64 absolute_byte_offset) override;
@@ -38,7 +36,6 @@ class flac_decoder : public FLAC::Decoder::Stream {
     const FLAC__FrameHeader& current_header() const { return _m_current_header; }
 
     private:
-
     istream_ptr _m_stream;
     std::vector<std::vector<FLAC__int32>> _m_samples;
     FLAC__StreamMetadata_StreamInfo _m_info;
@@ -57,10 +54,6 @@ flac_pcm_provider::flac_pcm_provider(const istream_ptr& stream) : pcm_provider(s
 
     _m_ns_per_frame = std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::seconds(1) / static_cast<double>(_m_decoder->get_sample_rate()));
-}
-
-flac_pcm_provider::~flac_pcm_provider() {
-    
 }
 
 int64_t flac_pcm_provider::get_samples(void*& data, sample_type type) {

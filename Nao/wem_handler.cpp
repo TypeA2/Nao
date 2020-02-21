@@ -1,23 +1,25 @@
-#include "wav_handler.h"
+#include "wem_handler.h"
 
 #include "file_handler_factory.h"
-#include "binary_stream.h"
-#include "wav_pcm_provider.h"
 
-file_handler_tag wav_handler::tag() const {
+#include "wem_pcm_provider.h"
+
+#include "riff.h"
+
+file_handler_tag wem_handler::tag() const {
     return TAG_PCM;
 }
 
-pcm_provider_ptr wav_handler::make_provider() {
-    return std::make_shared<wav_pcm_provider>(stream);
+pcm_provider_ptr wem_handler::make_provider() {
+    return std::make_shared<wem_pcm_provider>(stream);
 }
 
 static file_handler_ptr create(const istream_ptr& stream, const std::string& path) {
-    return std::make_shared<wav_handler>(stream, path);
+    return std::make_shared<wem_handler>(stream, path);
 }
 
 static bool supports(const istream_ptr& stream, const std::string& path) {
-    if (path.substr(path.size() - 4) == ".wav") {
+    if (path.substr(path.size() - 4) == ".wem") {
         wave_header hdr;
         stream->read(&hdr, sizeof(hdr));
 
@@ -26,7 +28,7 @@ static bool supports(const istream_ptr& stream, const std::string& path) {
 
         if (memcmp(hdr.riff.header, "RIFF", 4) == 0 &&
             memcmp(hdr.wave, "WAVE", 4) == 0 &&
-            fmt.riff.size == 16 && fmt.format == 1) {
+            fmt.riff.size == 66 && fmt.format == 0xFFFF) {
             return true;
         }
     }
@@ -38,5 +40,5 @@ static bool supports(const istream_ptr& stream, const std::string& path) {
     .tag = TAG_PCM,
     .creator = create,
     .supports = supports,
-    .name = "wav"
-});
+    .name = "wem"
+    });

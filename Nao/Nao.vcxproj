@@ -197,6 +197,7 @@
     <ClInclude Include="audio_player.h" />
     <ClInclude Include="auto_wrapper.h" />
     <ClInclude Include="binary_stream.h" />
+    <ClInclude Include="byte_array_streambuf.h" />
     <ClInclude Include="concepts.h" />
     <ClInclude Include="dimensions.h" />
     <ClInclude Include="drive_list.h" />
@@ -225,6 +226,7 @@
     <ClInclude Include="preview.h" />
     <ClInclude Include="push_button.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="riff.h" />
     <ClInclude Include="right_window.h" />
     <ClInclude Include="seekable_progress_bar.h" />
     <ClInclude Include="separator.h" />
@@ -236,12 +238,15 @@
     <ClInclude Include="vdf_parser.h" />
     <ClInclude Include="wav_handler.h" />
     <ClInclude Include="wav_pcm_provider.h" />
+    <ClInclude Include="wem_handler.h" />
+    <ClInclude Include="wem_pcm_provider.h" />
     <ClInclude Include="wsp_handler.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="audio_player.cpp" />
     <ClCompile Include="auto_wrapper.cpp" />
     <ClCompile Include="binary_stream.cpp" />
+    <ClCompile Include="byte_array_streambuf.cpp" />
     <ClCompile Include="drive_list.cpp" />
     <ClCompile Include="dynamic_library.cpp" />
     <ClCompile Include="filesystem_handler.cpp" />
@@ -277,6 +282,8 @@
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="wav_handler.cpp" />
     <ClCompile Include="wav_pcm_provider.cpp" />
+    <ClCompile Include="wem_handler.cpp" />
+    <ClCompile Include="wem_pcm_provider.cpp" />
     <ClCompile Include="wsp_handler.cpp" />
   </ItemGroup>
   <ItemGroup>

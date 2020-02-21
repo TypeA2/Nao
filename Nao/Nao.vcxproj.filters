@@ -61,6 +61,12 @@
     <Filter Include="Source Files\Handlers">
       <UniqueIdentifier>{4376c9b5-a2e0-4813-81c6-719d0637ad89}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Utils\IO">
+      <UniqueIdentifier>{02eca16e-5594-4564-b9a0-de731bd903f6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Utils\IO">
+      <UniqueIdentifier>{0ddc0085-1530-465e-b35c-8414eae699d0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Nao.rc">
@@ -102,9 +108,6 @@
     </ClInclude>
     <ClInclude Include="right_window.h">
       <Filter>Header Files\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="binary_stream.h">
-      <Filter>Header Files\Utils</Filter>
     </ClInclude>
     <ClInclude Include="item_data.h">
       <Filter>Header Files\Utils</Filter>
@@ -202,6 +205,21 @@
     <ClInclude Include="flac_pcm_provider.h">
       <Filter>Header Files\AV\PCM</Filter>
     </ClInclude>
+    <ClInclude Include="wem_handler.h">
+      <Filter>Header Files\Handlers</Filter>
+    </ClInclude>
+    <ClInclude Include="riff.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="wem_pcm_provider.h">
+      <Filter>Header Files\AV\PCM</Filter>
+    </ClInclude>
+    <ClInclude Include="binary_stream.h">
+      <Filter>Header Files\Utils\IO</Filter>
+    </ClInclude>
+    <ClInclude Include="byte_array_streambuf.h">
+      <Filter>Header Files\Utils\IO</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="nao.cpp">
@@ -232,9 +250,6 @@
       <Filter>Source Files\Utils</Filter>
     </ClCompile>
     <ClCompile Include="steam_utils.cpp">
-      <Filter>Source Files\Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="binary_stream.cpp">
       <Filter>Source Files\Utils</Filter>
     </ClCompile>
     <ClCompile Include="auto_wrapper.cpp">
@@ -320,6 +335,18 @@
     </ClCompile>
     <ClCompile Include="flac_pcm_provider.cpp">
       <Filter>Source Files\AV\PCM</Filter>
+    </ClCompile>
+    <ClCompile Include="wem_handler.cpp">
+      <Filter>Source Files\Handlers</Filter>
+    </ClCompile>
+    <ClCompile Include="wem_pcm_provider.cpp">
+      <Filter>Source Files\AV\PCM</Filter>
+    </ClCompile>
+    <ClCompile Include="binary_stream.cpp">
+      <Filter>Source Files\Utils\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="byte_array_streambuf.cpp">
+      <Filter>Source Files\Utils\IO</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
