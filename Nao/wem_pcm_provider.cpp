@@ -12,6 +12,7 @@
 #include "resource.h"
 
 #include "byte_array_streambuf.h"
+#include <vorbis/vorbisenc.h>
 
 class vorbis_packet {
     public:
@@ -494,8 +495,15 @@ wem_pcm_provider::wem_pcm_provider(const istream_ptr& stream) : pcm_provider(str
     binary_ostream os("C:\\Users\\Nuan\\Downloads\\wwriff.ogg");
     ogg_stream_state state;
     ogg_stream_init(&state, 1);
+    ogg_page page;
 
     int64_t packetno = 0;
+
+    vorbis_info vi;
+    vorbis_info_init(&vi);
+
+    vorbis_comment vc;
+    vorbis_comment_init(&vc);
 
     {
         auto ss = std::make_shared<std::stringstream>(std::ios::in | std::ios::out | std::ios::binary);
@@ -530,10 +538,13 @@ wem_pcm_provider::wem_pcm_provider(const istream_ptr& stream) : pcm_provider(str
 
         ogg_stream_packetin(&state, &packet);
 
-        ogg_page page;
-        ASSERT(ogg_stream_flush(&state, &page));
-        os.write(page.header, page.header_len);
-        os.write(page.body, page.body_len);
+        ASSERT(vorbis_synthesis_headerin(&vi, &vc, &packet) == 0);
+
+        while (ogg_stream_flush(&state, &page)) {
+            os.write(page.header, page.header_len);
+            os.write(page.body, page.body_len);
+            page = { };
+        }
     }
 
     // Comment
@@ -591,17 +602,22 @@ wem_pcm_provider::wem_pcm_provider(const istream_ptr& stream) : pcm_provider(str
             .packetno = packetno++
         };
         ogg_stream_packetin(&state, &packet);
-    }
-    ogg_page page;
-    while (ogg_stream_flush(&state, &page) != 0) {
-        os.write(page.header, page.header_len);
-        os.write(page.body, page.body_len);
+
+        ASSERT(vorbis_synthesis_headerin(&vi, &vc, &packet) == 0);
+
+        while (ogg_stream_pageout(&state, &page)) {
+            os.write(page.header, page.header_len);
+            os.write(page.body, page.body_len);
+            page = { };
+        }
     }
 
     std::vector<bool> mode_blockflag;
     size_t mode_bits = 0;
 
     // Comment and setup can be on same page
+
+
     {
         auto ss = std::make_shared<std::stringstream>(std::ios::in | std::ios::out | std::ios::binary);
         binary_iostream io(ss);
@@ -845,8 +861,8 @@ wem_pcm_provider::wem_pcm_provider(const istream_ptr& stream) : pcm_provider(str
             }
 
             io.write<1>(1); // framing
+            io.flush_bits();
         }
-
 
         auto packet_data = ss->str();
 
@@ -858,16 +874,28 @@ wem_pcm_provider::wem_pcm_provider(const istream_ptr& stream) : pcm_provider(str
             .packetno = packetno++
         };
         ogg_stream_packetin(&state, &packet);
+
+        ASSERT(vorbis_synthesis_headerin(&vi, &vc, &packet) == 0);
+
+        utils::coutln("setup packet of size", packet_data.size(), "starting at", os.tellp());
+
+        while (ogg_stream_flush(&state, &page)) {
+            os.write(page.header, page.header_len);
+            os.write(page.body, page.body_len);
+            page = { };
+        }
     }
 
-    while (ogg_stream_flush(&state, &page) != 0) {
-        os.write(page.header, page.header_len);
-        os.write(page.body, page.body_len);
-    }
     utils::coutln("writing audio from", data.offset + audio_start_offset, "to", os.tellp());
     bool prev_blockflag = false;
+
+    
+    //ASSERT(vorbis_encode_setup_managed(&vi,
+    //    _fmt.channels, _fmt.rate, 0, static_cast<long>(_fmt.byte_rate) * 8, 0) == 0);
     // Audio
     auto _offset = data.offset + audio_start_offset;
+    int64_t last_bs = 0;
+    int64_t granpos = 0;
     while (_offset < (data.offset + data.size)) {
         auto ss = std::make_shared<std::stringstream>(std::ios::in | std::ios::out | std::ios::binary);
         binary_iostream io(ss);
@@ -888,6 +916,7 @@ wem_pcm_provider::wem_pcm_provider(const istream_ptr& stream) : pcm_provider(str
             stream->seekg(_offset);
 
             if (granule == 0xFFFFFFFF) {
+                utils::coutln("fixing granule");
                 granule = 1;
             }
 
@@ -953,15 +982,35 @@ wem_pcm_provider::wem_pcm_provider(const istream_ptr& stream) : pcm_provider(str
             .granulepos = granule,
             .packetno = packetno++
         };
+
+        int64_t bs = vorbis_packet_blocksize(&vi, &packet);
+        ASSERT(bs > 0);
+        if (last_bs) {
+            granpos += (last_bs + bs) / 4;
+        }
+
+        last_bs = bs;
+
+        packet.granulepos = granpos;
+
+        if (_offset >= (data.offset + data.size)) {
+            packet.e_o_s = 1;
+        }
         ogg_stream_packetin(&state, &packet);
 
-        while (ogg_stream_flush(&state, &page) != 0) {
+        while (ogg_stream_pageout(&state, &page)) {
             os.write(page.header, page.header_len);
             os.write(page.body, page.body_len);
         }
     }
 
-    
+    vorbis_info_clear(&vi);
+    vorbis_comment_clear(&vc);
+
+    while (ogg_stream_flush(&state, &page) != 0) {
+        os.write(page.header, page.header_len);
+        os.write(page.body, page.body_len);
+    }
 
     ogg_stream_clear(&state);
 }

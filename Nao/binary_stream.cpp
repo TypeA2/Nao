@@ -191,7 +191,7 @@ binary_ostream::pos_type binary_ostream::tellp() const {
 }
 
 void binary_ostream::set_bitwise(bool bitwise) {
-    if (!bitwise && _m_bit_buffer_size) {
+    if (!bitwise) {
         flush_bits();
     }
 
