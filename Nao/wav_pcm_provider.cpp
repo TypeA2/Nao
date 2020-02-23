@@ -80,6 +80,10 @@ channel_order wav_pcm_provider::order() {
     return CHANNELS_WAV;
 }
 
+std::string wav_pcm_provider::name() {
+    return "WAVE";
+}
+
 std::chrono::nanoseconds wav_pcm_provider::duration() {
     // align is frame size, return the number of frames multiplied by nanoseconds per frame
     return (_m_data.size / _m_fmt.align) * _m_ns_per_frame;

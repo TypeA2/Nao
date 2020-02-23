@@ -12,6 +12,8 @@
 #include "slider.h"
 #include "label.h"
 #include "seekable_progress_bar.h"
+#include "separator.h"
+#include "line_edit.h"
 
 #include "dimensions.h"
 #include "dynamic_library.h"
@@ -234,6 +236,45 @@ bool audio_player_preview::wm_create(CREATESTRUCTW*) {
     _m_player->add_event(EVENT_START, timer_start_func);
     _m_player->add_event(EVENT_STOP, timer_stop_func);
 
+    _m_separator = std::make_unique<separator>(this, SEPARATOR_HORIZONTAL);
+
+    auto provider = _m_player->provider();
+
+    auto make_edit = [this](const std::string& str) {
+        auto edit = std::make_unique<line_edit>(this, str);
+        edit->set_read_only(true);
+        edit->set_ex_style(WS_EX_CLIENTEDGE, false);
+        return edit;
+    };
+
+    _m_codec_label = std::make_unique<label>(this, "Codec:", LABEL_LEFT);
+    _m_codec_edit = make_edit(provider->name());
+
+    _m_rate_label = std::make_unique<label>(this, "Sample rate:", LABEL_LEFT);
+    _m_rate_edit = make_edit(std::to_string(provider->rate()) + " Hz");
+
+    _m_channels_label = std::make_unique<label>(this, "Channels:", LABEL_LEFT);
+    _m_channels_edit = make_edit(std::to_string(provider->channels()));
+
+    _m_order_label = std::make_unique<label>(this, "Channel order:", LABEL_LEFT);
+    std::string order_name;
+    switch (provider->order()) {
+        case CHANNELS_NONE:   order_name = "unspecified"; break;
+        case CHANNELS_VORBIS: order_name = "Vorbis";      break;
+        case CHANNELS_WAV:    order_name = "WAVE";        break;
+        case CHANNELS_SMPTE:  order_name = "SMPTE";       break;
+    }
+    _m_order_edit = make_edit(order_name);
+
+    _m_type_label = std::make_unique<label>(this, "Sample type:", LABEL_LEFT);
+    std::string sample_name;
+    switch (_m_player->pcm_format()) {
+        case SAMPLE_NONE:    sample_name = "<error>";      break;
+        case SAMPLE_INT16:   sample_name = "int16"; break;
+        case SAMPLE_FLOAT32: sample_name = "float32"; break;
+    }
+    _m_type_edit = make_edit(sample_name);
+
     return true;
 }
 
@@ -243,6 +284,8 @@ void audio_player_preview::wm_size(int, int width, int height) {
     long partial_offset = static_cast<long>(width * 0.15);
 
     long controls_height = 3 * dims::control_height + dims::play_button_size + dims::volume_slider_height + 6 * dims::gutter_size;
+    long info_offset = controls_height + 2 + (dims::control_height / 2) + dims::gutter_size;
+    long info_element_height = dims::control_height + dims::gutter_size;
 
     defer_window_pos()
         .move(_m_progress_bar, {
@@ -250,37 +293,88 @@ void audio_player_preview::wm_size(int, int width, int height) {
                 .y = dims::gutter_size,
                 .width = partial_width,
                 .height = dims::control_height })
-
         .move(_m_toggle_button, {
                 .x = (width / 2) - (dims::play_button_size / 2),
                 .y = 2 * dims::control_height + 3 * dims::gutter_size,
                 .width = dims::play_button_size,
                 .height = dims::play_button_size })
-
         .move(_m_volume_slider, {
                 .x = (width / 2) - (dims::volume_slider_width / 2),
                 .y = 2 * dims::control_height + dims::play_button_size + 4 * dims::gutter_size,
                 .width = dims::volume_slider_width,
                 .height = dims::volume_slider_height })
-
         .move(_m_volume_display, {
                 .x = (width / 2) - (_m_volume_display_size.width / 2),
                 .y = 2 * dims::control_height + dims::play_button_size + dims::volume_slider_height + 5 * dims::gutter_size,
                 .width = _m_volume_display_size.width,
                 .height = _m_volume_display_size.height })
-
         .move(_m_progress_display, {
                 .x = partial_offset,
                 .y = dims::control_height + 2 * dims::gutter_size,
                 .width = _m_progress_size.width,
                 .height = _m_progress_size.height })
-
         .move(_m_duration_display, {
                 .x = partial_offset + (partial_width - _m_duration_size.width),
                 .y = dims::control_height + 2 * dims::gutter_size,
                 .width = _m_duration_size.width,
-                .height = _m_duration_size.height
-            });
+                .height = _m_duration_size.height })
+
+        .move(_m_separator, {
+                .x = partial_offset,
+                .y = controls_height,
+                .width = partial_width,
+                .height = 2 })
+
+        .move(_m_codec_label, {
+                .x = partial_offset,
+                .y = info_offset,
+                .width = partial_width / 5,
+                .height = dims::control_height })
+        .move(_m_codec_edit, {
+                .x = partial_offset + (partial_width / 5),
+                .y = info_offset - 1,
+                .width = 4 * (partial_width / 5),
+                .height = dims::control_height })
+        .move(_m_rate_label, {
+                .x = partial_offset,
+                .y = info_offset + info_element_height,
+                .width = partial_width / 5,
+                .height = dims::control_height })
+        .move(_m_rate_edit, {
+                .x = partial_offset + (partial_width / 5),
+                .y = info_offset + info_element_height - 1,
+                .width = 4 * (partial_width / 5),
+                .height = dims::control_height })
+        .move(_m_channels_label, {
+                .x = partial_offset,
+                .y = info_offset + 2 * info_element_height,
+                .width = partial_width / 5,
+                .height = dims::control_height })
+        .move(_m_channels_edit, {
+                .x = partial_offset + (partial_width / 5),
+                .y = info_offset + 2 * info_element_height - 1,
+                .width = 4 * (partial_width / 5),
+                .height = dims::control_height })
+        .move(_m_order_label, {
+                .x = partial_offset,
+                .y = info_offset + 3 * info_element_height,
+                .width = partial_width / 5,
+                .height = dims::control_height })
+        .move(_m_order_edit, {
+                .x = partial_offset + (partial_width / 5),
+                .y = info_offset + 3 * info_element_height - 1,
+                .width = 4 * (partial_width / 5),
+                .height = dims::control_height })
+        .move(_m_type_label, {
+                .x = partial_offset,
+                .y = info_offset + 4 * info_element_height,
+                .width = partial_width / 5,
+                .height = dims::control_height })
+        .move(_m_type_edit, {
+                .x = partial_offset + (partial_width / 5),
+                .y = info_offset + 4 * info_element_height - 1,
+                .width = 4 * (partial_width / 5),
+                .height = dims::control_height });
 }
 
 LRESULT audio_player_preview::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {

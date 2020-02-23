@@ -35,6 +35,9 @@ class audio_player {
     void add_event(event_type type, const event_handler& handler);
     void trigger_event(event_type type) const;
 
+    pcm_provider* provider() const;
+    sample_type pcm_format() const;
+
     private:
     void _playback_loop_passthrough(sample_type output_format);
     void _playback_loop_resample(const PaDeviceInfo* info);

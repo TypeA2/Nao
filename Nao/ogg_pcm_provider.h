@@ -12,6 +12,7 @@ class ogg_pcm_provider : public pcm_provider {
     int64_t rate() override;
     int64_t channels() override;
     channel_order order() override;
+    std::string name() override;
 
     std::chrono::nanoseconds duration() override;
     std::chrono::nanoseconds pos() override;

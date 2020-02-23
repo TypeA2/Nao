@@ -60,19 +60,19 @@ flac_pcm_provider::flac_pcm_provider(const istream_ptr& stream) : pcm_provider(s
 
 pcm_samples flac_pcm_provider::get_samples(sample_type type) {
     if (type != preferred_type()) {
-        return pcm_samples::error(PCM_ERR);
+        return PCM_ERR;
     }
 
     // Make sure there is audio available
     while (!_m_decoder->ready()) {
         if (_m_decoder->get_state() == FLAC__STREAM_DECODER_END_OF_STREAM) {
-            return pcm_samples { SAMPLE_INT16, 0, _m_decoder->get_channels(), CHANNELS_SMPTE };
+            return PCM_DONE;
         }
 
         _m_decoder->process_single();
     }
 
-    const auto& samples = _m_decoder->release_samples();
+    const std::vector<std::vector<FLAC__int32>>& samples = _m_decoder->release_samples();
 
     switch (preferred_type()) {
         case SAMPLE_INT16: {
@@ -81,9 +81,8 @@ pcm_samples flac_pcm_provider::get_samples(sample_type type) {
             // Interleave
             sample_int16_t* dest = pcm.data<SAMPLE_INT16>();
             for (int64_t i = 0; i < _m_decoder->get_blocksize(); ++i) {
-                for (const auto& chan : samples) {
+                for (const std::vector<FLAC__int32>& chan : samples) {
                     *dest++ = chan[i];
-
                 }
             }
 
@@ -91,10 +90,10 @@ pcm_samples flac_pcm_provider::get_samples(sample_type type) {
         }
 
         case SAMPLE_FLOAT32:
-        case SAMPLE_NONE: return pcm_samples::error(PCM_ERR);
+        case SAMPLE_NONE: return PCM_ERR;
     }
 
-    return pcm_samples::error(PCM_ERR);
+    return PCM_ERR;
 }
 
 int64_t flac_pcm_provider::rate() {
@@ -107,6 +106,10 @@ int64_t flac_pcm_provider::channels() {
 
 channel_order flac_pcm_provider::order() {
     return CHANNELS_SMPTE;
+}
+
+std::string flac_pcm_provider::name() {
+    return "FLAC";
 }
 
 std::chrono::nanoseconds flac_pcm_provider::duration() {

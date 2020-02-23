@@ -67,6 +67,9 @@
     <Filter Include="Source Files\Utils\IO">
       <UniqueIdentifier>{0ddc0085-1530-465e-b35c-8414eae699d0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\AV\Codec">
+      <UniqueIdentifier>{54d1add7-b6d1-4d24-b30b-d3c9e1778db5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Nao.rc">

@@ -42,7 +42,7 @@ enum channel_order {
      * 7: front left, center, front right, side left, side right, rear center, LFE
      * 8: front left, center, front right, side left, side right, rear left, rear right, LFE
      */
-     CHANNELS_VORBIS,
+    CHANNELS_VORBIS,
 
     /**
      * front left, front right, front center, LFE, back left, back right, front left of center, front right of center
@@ -58,6 +58,10 @@ enum channel_order {
 // Encapsulates samples
 class pcm_samples final {
     public:
+    // Some type checks to make sure our vector-based packing works properly
+    static_assert(sizeof(sample_int16_t) == alignof(sample_int16_t));
+    static_assert(sizeof(sample_float32_t) == alignof(sample_float32_t));
+ 
     static pcm_samples error(int64_t code);
 
     static size_t sample_size(sample_type type);
@@ -129,6 +133,7 @@ class pcm_provider {
     virtual int64_t rate() = 0;
     virtual int64_t channels() = 0;
     virtual channel_order order() = 0;
+    virtual std::string name() = 0;
 
     virtual std::chrono::nanoseconds duration() = 0;
     virtual std::chrono::nanoseconds pos() = 0;

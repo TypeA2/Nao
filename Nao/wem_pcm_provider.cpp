@@ -1128,6 +1128,10 @@ channel_order wem_pcm_provider::order() {
     return CHANNELS_VORBIS;
 }
 
+std::string wem_pcm_provider::name() {
+    return "Vorbis (Audiokinetic Wwise)";
+}
+
 std::chrono::nanoseconds wem_pcm_provider::duration() {
     return _m_duration;
 }

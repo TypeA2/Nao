@@ -278,6 +278,15 @@ channel_order ogg_pcm_provider::order() {
     return CHANNELS_VORBIS;
 }
 
+std::string ogg_pcm_provider::name() {
+    switch (_d->type) {
+        case TYPE_VORBIS: return "Vorbis";
+        case TYPE_OPUS: return "Opus";
+    }
+
+    return "<error>";
+}
+
 std::chrono::nanoseconds ogg_pcm_provider::duration() {
     return _d->duration;
 }

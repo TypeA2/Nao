@@ -60,6 +60,8 @@ class list_view_preview : public preview_t<item_file_handler> {
 class push_button;
 class slider;
 class label;
+class line_edit;
+class separator;
 class seekable_progress_bar;
 
 // A preview which plays audio
@@ -85,6 +87,23 @@ class audio_player_preview : public preview_t<pcm_file_handler> {
     std::unique_ptr<label> _m_volume_display;
     std::unique_ptr<label> _m_progress_display;
     std::unique_ptr<label> _m_duration_display;
+
+    std::unique_ptr<separator> _m_separator;
+
+    std::unique_ptr<label> _m_codec_label;
+    std::unique_ptr<line_edit> _m_codec_edit;
+
+    std::unique_ptr<label> _m_rate_label;
+    std::unique_ptr<line_edit> _m_rate_edit;
+
+    std::unique_ptr<label> _m_channels_label;
+    std::unique_ptr<line_edit> _m_channels_edit;
+
+    std::unique_ptr<label> _m_order_label;
+    std::unique_ptr<line_edit> _m_order_edit;
+
+    std::unique_ptr<label> _m_type_label;
+    std::unique_ptr<line_edit> _m_type_edit;
 
     std::unique_ptr<audio_player> _m_player;
 

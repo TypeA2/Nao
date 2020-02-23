@@ -157,6 +157,21 @@ void audio_player::trigger_event(event_type type) const {
     }
 }
 
+pcm_provider* audio_player::provider() const {
+    return _m_provider.get();
+}
+
+sample_type audio_player::pcm_format() const {
+    // If the rate is converted but the format isn't, we're getting float32
+    // from the provider, whether this is preferred or not
+    if (_m_convert_rate && !_m_convert_format) {
+        return SAMPLE_FLOAT32;
+    }
+
+    // Else we just output the preferred
+    return _m_provider->preferred_type();
+}
+
 void audio_player::_playback_loop_passthrough(sample_type output_format) {
     while (true) {
         _wait_pause();
@@ -194,7 +209,7 @@ void audio_player::_playback_loop_resample(const PaDeviceInfo* info) {
         .provider = _m_provider.get(),
         .convert_format = _m_convert_format,
         .prev_pcm = pcm_samples::error(0),
-        .src_type = SAMPLE_FLOAT32,
+        .src_type = _m_provider->preferred_type(),
         .channels = channels
     };
 
@@ -248,6 +263,7 @@ void audio_player::_playback_loop_resample(const PaDeviceInfo* info) {
         _write_samples(std::move(samples));
     }
 
+    _playback_end();
     src_delete(state);
 }
 

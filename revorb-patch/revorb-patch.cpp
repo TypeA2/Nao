@@ -41,7 +41,7 @@ bool copy_headers(FILE* fi, ogg_sync_state* si, ogg_stream_state* is,
     vorbis_info* vi)
 {
     char* buffer = ogg_sync_buffer(si, CHUNK_SIZE);
-    int numread = fread(buffer, 1, CHUNK_SIZE, fi);
+    size_t numread = fread(buffer, 1, CHUNK_SIZE, fi);
     ogg_sync_wrote(si, numread);
 
     ogg_page page;
@@ -202,7 +202,7 @@ int wmain(int argc, wchar_t** argv)
                 int res = ogg_sync_pageout(&sync_in, &page);
                 if (res == 0) {
                     char* buffer = ogg_sync_buffer(&sync_in, CHUNK_SIZE);
-                    int numread = fread(buffer, 1, CHUNK_SIZE, fi);
+                    size_t numread = fread(buffer, 1, CHUNK_SIZE, fi);
                     if (numread > 0)
                         ogg_sync_wrote(&sync_in, numread);
                     else
