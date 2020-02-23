@@ -2,13 +2,16 @@
 
 #include "utils.h"
 
+#include "namespaces.h"
+
 wav_pcm_provider::wav_pcm_provider(const istream_ptr& stream) : pcm_provider(stream)
     , _m_fmt { }, _m_data { }, _m_ns_per_frame { } {
     
     // WAVE header
     stream->read(&_m_wave, sizeof(_m_wave));
-    ASSERT(memcmp(_m_wave.riff.header, "RIFF", 4) == 0);
-    ASSERT(memcmp(_m_wave.wave, "WAVE", 4) == 0);
+
+    ASSERT(std::string(_m_wave.riff.header, 4) == "RIFF");
+    ASSERT(std::string( _m_wave.wave, 4) == "WAVE");
 
     // Search for fmt and data chunks
     bool fmt_read = false;
@@ -17,7 +20,7 @@ wav_pcm_provider::wav_pcm_provider(const istream_ptr& stream) : pcm_provider(str
         riff_header riff;
         stream->read(&riff, sizeof(riff));
 
-        if (memcmp(riff.header, "fmt ", 4) == 0) {
+        if (std::string(riff.header, 4) == "fmt "s) {
             // Format chunk
             stream->rseek(-1 * sizeof(riff));
             stream->read(&_m_fmt, sizeof(_m_fmt));
@@ -34,7 +37,7 @@ wav_pcm_provider::wav_pcm_provider(const istream_ptr& stream) : pcm_provider(str
             continue;
         }
 
-        if (memcmp(riff.header, "data", 4) == 0) {
+        if (std::string(riff.header, 4) == "data") {
             // data chunk
             _m_data_start = stream->tellg();
             _m_data = riff;
@@ -51,35 +54,38 @@ wav_pcm_provider::wav_pcm_provider(const istream_ptr& stream) : pcm_provider(str
     stream->seekg(_m_data_start);
 }
 
-wav_pcm_provider::~wav_pcm_provider() {
-    
-}
-
-int64_t wav_pcm_provider::get_samples(void*& data, sample_type type) {
+pcm_samples wav_pcm_provider::get_samples(sample_type type) {
     if (type != SAMPLE_INT16) {
-        return PCM_ERR;
+        return pcm_samples::error(PCM_ERR);
     }
 
-    data = new int16_t[frames_per_block * _m_fmt.channels];
-    stream->read(data, 2, frames_per_block * _m_fmt.channels);
+    pcm_samples samples { SAMPLE_INT16, frames_per_block, _m_fmt.channels, CHANNELS_WAV };
+    stream->read(samples.data(), 2, frames_per_block * _m_fmt.channels);
 
-    return stream->gcount() / 2 / _m_fmt.channels;
+    // Maybe didn't read entire block
+    samples.resize(stream->gcount() / samples.frame_size());
+
+    return samples;
 }
 
-int64_t wav_pcm_provider::rate() const {
+int64_t wav_pcm_provider::rate() {
     return _m_fmt.rate;
 }
 
-int64_t wav_pcm_provider::channels() const {
+int64_t wav_pcm_provider::channels() {
     return _m_fmt.channels;
 }
 
-std::chrono::nanoseconds wav_pcm_provider::duration() const {
+channel_order wav_pcm_provider::order() {
+    return CHANNELS_WAV;
+}
+
+std::chrono::nanoseconds wav_pcm_provider::duration() {
     // align is frame size, return the number of frames multiplied by nanoseconds per frame
     return (_m_data.size / _m_fmt.align) * _m_ns_per_frame;
 }
 
-std::chrono::nanoseconds wav_pcm_provider::pos() const {
+std::chrono::nanoseconds wav_pcm_provider::pos() {
     // Offset to start of data segment
     return ((stream->tellg() - _m_data_start) / _m_fmt.align) * _m_ns_per_frame;
 }
@@ -89,11 +95,11 @@ void wav_pcm_provider::seek(std::chrono::nanoseconds pos) {
     stream->seekg(_m_data_start + ((pos / _m_ns_per_frame) * _m_fmt.align));
 }
 
-sample_type wav_pcm_provider::types() const {
+sample_type wav_pcm_provider::types() {
     return SAMPLE_INT16;
 }
 
-sample_type wav_pcm_provider::preferred_type() const {
+sample_type wav_pcm_provider::preferred_type() {
     return SAMPLE_INT16;
 }
 

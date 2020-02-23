@@ -2,6 +2,8 @@
 
 #include "utils.h"
 
+#include "namespaces.h"
+
 #include <FLAC++/decoder.h>
 
 class flac_decoder : public FLAC::Decoder::Stream {
@@ -53,18 +55,18 @@ flac_pcm_provider::flac_pcm_provider(const istream_ptr& stream) : pcm_provider(s
     ASSERT(_m_decoder->get_bits_per_sample() == 16);
 
     _m_ns_per_frame = std::chrono::duration_cast<std::chrono::nanoseconds>(
-        std::chrono::seconds(1) / static_cast<double>(_m_decoder->get_sample_rate()));
+        1s / static_cast<double>(_m_decoder->get_sample_rate()));
 }
 
-int64_t flac_pcm_provider::get_samples(void*& data, sample_type type) {
+pcm_samples flac_pcm_provider::get_samples(sample_type type) {
     if (type != preferred_type()) {
-        return PCM_ERR;
+        return pcm_samples::error(PCM_ERR);
     }
 
     // Make sure there is audio available
     while (!_m_decoder->ready()) {
         if (_m_decoder->get_state() == FLAC__STREAM_DECODER_END_OF_STREAM) {
-            return PCM_DONE;
+            return pcm_samples { SAMPLE_INT16, 0, _m_decoder->get_channels(), CHANNELS_SMPTE };
         }
 
         _m_decoder->process_single();
@@ -74,40 +76,44 @@ int64_t flac_pcm_provider::get_samples(void*& data, sample_type type) {
 
     switch (preferred_type()) {
         case SAMPLE_INT16: {
-            // ReSharper disable once CppNonReclaimedResourceAcquisition
-            data = new int16_t[static_cast<int64_t>(_m_decoder->get_blocksize()) * _m_decoder->get_channels()];
+            pcm_samples pcm { SAMPLE_INT16, _m_decoder->get_blocksize(), _m_decoder->get_channels(), CHANNELS_SMPTE };
 
             // Interleave
-            int16_t* cur = static_cast<int16_t*>(data);
+            sample_int16_t* dest = pcm.data<SAMPLE_INT16>();
             for (int64_t i = 0; i < _m_decoder->get_blocksize(); ++i) {
                 for (const auto& chan : samples) {
-                    *cur++ = chan[i];
+                    *dest++ = chan[i];
 
                 }
             }
-            break;
+
+            return pcm;
         }
 
         case SAMPLE_FLOAT32:
-        case SAMPLE_NONE: return PCM_ERR;
+        case SAMPLE_NONE: return pcm_samples::error(PCM_ERR);
     }
 
-    return _m_decoder->get_blocksize();
+    return pcm_samples::error(PCM_ERR);
 }
 
-int64_t flac_pcm_provider::rate() const {
+int64_t flac_pcm_provider::rate() {
     return _m_decoder->get_sample_rate();
 }
 
-int64_t flac_pcm_provider::channels() const {
+int64_t flac_pcm_provider::channels() {
     return _m_decoder->get_channels();
 }
 
-std::chrono::nanoseconds flac_pcm_provider::duration() const {
+channel_order flac_pcm_provider::order() {
+    return CHANNELS_SMPTE;
+}
+
+std::chrono::nanoseconds flac_pcm_provider::duration() {
     return _m_decoder->get_total_samples() * _m_ns_per_frame;
 }
 
-std::chrono::nanoseconds flac_pcm_provider::pos() const {
+std::chrono::nanoseconds flac_pcm_provider::pos() {
     return _m_decoder->current_header().number.sample_number * _m_ns_per_frame;
 }
 
@@ -120,11 +126,11 @@ void flac_pcm_provider::seek(std::chrono::nanoseconds pos) {
     _m_decoder->seek_absolute(pos / _m_ns_per_frame);
 }
 
-sample_type flac_pcm_provider::types() const {
+sample_type flac_pcm_provider::types() {
     return preferred_type();
 }
 
-sample_type flac_pcm_provider::preferred_type() const {
+sample_type flac_pcm_provider::preferred_type() {
     switch (_m_decoder->get_bits_per_sample()) {
         case 16: return SAMPLE_INT16;
         default: return SAMPLE_NONE;

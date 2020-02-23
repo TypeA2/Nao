@@ -207,6 +207,7 @@
     <ClInclude Include="file_info.h" />
     <ClInclude Include="flac_handler.h" />
     <ClInclude Include="flac_pcm_provider.h" />
+    <ClInclude Include="namespaces.h" />
     <ClInclude Include="icon.h" />
     <ClInclude Include="label.h" />
     <ClInclude Include="left_window.h" />

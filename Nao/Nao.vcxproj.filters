@@ -220,6 +220,9 @@
     <ClInclude Include="byte_array_streambuf.h">
       <Filter>Header Files\Utils\IO</Filter>
     </ClInclude>
+    <ClInclude Include="namespaces.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="nao.cpp">

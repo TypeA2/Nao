@@ -3,7 +3,7 @@
 #include <vorbis/vorbisfile.h>
 #include <opusfile.h>
 
-#include <string>
+#include "namespaces.h"
 
 #include "utils.h"
 
@@ -112,7 +112,7 @@ ogg_pcm_provider::ogg_pcm_provider(const istream_ptr& stream) : pcm_provider(str
         _d->type = TYPE_VORBIS;
 
         _d->duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
-            ov_time_total(&_d->vorb.vf, -1) * std::chrono::seconds(1));
+            ov_time_total(&_d->vorb.vf, -1) * 1s);
 
         is_valid = true;
     } else {
@@ -129,7 +129,7 @@ ogg_pcm_provider::ogg_pcm_provider(const istream_ptr& stream) : pcm_provider(str
         _d->opus.of = of;
         _d->opus.head = op_head(of, -1);
         _d->opus.ns_per_sample = std::chrono::duration_cast<std::chrono::nanoseconds>(
-            std::chrono::seconds(1) / static_cast<double>(_d->opus.head->input_sample_rate));
+            1s / static_cast<double>(_d->opus.head->input_sample_rate));
 
         _d->type = TYPE_OPUS;
 
@@ -150,18 +150,19 @@ ogg_pcm_provider::~ogg_pcm_provider() {
     }
 }
 
-int64_t ogg_pcm_provider::get_samples(void*& data, sample_type type) {
-    static constexpr size_t data_size = 4096;
+pcm_samples ogg_pcm_provider::get_samples(sample_type type) {
+    static constexpr size_t block_size = 1024;
     static constexpr size_t word_size = 2;
 
     switch (_d->type) {
         case TYPE_VORBIS: {
             switch (type) {
                 case SAMPLE_INT16: {
-                    data = new char[data_size];
+                    pcm_samples pcm(SAMPLE_INT16, block_size, _d->vorb.info->channels, CHANNELS_VORBIS);
+
                     int bs;
                     // Get bytes read
-                    long size = ov_read(&_d->vorb.vf, static_cast<char*>(data), data_size, 0, word_size, 1, &bs);
+                    long size = ov_read(&_d->vorb.vf, pcm.data(), static_cast<int>(pcm.frame_size() * pcm.frames()), 0, word_size, 1, &bs);
                     if (size == 0) {
                         _d->eof = true;
                         return PCM_DONE;
@@ -171,7 +172,7 @@ int64_t ogg_pcm_provider::get_samples(void*& data, sample_type type) {
                         return PCM_ERR;
                     }
 
-                    return (size / word_size) / _d->vorb.info->channels;
+                    return pcm;
                 }
 
                 case SAMPLE_FLOAT32: {
@@ -180,7 +181,7 @@ int64_t ogg_pcm_provider::get_samples(void*& data, sample_type type) {
                     float** pcm_target;
 
                     // Amount of samples per channel
-                    long samples = ov_read_float(&_d->vorb.vf, &pcm_target, data_size / word_size, &bs);
+                    long samples = ov_read_float(&_d->vorb.vf, &pcm_target, static_cast<int>(block_size) * _d->vorb.info->channels, &bs);
 
                     if (samples == 0) {
                         _d->eof = true;
@@ -191,9 +192,8 @@ int64_t ogg_pcm_provider::get_samples(void*& data, sample_type type) {
                         return PCM_ERR;
                     }
 
-                    // ReSharper disable once CppNonReclaimedResourceAcquisition
-                    float* dest = new float[samples * static_cast<size_t>(_d->vorb.info->channels)];
-                    data = dest;
+                    pcm_samples pcm(SAMPLE_FLOAT32, samples, _d->vorb.info->channels, CHANNELS_VORBIS);
+                    sample_float32_t* dest = pcm.data<SAMPLE_FLOAT32>();
 
                     // Interleave
                     for (long i = 0; i < samples; ++i) {
@@ -202,7 +202,7 @@ int64_t ogg_pcm_provider::get_samples(void*& data, sample_type type) {
                         }
                     }
 
-                    return samples;
+                    return pcm;
                 }
 
                 case SAMPLE_NONE: return PCM_ERR;
@@ -213,9 +213,8 @@ int64_t ogg_pcm_provider::get_samples(void*& data, sample_type type) {
         case TYPE_OPUS: {
             switch (type) {
                 case SAMPLE_INT16: {
-                    data = new char[data_size];
-
-                    int frames = op_read(_d->opus.of, static_cast<opus_int16*>(data), data_size / sizeof(opus_int16), nullptr);
+                    pcm_samples pcm(SAMPLE_INT16, block_size, _d->opus.head->channel_count, CHANNELS_VORBIS);
+                    int frames = op_read(_d->opus.of, pcm.data<SAMPLE_INT16>(), static_cast<int>(pcm.samples()), nullptr);
                     if (frames == 0) {
                         _d->eof = true;
                         return PCM_DONE;
@@ -225,13 +224,15 @@ int64_t ogg_pcm_provider::get_samples(void*& data, sample_type type) {
                         return PCM_ERR;
                     }
 
-                    return frames;
+                    pcm.resize(frames);
+
+                    return pcm;
                 }
 
                 case SAMPLE_FLOAT32: {
-                    data = new char[data_size];
+                    pcm_samples pcm(SAMPLE_FLOAT32, block_size, _d->opus.head->channel_count, CHANNELS_VORBIS);
 
-                    int frames = op_read_float(_d->opus.of, static_cast<float*>(data), data_size / sizeof(float), nullptr);
+                    int frames = op_read_float(_d->opus.of, pcm.data<SAMPLE_FLOAT32>(), static_cast<int>(pcm.samples()), nullptr);
                     if (frames == 0) {
                         _d->eof = true;
                         return PCM_DONE;
@@ -241,7 +242,9 @@ int64_t ogg_pcm_provider::get_samples(void*& data, sample_type type) {
                         return PCM_ERR;
                     }
 
-                    return frames;
+                    pcm.resize(frames);
+
+                    return pcm;
                 }
 
                 case SAMPLE_NONE: return PCM_ERR;
@@ -253,7 +256,7 @@ int64_t ogg_pcm_provider::get_samples(void*& data, sample_type type) {
     return PCM_ERR;
 }
 
-int64_t ogg_pcm_provider::rate() const {
+int64_t ogg_pcm_provider::rate() {
     switch (_d->type) {
         case TYPE_VORBIS: return _d->vorb.info->rate;
         case TYPE_OPUS: return _d->opus.head->input_sample_rate;
@@ -262,7 +265,7 @@ int64_t ogg_pcm_provider::rate() const {
     return 0;
 }
 
-int64_t ogg_pcm_provider::channels() const {
+int64_t ogg_pcm_provider::channels() {
     switch (_d->type) {
         case TYPE_VORBIS: return _d->vorb.info->channels;
         case TYPE_OPUS: return _d->opus.head->channel_count;
@@ -271,18 +274,21 @@ int64_t ogg_pcm_provider::channels() const {
     return 0;
 }
 
-std::chrono::nanoseconds ogg_pcm_provider::duration() const {
+channel_order ogg_pcm_provider::order() {
+    return CHANNELS_VORBIS;
+}
+
+std::chrono::nanoseconds ogg_pcm_provider::duration() {
     return _d->duration;
 }
 
-std::chrono::nanoseconds ogg_pcm_provider::pos() const {
+std::chrono::nanoseconds ogg_pcm_provider::pos() {
     switch (_d->type) {
-        case TYPE_VORBIS: return std::chrono::duration_cast<std::chrono::nanoseconds>(
-            ov_time_tell(&_d->vorb.vf) * std::chrono::seconds(1));
+        case TYPE_VORBIS: return std::chrono::duration_cast<std::chrono::nanoseconds>(ov_time_tell(&_d->vorb.vf) * 1s);
         case TYPE_OPUS: return op_pcm_tell(_d->opus.of) * _d->opus.ns_per_sample;
     }
 
-    return std::chrono::nanoseconds(0);
+    return 0ns;
 }
 
 void ogg_pcm_provider::seek(std::chrono::nanoseconds pos) {
@@ -295,23 +301,12 @@ void ogg_pcm_provider::seek(std::chrono::nanoseconds pos) {
     }
 }
 
-
-sample_type ogg_pcm_provider::types() const {
-    switch (_d->type) {
-        case TYPE_VORBIS: return SAMPLE_INT16 | SAMPLE_FLOAT32;
-        case TYPE_OPUS: return SAMPLE_INT16 | SAMPLE_FLOAT32;
-    }
-
-    return SAMPLE_NONE;
+sample_type ogg_pcm_provider::types() {
+    return SAMPLE_INT16 | SAMPLE_FLOAT32;
 }
 
-sample_type ogg_pcm_provider::preferred_type() const {
-    switch (_d->type) {
-        case TYPE_VORBIS: return SAMPLE_FLOAT32;
-        case TYPE_OPUS: return SAMPLE_FLOAT32;
-    }
-
-    return SAMPLE_NONE;
+sample_type ogg_pcm_provider::preferred_type() {
+    return SAMPLE_FLOAT32;
 }
 
 void ogg_pcm_provider::_validate_open() const {

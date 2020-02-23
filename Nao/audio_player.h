@@ -38,7 +38,9 @@ class audio_player {
     private:
     void _playback_loop_passthrough(sample_type output_format);
     void _playback_loop_resample(const PaDeviceInfo* info);
-    void _write_samples(void* samples, int64_t frames, int64_t channels, sample_type type) const;
+    void _wait_pause();
+    void _playback_end();
+    void _write_samples(pcm_samples samples) const;
 
     std::unique_ptr<audio_player_pa_lock> _d;
 
@@ -61,6 +63,7 @@ class audio_player {
     float _m_volume;
 
     PaStream* _m_stream;
+    int _m_channel_out;
 
     std::unordered_map<event_type, std::vector<event_handler>> _m_events;
 };

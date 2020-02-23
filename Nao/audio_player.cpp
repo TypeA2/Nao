@@ -5,6 +5,8 @@
 #include <portaudio.h>
 #include <samplerate.h>
 
+#include <compare>
+
 class audio_player_pa_lock {
     public:
     explicit audio_player_pa_lock() {
@@ -89,10 +91,21 @@ void audio_player::reset() {
         output_format = SAMPLE_FLOAT32;
     }
 
+    auto pcm_channels = _m_provider->channels();
+    if (pcm_channels == info->maxOutputChannels) {
+        _m_channel_out = static_cast<int>(pcm_channels);
+    } else if (pcm_channels > info->maxOutputChannels) {
+        _m_channel_out = info->maxOutputChannels;
+    } else {
+        ASSERT(false);
+    }
+
+    ASSERT(pcm_channels == 2 || pcm_channels == 6);
+
     PaStreamParameters params {
         .device = device,
-        .channelCount = static_cast<int>(_m_provider->channels()),
-        .sampleFormat = pcm_provider::pa_format(output_format),
+        .channelCount = _m_channel_out,
+        .sampleFormat = pcm_samples::pa_format(output_format),
         .suggestedLatency = info->defaultHighOutputLatency
     };
 
@@ -145,50 +158,22 @@ void audio_player::trigger_event(event_type type) const {
 }
 
 void audio_player::_playback_loop_passthrough(sample_type output_format) {
-    const auto channels = _m_provider->channels();
-
     while (true) {
-        // Wait until pause is over
-        if (_m_pause) {
-            if (!_m_startup_done) {
-                _m_startup_done = true;
-                _m_startup_condition.notify_all();
-            } else {
-                trigger_event(EVENT_STOP);
-            }
-
-            std::unique_lock lock(_m_pause_mutex);
-            _m_pause_condition.wait(lock, [this] { return !_m_pause; });
-
-            if (!_m_quit) {
-                trigger_event(EVENT_START);
-            }
-        }
-
+        _wait_pause();
+        
         if (_m_quit) {
             break;
         }
 
-        void* samples;
-        int64_t frames = _m_provider->get_samples(samples, output_format);
-        if (frames <= 0) {
+        pcm_samples samples = _m_provider->get_samples(output_format);
+        if (!samples) {
             break;
         }
 
-        _write_samples(samples, frames, channels, output_format);
-        pcm_provider::delete_samples(samples, output_format);
+        _write_samples(std::move(samples));
     }
 
-    _m_pause = true;
-    _m_eof = true;
-
-    if (!_m_quit) {
-        trigger_event(EVENT_STOP);
-    }
-
-    if (_m_stream) {
-        ASSERT(paNoError == Pa_CloseStream(_m_stream));
-    }
+    _playback_end();
 }
 
 void audio_player::_playback_loop_resample(const PaDeviceInfo* info) {
@@ -201,13 +186,14 @@ void audio_player::_playback_loop_resample(const PaDeviceInfo* info) {
 
     struct cb_args {
         pcm_provider* provider;
-        float* prev_buf;
         bool convert_format;
+        pcm_samples prev_pcm;
         sample_type src_type;
         int64_t channels;
     } args {
         .provider = _m_provider.get(),
         .convert_format = _m_convert_format,
+        .prev_pcm = pcm_samples::error(0),
         .src_type = SAMPLE_FLOAT32,
         .channels = channels
     };
@@ -217,29 +203,24 @@ void audio_player::_playback_loop_resample(const PaDeviceInfo* info) {
     }
 
     src_callback_t src_callback = [](void* data, float** samples) -> long {
-        auto& [provider, prev_buf, convert, src_type, channels] = *static_cast<cb_args*>(data);
+        auto& [provider, convert, prev_pcm, src_type, channels] = *static_cast<cb_args*>(data);
         
-        void* pcm;
-        long frames = static_cast<long>(provider->get_samples(pcm, src_type));
-
-        if (frames == 0) {
+        pcm_samples pcm = provider->get_samples(src_type);
+        if (!pcm) {
             return 0;
         }
 
-        pcm_provider::delete_samples(prev_buf, SAMPLE_FLOAT32);
-
         // Convert sample rate if needed
         if (convert) {
-            void* pcm_conv;
-            pcm_provider::convert_samples(pcm, src_type, pcm_conv, SAMPLE_FLOAT32, frames, channels);
-            pcm_provider::delete_samples(pcm, src_type);
-
-            pcm = pcm_conv;
+            pcm = pcm.as(SAMPLE_FLOAT32);
         }
 
-        *samples = static_cast<float*>(pcm);
-        prev_buf = *samples;
-        return frames;
+        prev_pcm = std::move(pcm);
+
+
+        *samples = prev_pcm.data<SAMPLE_FLOAT32>();
+
+        return static_cast<long>(prev_pcm.frames());
     };
 
     int conversion_err;
@@ -248,21 +229,7 @@ void audio_player::_playback_loop_resample(const PaDeviceInfo* info) {
 
     while (true) {
         // Wait until pause is over
-        if (_m_pause) {
-            if (!_m_startup_done) {
-                _m_startup_done = true;
-                _m_startup_condition.notify_all();
-            } else {
-                trigger_event(EVENT_STOP);
-            }
-
-            std::unique_lock lock(_m_pause_mutex);
-            _m_pause_condition.wait(lock, [this] { return !_m_pause; });
-
-            if (!_m_quit) {
-                trigger_event(EVENT_START);
-            }
-        }
+        _wait_pause();
 
         if (_m_quit) {
             break;
@@ -274,9 +241,36 @@ void audio_player::_playback_loop_resample(const PaDeviceInfo* info) {
             break;
         }
 
-        _write_samples(pcm, frames_converted, channels, SAMPLE_FLOAT32);
+        pcm_samples samples(SAMPLE_FLOAT32, frames_converted, channels, _m_provider->order());
+
+        std::copy(pcm, pcm + (frames_converted * channels), samples.data<SAMPLE_FLOAT32>());
+
+        _write_samples(std::move(samples));
     }
 
+    src_delete(state);
+}
+
+void audio_player::_wait_pause() {
+    // Wait until pause is over
+    if (_m_pause) {
+        if (!_m_startup_done) {
+            _m_startup_done = true;
+            _m_startup_condition.notify_all();
+        } else {
+            trigger_event(EVENT_STOP);
+        }
+
+        std::unique_lock lock(_m_pause_mutex);
+        _m_pause_condition.wait(lock, [this] { return !_m_pause; });
+
+        if (!_m_quit) {
+            trigger_event(EVENT_START);
+        }
+    }
+}
+
+void audio_player::_playback_end() {
     _m_pause = true;
     _m_eof = true;
 
@@ -287,32 +281,17 @@ void audio_player::_playback_loop_resample(const PaDeviceInfo* info) {
     if (_m_stream) {
         ASSERT(paNoError == Pa_CloseStream(_m_stream));
     }
-
-    src_delete(state);
 }
 
-inline void audio_player::_write_samples(void* samples, int64_t frames, int64_t channels, sample_type type) const {
-    int64_t sample_count = frames * channels;
-
+inline void audio_player::_write_samples(pcm_samples samples) const {
     // Apply volume scaling
-    switch (type) {
-        case SAMPLE_INT16: {
-            short* data = static_cast<short*>(samples);
-            for (int64_t i = 0; i < sample_count; ++i) {
-                data[i] = static_cast<short>(static_cast<float>(data[i]) * _m_volume);
-            }
-            break;
-        }
+    samples.scale(_m_volume);
 
-        case SAMPLE_FLOAT32: {
-            float* data = static_cast<float*>(samples);
-            for (int64_t i = 0; i < sample_count; ++i) {
-                data[i] *= _m_volume;
-            }
-            break;
-        }
-        case SAMPLE_NONE: break;
+    // Downmix
+    if (samples.channels() != _m_channel_out) {
+        samples = samples.downmix(_m_channel_out);
     }
 
-    Pa_WriteStream(_m_stream, samples, static_cast<int>(frames));
+    Pa_WriteStream(_m_stream, samples.data(), static_cast<unsigned long>(samples.frames()));
 }
+

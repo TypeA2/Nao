@@ -12,7 +12,10 @@
 #include "resource.h"
 
 #include "byte_array_streambuf.h"
+#include "namespaces.h"
+
 #include <vorbis/vorbisenc.h>
+#include <vorbis/vorbisfile.h>
 
 class vorbis_packet {
     public:
@@ -253,6 +256,36 @@ enum known_chunks {
 static std::string chunk_map[CHUNK_COUNT] {
     "fmt ", "cue ", "LIST", "smpl", "vorb", "data"
 };
+namespace detail {
+    static ov_callbacks vorbis_callbacks {
+        .read_func = [](void* ptr, size_t size, size_t nmemb, void* source) -> size_t {
+            binary_istream& stream = *static_cast<binary_istream*>(source);
+
+            if (!stream.good() || stream.eof()) {
+                return 0;
+            }
+
+            return stream.read(ptr, size, nmemb).gcount();
+        },
+
+        .seek_func = [](void* source, ogg_int64_t offset, int whence) -> int {
+            binary_istream& stream = *static_cast<binary_istream*>(source);
+
+            switch (whence) {
+                case SEEK_SET: stream.seekg(offset, std::ios::beg); break;
+                case SEEK_CUR: stream.seekg(offset, std::ios::cur); break;
+                case SEEK_END: stream.seekg(offset, std::ios::end); break;
+                default: return -1;
+            }
+
+            return 0;
+        },
+
+        .tell_func = [](void* source) -> long {
+            return static_cast<long>(static_cast<binary_istream*>(source)->tellg());
+        }
+    };
+}
 
 wem_pcm_provider::wem_pcm_provider(const istream_ptr& stream) : pcm_provider(stream) {
     wave_header wave;
@@ -492,7 +525,9 @@ wem_pcm_provider::wem_pcm_provider(const istream_ptr& stream) : pcm_provider(str
 
     utils::coutln("parsing done");
 
-    binary_ostream os("C:\\Users\\Nuan\\Downloads\\wwriff.ogg");
+    //binary_ostream os("C:\\Users\\Nuan\\Downloads\\wwriff.ogg");
+    _m_buf = std::make_shared<binary_iostream>(std::make_shared<std::stringstream>(std::ios::in | std::ios::out | std::ios::binary));
+    binary_ostream& os = *_m_buf;
     ogg_stream_state state;
     ogg_stream_init(&state, 1);
     ogg_page page;
@@ -616,7 +651,6 @@ wem_pcm_provider::wem_pcm_provider(const istream_ptr& stream) : pcm_provider(str
     size_t mode_bits = 0;
 
     // Comment and setup can be on same page
-
 
     {
         auto ss = std::make_shared<std::stringstream>(std::ios::in | std::ios::out | std::ios::binary);
@@ -1013,40 +1047,116 @@ wem_pcm_provider::wem_pcm_provider(const istream_ptr& stream) : pcm_provider(str
     }
 
     ogg_stream_clear(&state);
+
+    _m_buf->seekg(0);
+    _m_buf->clear();
+
+    ASSERT(ov_open_callbacks(_m_buf.get(), &_m_vf, nullptr, 0, detail::vorbis_callbacks) == 0);
+    _m_info = ov_info(&_m_vf, -1);
+    _m_duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
+        ov_time_total(&_m_vf, -1) * std::chrono::seconds(1));
 }
 
-wem_pcm_provider::~wem_pcm_provider() {
-    
-}
+pcm_samples wem_pcm_provider::get_samples(sample_type type) {
+    static constexpr size_t block_size = 1024;
+    static constexpr size_t word_size = 2;
 
-int64_t wem_pcm_provider::get_samples(void*& data, sample_type type) {
+    switch (type) {
+        case SAMPLE_INT16: {
+            pcm_samples pcm(SAMPLE_INT16, block_size, _m_info->channels, CHANNELS_VORBIS);
+
+            int bs;
+            // Get bytes read
+            long size = ov_read(&_m_vf, pcm.data(), static_cast<int>(pcm.frame_size() * pcm.frames()), 0, word_size, 1, &bs);
+            if (size == 0) {
+                _m_eof = true;
+                return PCM_DONE;
+            }
+
+            if (size < 0) {
+                return PCM_ERR;
+            }
+
+            return pcm;
+        }
+
+        case SAMPLE_FLOAT32: {
+            int bs;
+            // Array of pointers, 1 per channel
+            float** pcm_target;
+
+            // Amount of samples per channel
+            long samples = ov_read_float(&_m_vf, &pcm_target, static_cast<int>(block_size)* _m_info->channels, &bs);
+
+            if (samples == 0) {
+                _m_eof = true;
+                return PCM_DONE;
+            }
+
+            if (samples < 0) {
+                return PCM_ERR;
+            }
+
+            pcm_samples pcm(SAMPLE_FLOAT32, samples, _m_info->channels, CHANNELS_VORBIS);
+            sample_float32_t* dest = pcm.data<SAMPLE_FLOAT32>();
+
+            // Interleave
+            for (long i = 0; i < samples; ++i) {
+                for (int j = 0; j < _m_info->channels; ++j) {
+                    *dest++ = pcm_target[j][i];
+                }
+            }
+
+            return pcm;
+        }
+
+        case SAMPLE_NONE: return PCM_ERR;
+    }
+
     return PCM_ERR;
 }
 
-int64_t wem_pcm_provider::rate() const {
-    return 0;
+int64_t wem_pcm_provider::rate() {
+    return _m_info->rate;
 }
 
-int64_t wem_pcm_provider::channels() const {
-    return 0;
+int64_t wem_pcm_provider::channels() {
+    return _m_info->channels;
 }
 
-std::chrono::nanoseconds wem_pcm_provider::duration() const {
-    return std::chrono::nanoseconds(0);
+channel_order wem_pcm_provider::order() {
+    return CHANNELS_VORBIS;
 }
 
-std::chrono::nanoseconds wem_pcm_provider::pos() const {
-    return std::chrono::nanoseconds(0);
+std::chrono::nanoseconds wem_pcm_provider::duration() {
+    return _m_duration;
+}
+
+std::chrono::nanoseconds wem_pcm_provider::pos() {
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(
+        ov_time_tell(const_cast<OggVorbis_File*>(&_m_vf)) *  1s);
 }
 
 void wem_pcm_provider::seek(std::chrono::nanoseconds pos) {
-    
+    _validate_open();
+
+    ov_time_seek(&_m_vf, static_cast<double>(pos.count()) / std::chrono::nanoseconds::period::den);
 }
 
-sample_type wem_pcm_provider::types() const {
-    return SAMPLE_NONE;
+sample_type wem_pcm_provider::types() {
+    return SAMPLE_INT16 | SAMPLE_FLOAT32;
 }
 
-sample_type wem_pcm_provider::preferred_type() const {
-    return SAMPLE_NONE;
+sample_type wem_pcm_provider::preferred_type() {
+    return SAMPLE_FLOAT32;
+}
+
+void wem_pcm_provider::_validate_open() {
+    if (_m_eof) {
+        _m_eof = false;
+        ov_clear(&_m_vf);
+        _m_buf->seekg(0);
+        ASSERT(ov_open_callbacks(_m_buf.get(), &_m_vf, nullptr, 0, detail::vorbis_callbacks) == 0);
+        _m_info = ov_info(&_m_vf, -1);
+    }
 }
