@@ -2,11 +2,17 @@
 
 #include "pcm_provider.h"
 
-class ogg_pcm_provider_impl;
+class opus_vorbis_decoder;
+
+enum ogg_pcm_type {
+    TYPE_VORBIS,
+    TYPE_OPUS
+};
+
 class ogg_pcm_provider : public pcm_provider {
     public:
     explicit ogg_pcm_provider(const istream_ptr& stream);
-    ~ogg_pcm_provider() override;
+    ~ogg_pcm_provider() override = default;
 
     pcm_samples get_samples(sample_type type) override;
     int64_t rate() override;
@@ -22,7 +28,6 @@ class ogg_pcm_provider : public pcm_provider {
     sample_type preferred_type() override;
 
     private:
-    void _validate_open() const;
-
-    std::unique_ptr<ogg_pcm_provider_impl> _d;
+    std::unique_ptr<opus_vorbis_decoder> _m_dec;
+    ogg_pcm_type _m_type;
 };

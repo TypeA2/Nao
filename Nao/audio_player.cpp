@@ -2,6 +2,8 @@
 
 #include "thread_pool.h"
 
+#include "namespaces.h"
+
 #include <portaudio.h>
 #include <samplerate.h>
 
@@ -71,7 +73,7 @@ void audio_player::reset() {
     _m_eof = false;
     _m_pause = true;
 
-    _m_provider->seek(std::chrono::nanoseconds(0));
+    _m_provider->seek(0ns);
 
     PaDeviceIndex device = Pa_GetDefaultOutputDevice();
     auto info = Pa_GetDeviceInfo(device);
@@ -243,7 +245,6 @@ void audio_player::_playback_loop_resample(const PaDeviceInfo* info) {
         static_cast<int>(channels), &conversion_err, &args);
 
     while (true) {
-        // Wait until pause is over
         _wait_pause();
 
         if (_m_quit) {

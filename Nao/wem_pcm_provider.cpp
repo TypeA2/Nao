@@ -17,6 +17,8 @@
 #include <vorbis/vorbisenc.h>
 #include <vorbis/vorbisfile.h>
 
+#include "vorbis_decoder.h"
+
 class vorbis_packet {
     public:
     explicit vorbis_packet(const istream_ptr& stream, std::streamoff offset, bool no_granule = false)
@@ -256,36 +258,6 @@ enum known_chunks {
 static std::string chunk_map[CHUNK_COUNT] {
     "fmt ", "cue ", "LIST", "smpl", "vorb", "data"
 };
-namespace detail {
-    static ov_callbacks vorbis_callbacks {
-        .read_func = [](void* ptr, size_t size, size_t nmemb, void* source) -> size_t {
-            binary_istream& stream = *static_cast<binary_istream*>(source);
-
-            if (!stream.good() || stream.eof()) {
-                return 0;
-            }
-
-            return stream.read(ptr, size, nmemb).gcount();
-        },
-
-        .seek_func = [](void* source, ogg_int64_t offset, int whence) -> int {
-            binary_istream& stream = *static_cast<binary_istream*>(source);
-
-            switch (whence) {
-                case SEEK_SET: stream.seekg(offset, std::ios::beg); break;
-                case SEEK_CUR: stream.seekg(offset, std::ios::cur); break;
-                case SEEK_END: stream.seekg(offset, std::ios::end); break;
-                default: return -1;
-            }
-
-            return 0;
-        },
-
-        .tell_func = [](void* source) -> long {
-            return static_cast<long>(static_cast<binary_istream*>(source)->tellg());
-        }
-    };
-}
 
 wem_pcm_provider::wem_pcm_provider(const istream_ptr& stream) : pcm_provider(stream) {
     wave_header wave;
@@ -311,7 +283,7 @@ wem_pcm_provider::wem_pcm_provider(const istream_ptr& stream) : pcm_provider(str
 
         // Read all chunks
         for (size_t i = 0; i < CHUNK_COUNT; ++i) {
-            if (memcmp(chunk.header, chunk_map[i].c_str(), 4) == 0) {
+            if (std::string(chunk.header, 4) == chunk_map[i]) {
                 chunks[i].offset = offset + 8;
                 chunks[i].size = chunk.size;
                 found[i] = true;
@@ -923,10 +895,6 @@ wem_pcm_provider::wem_pcm_provider(const istream_ptr& stream) : pcm_provider(str
     utils::coutln("writing audio from", data.offset + audio_start_offset, "to", os.tellp());
     bool prev_blockflag = false;
 
-    
-    //ASSERT(vorbis_encode_setup_managed(&vi,
-    //    _fmt.channels, _fmt.rate, 0, static_cast<long>(_fmt.byte_rate) * 8, 0) == 0);
-    // Audio
     auto _offset = data.offset + audio_start_offset;
     int64_t last_bs = 0;
     int64_t granpos = 0;
@@ -1051,62 +1019,44 @@ wem_pcm_provider::wem_pcm_provider(const istream_ptr& stream) : pcm_provider(str
     _m_buf->seekg(0);
     _m_buf->clear();
 
-    ASSERT(ov_open_callbacks(_m_buf.get(), &_m_vf, nullptr, 0, detail::vorbis_callbacks) == 0);
-    _m_info = ov_info(&_m_vf, -1);
-    _m_duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
-        ov_time_total(&_m_vf, -1) * std::chrono::seconds(1));
+    _m_dec = std::make_unique<vorbis_decoder>(_m_buf);
+    ASSERT(_m_dec->valid());
 }
 
 pcm_samples wem_pcm_provider::get_samples(sample_type type) {
-    static constexpr size_t block_size = 1024;
-    static constexpr size_t word_size = 2;
-
+    static constexpr int block_size = 1024;
     switch (type) {
         case SAMPLE_INT16: {
-            pcm_samples pcm(SAMPLE_INT16, block_size, _m_info->channels, CHANNELS_VORBIS);
+            pcm_samples pcm(SAMPLE_INT16, block_size, _m_dec->channels(), CHANNELS_VORBIS);
 
-            int bs;
-            // Get bytes read
-            long size = ov_read(&_m_vf, pcm.data(), static_cast<int>(pcm.frame_size() * pcm.frames()), 0, word_size, 1, &bs);
-            if (size == 0) {
-                _m_eof = true;
+            int64_t frames = _m_dec->read(pcm.data<SAMPLE_INT16>(), pcm.frames());
+
+            if (frames == 0) {
                 return PCM_DONE;
             }
 
-            if (size < 0) {
+            if (frames < 0) {
                 return PCM_ERR;
             }
 
+            pcm.resize(frames);
             return pcm;
         }
 
         case SAMPLE_FLOAT32: {
-            int bs;
-            // Array of pointers, 1 per channel
-            float** pcm_target;
+            pcm_samples pcm(SAMPLE_FLOAT32, block_size, _m_dec->channels(), CHANNELS_VORBIS);
 
-            // Amount of samples per channel
-            long samples = ov_read_float(&_m_vf, &pcm_target, static_cast<int>(block_size)* _m_info->channels, &bs);
+            int64_t frames = _m_dec->read_float(pcm.data<SAMPLE_FLOAT32>(), pcm.frames());
 
-            if (samples == 0) {
-                _m_eof = true;
+            if (frames == 0) {
                 return PCM_DONE;
             }
 
-            if (samples < 0) {
+            if (frames < 0) {
                 return PCM_ERR;
             }
 
-            pcm_samples pcm(SAMPLE_FLOAT32, samples, _m_info->channels, CHANNELS_VORBIS);
-            sample_float32_t* dest = pcm.data<SAMPLE_FLOAT32>();
-
-            // Interleave
-            for (long i = 0; i < samples; ++i) {
-                for (int j = 0; j < _m_info->channels; ++j) {
-                    *dest++ = pcm_target[j][i];
-                }
-            }
-
+            pcm.resize(frames);
             return pcm;
         }
 
@@ -1117,11 +1067,11 @@ pcm_samples wem_pcm_provider::get_samples(sample_type type) {
 }
 
 int64_t wem_pcm_provider::rate() {
-    return _m_info->rate;
+    return _m_dec->rate();
 }
 
 int64_t wem_pcm_provider::channels() {
-    return _m_info->channels;
+    return _m_dec->channels();
 }
 
 channel_order wem_pcm_provider::order() {
@@ -1133,18 +1083,15 @@ std::string wem_pcm_provider::name() {
 }
 
 std::chrono::nanoseconds wem_pcm_provider::duration() {
-    return _m_duration;
+    return _m_dec->duration();
 }
 
 std::chrono::nanoseconds wem_pcm_provider::pos() {
-    return std::chrono::duration_cast<std::chrono::nanoseconds>(
-        ov_time_tell(const_cast<OggVorbis_File*>(&_m_vf)) *  1s);
+    return _m_dec->pos();
 }
 
 void wem_pcm_provider::seek(std::chrono::nanoseconds pos) {
-    _validate_open();
-
-    ov_time_seek(&_m_vf, static_cast<double>(pos.count()) / std::chrono::nanoseconds::period::den);
+    _m_dec->seek(pos);
 }
 
 sample_type wem_pcm_provider::types() {
@@ -1155,12 +1102,3 @@ sample_type wem_pcm_provider::preferred_type() {
     return SAMPLE_FLOAT32;
 }
 
-void wem_pcm_provider::_validate_open() {
-    if (_m_eof) {
-        _m_eof = false;
-        ov_clear(&_m_vf);
-        _m_buf->seekg(0);
-        ASSERT(ov_open_callbacks(_m_buf.get(), &_m_vf, nullptr, 0, detail::vorbis_callbacks) == 0);
-        _m_info = ov_info(&_m_vf, -1);
-    }
-}

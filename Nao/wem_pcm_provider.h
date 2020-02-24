@@ -2,7 +2,7 @@
 
 #include "pcm_provider.h"
 
-#include <vorbis/vorbisfile.h>
+class vorbis_decoder;
 
 class wem_pcm_provider : public pcm_provider {
     public:
@@ -23,11 +23,6 @@ class wem_pcm_provider : public pcm_provider {
     sample_type preferred_type() override;
 
     private:
-    void _validate_open();
-
     iostream_ptr _m_buf;
-    OggVorbis_File _m_vf;
-    vorbis_info* _m_info;
-    bool _m_eof;
-    std::chrono::nanoseconds _m_duration;
+    std::unique_ptr<vorbis_decoder> _m_dec;
 };

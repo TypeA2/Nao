@@ -104,6 +104,8 @@ class pcm_samples final {
 
     // Resize the value array
     pcm_samples& resize(int64_t frames);
+    pcm_samples& resize_samples(int64_t samples);
+    pcm_samples& resize_bytes(size_t bytes);
 
     // Copy and convert to a different sample type
     pcm_samples as(sample_type type) const;
@@ -125,7 +127,7 @@ class pcm_samples final {
 class pcm_provider {
     public:
     explicit pcm_provider(const istream_ptr& stream);
-    virtual ~pcm_provider() = 0;
+    virtual ~pcm_provider() = default;
 
     // Retrieve some samples, return 0 for eof, negative for error
     // or positive for read frames (sample_count = frames * channel_count), interleaved

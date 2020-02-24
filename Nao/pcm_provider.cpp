@@ -126,6 +126,31 @@ pcm_samples& pcm_samples::resize(int64_t frames) {
     return *this;
 }
 
+pcm_samples& pcm_samples::resize_samples(int64_t samples) {
+    ASSERT(samples <= this->samples());
+
+    if (samples == this->samples()) {
+        return *this;
+    }
+
+    _m_frames = samples / _m_channels;
+    _m_data.resize(samples * sample_size(_m_type));
+    return *this;
+}
+
+pcm_samples& pcm_samples::resize_bytes(size_t bytes) {
+    ASSERT(bytes <= _m_data.size());
+
+    if (bytes == _m_data.size()) {
+        return *this;
+    }
+
+    _m_frames = bytes / _m_channels / sample_size(_m_type);
+    _m_data.resize(bytes);
+    return *this;
+}
+
+
 pcm_samples pcm_samples::as(sample_type type) const {
     if (type == _m_type) {
         return *this;
@@ -220,9 +245,5 @@ pcm_samples pcm_samples::downmix(int64_t channels) const {
 }
 
 pcm_provider::pcm_provider(const istream_ptr& stream) : stream(stream) {
-    
-}
-
-pcm_provider::~pcm_provider() {
     
 }

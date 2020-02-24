@@ -70,6 +70,9 @@
     <Filter Include="Header Files\AV\Codec">
       <UniqueIdentifier>{54d1add7-b6d1-4d24-b30b-d3c9e1778db5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\AV\Codec">
+      <UniqueIdentifier>{20d3ef5f-aaf4-448f-874c-69a3722a43ec}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Nao.rc">
@@ -226,6 +229,15 @@
     <ClInclude Include="namespaces.h">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
+    <ClInclude Include="vorbis_decoder.h">
+      <Filter>Header Files\AV\Codec</Filter>
+    </ClInclude>
+    <ClInclude Include="opus_decoder.h">
+      <Filter>Header Files\AV\Codec</Filter>
+    </ClInclude>
+    <ClInclude Include="opus_vorbis_decoder.h">
+      <Filter>Header Files\AV\Codec</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="nao.cpp">
@@ -353,6 +365,15 @@
     </ClCompile>
     <ClCompile Include="byte_array_streambuf.cpp">
       <Filter>Source Files\Utils\IO</Filter>
+    </ClCompile>
+    <ClCompile Include="vorbis_decoder.cpp">
+      <Filter>Source Files\AV\Codec</Filter>
+    </ClCompile>
+    <ClCompile Include="opus_decoder.cpp">
+      <Filter>Source Files\AV\Codec</Filter>
+    </ClCompile>
+    <ClCompile Include="opus_vorbis_decoder.cpp">
+      <Filter>Source Files\AV\Codec</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
