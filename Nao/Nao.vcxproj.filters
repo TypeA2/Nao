@@ -238,6 +238,15 @@
     <ClInclude Include="opus_vorbis_decoder.h">
       <Filter>Header Files\AV\Codec</Filter>
     </ClInclude>
+    <ClInclude Include="wwriff.h">
+      <Filter>Header Files\AV\Codec</Filter>
+    </ClInclude>
+    <ClInclude Include="ogg_stream.h">
+      <Filter>Header Files\AV\Codec</Filter>
+    </ClInclude>
+    <ClInclude Include="vorbis_encoder.h">
+      <Filter>Header Files\AV\Codec</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="nao.cpp">
@@ -373,6 +382,15 @@
       <Filter>Source Files\AV\Codec</Filter>
     </ClCompile>
     <ClCompile Include="opus_vorbis_decoder.cpp">
+      <Filter>Source Files\AV\Codec</Filter>
+    </ClCompile>
+    <ClCompile Include="wwriff.cpp">
+      <Filter>Source Files\AV\Codec</Filter>
+    </ClCompile>
+    <ClCompile Include="ogg_stream.cpp">
+      <Filter>Source Files\AV\Codec</Filter>
+    </ClCompile>
+    <ClCompile Include="vorbis_encoder.cpp">
       <Filter>Source Files\AV\Codec</Filter>
     </ClCompile>
   </ItemGroup>

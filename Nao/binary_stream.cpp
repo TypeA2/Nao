@@ -23,8 +23,22 @@ binary_istream::binary_istream(const std::shared_ptr<std::istream>& file) : file
 }
 
 binary_istream::binary_istream(binary_istream&& other) noexcept
-    : file { std::move(other.file) }  {
+    : file { std::move(other.file) }, streambuf { other.streambuf.release() } {
     other.file = nullptr;
+}
+
+binary_istream::binary_istream(int resource, const std::string& type) {
+    HRSRC handle = FindResourceW(nullptr, MAKEINTRESOURCEW(resource), utils::utf16(type).c_str());
+    HGLOBAL res = LoadResource(nullptr, handle);
+    streambuf = std::make_unique<byte_array_streambuf>(static_cast<char*>(LockResource(res)),
+        SizeofResource(nullptr, handle));
+
+    file = std::make_unique<std::istream>(streambuf.get());
+}
+
+binary_istream::binary_istream(std::unique_ptr<std::streambuf> buf)
+    : file { std::make_shared<std::istream>(buf.get()) }, streambuf { std::move(buf) } {
+
 }
 
 binary_istream::pos_type binary_istream::tellg() const {
@@ -143,25 +157,27 @@ uintmax_t binary_istream::read_bits(size_t bits) {
 }
 
 binary_ostream& binary_ostream::write_bits(uintmax_t val, size_t bits) {
-    for (size_t i = 0; i < bits; ++i) {
-        put_bit((val & (1i64 << i)) != 0);
+    ASSERT(_m_bitwise);
+    if (bits >= (bit_buffer_limit - _m_bit_buffer_size)) {
+        size_t bits_to_put = bit_buffer_limit - _m_bit_buffer_size;
+        _m_bit_buffer |= (static_cast<uint64_t>(val & ((1ui64 << bits_to_put) - 1)) << _m_bit_buffer_size);
+        flush_bits();
+        val >>= bits_to_put;
+
+        if (bits_to_put != bits) {
+            _m_bit_buffer |= static_cast<uint64_t>(val);
+            _m_bit_buffer_size += (bits - bits_to_put);
+        }
+
+
+        return *this;
     }
 
+    // There's enough place to emplace the entire value
+    _m_bit_buffer |= (static_cast<uint64_t>(val) << _m_bit_buffer_size);
+    _m_bit_buffer_size += bits;
+
     return *this;
-}
-
-custom_istream::custom_istream(int resource, const std::string& type) {
-    HRSRC handle = FindResourceW(nullptr, MAKEINTRESOURCEW(resource), utils::utf16(type).c_str());
-    HGLOBAL res = LoadResource(nullptr, handle);
-    _m_buf = std::make_unique<byte_array_streambuf>(static_cast<char*>(LockResource(res)),
-        SizeofResource(nullptr, handle));
-
-    file = std::make_unique<std::istream>(_m_buf.get());
-}
-
-custom_istream::custom_istream(std::unique_ptr<std::streambuf> buf)
-    : binary_istream(std::make_unique<std::istream>(buf.get())), _m_buf { std::move(buf) } {
-    
 }
 
 binary_ostream::binary_ostream(const std::filesystem::path& path)
@@ -178,6 +194,13 @@ binary_ostream::binary_ostream(binary_ostream&& other) noexcept
     : file { std::move(other.file) } {
     other.file = nullptr;
 }
+
+binary_ostream::~binary_ostream() {
+    if (_m_bitwise) {
+        flush_bits();
+    }
+}
+
 
 binary_ostream& binary_ostream::write(const char* buf, std::streamsize size) {
     ASSERT(!_m_bitwise);
@@ -206,12 +229,12 @@ binary_ostream& binary_ostream::put_bit(bool value) {
     ASSERT(_m_bitwise);
 
     if (value) {
-        _m_bit_buffer |= (1 << _m_bit_buffer_size);
+        _m_bit_buffer |= (1ui64 << _m_bit_buffer_size);
     }
 
     ++_m_bit_buffer_size;
 
-    if (_m_bit_buffer_size == 8) {
+    if (_m_bit_buffer_size == bit_buffer_limit) {
         flush_bits();
     }
 
@@ -220,7 +243,7 @@ binary_ostream& binary_ostream::put_bit(bool value) {
 
 binary_ostream& binary_ostream::flush_bits() {
     if (_m_bit_buffer_size != 0) {
-        file->write(reinterpret_cast<char*>(&_m_bit_buffer), 1);
+        file->write(reinterpret_cast<char*>(&_m_bit_buffer), sizeof(_m_bit_buffer));
         _m_bit_buffer_size = 0;
     }
     

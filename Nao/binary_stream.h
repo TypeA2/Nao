@@ -5,6 +5,7 @@
 #include <filesystem>
 
 #include "concepts.h"
+#include "utils.h"
 
 template <size_t> struct fixed_uint { };
 template <>       struct fixed_uint<8> { using type = uint8_t; };
@@ -57,6 +58,12 @@ class binary_istream {
 
     explicit binary_istream(binary_istream&& other) noexcept;
     explicit binary_istream(const binary_istream& other) = delete;
+
+    // Construct from a Win32 resource
+    explicit binary_istream(int resource, const std::string& type = "binary");
+
+    // Construct from an existing streambuf
+    explicit binary_istream(std::unique_ptr<std::streambuf> buf);
 
     virtual ~binary_istream() = default;
 
@@ -153,6 +160,8 @@ class binary_istream {
     std::shared_ptr<std::istream> file;
     mutable std::mutex mutex;
 
+    std::unique_ptr<std::streambuf> streambuf;
+
     private:
     bool _m_bitwise { }; // Whether we are writing bitwise data, this must be false
                          // before next non-bitwise read
@@ -164,19 +173,6 @@ class binary_istream {
 };
 
 using istream_ptr = std::shared_ptr<binary_istream>;
-
-// An istream with a custom streambuf
-class custom_istream : public binary_istream {
-    public:
-    // Construct from a Win32 resource
-    explicit custom_istream(int resource, const std::string& type = "binary");
-
-    // Construct from an existing streambuf
-    explicit custom_istream(std::unique_ptr<std::streambuf> buf);
-
-    private:
-    std::unique_ptr<std::streambuf> _m_buf;
-};
 
 class binary_ostream {
     public:
@@ -192,7 +188,7 @@ class binary_ostream {
     explicit binary_ostream(binary_ostream&& other) noexcept;
     explicit binary_ostream(const binary_ostream& other) = delete;
 
-    virtual ~binary_ostream() = default;
+    virtual ~binary_ostream();
 
     virtual binary_ostream& write(const char* buf, std::streamsize size);
 
@@ -222,12 +218,35 @@ class binary_ostream {
         return write(&val, sizeof(T));
     }
 
+    template <concepts::readable_container Container>
+    binary_ostream& write(const Container& buf) {
+        return write(buf.data(), buf.size() * sizeof(Container::value_type));
+    }
+
     // Write a fixed-size integer value
     template <size_t bits>
     binary_ostream& write(min_uint_t<bits> val) {
-        for (size_t i = 0; i < bits; ++i) {
-            put_bit((val & (1i64 << i)) != 0);
+        ASSERT(_m_bitwise);
+        if (bits >= (bit_buffer_limit - _m_bit_buffer_size)) {
+            size_t bits_to_put = bit_buffer_limit - _m_bit_buffer_size;
+            _m_bit_buffer |= (static_cast<uint64_t>(val & ((1ui64 << bits_to_put) - 1))
+                                    << _m_bit_buffer_size);
+            flush_bits();
+            val >>= bits_to_put;
+
+            if (bits_to_put != bits) {
+                _m_bit_buffer = static_cast<uint64_t>(val);
+                _m_bit_buffer_size = (bits - bits_to_put);
+            }
+
+            
+            return *this;
         }
+
+        // There's enough place to emplace the entire value
+        _m_bit_buffer |= (static_cast<uint64_t>(val) << _m_bit_buffer_size);
+        _m_bit_buffer_size += bits;
+     
         return *this;
     }
 
@@ -241,13 +260,26 @@ class binary_ostream {
     bool _m_bitwise { }; // Whether we are writing bitwise data, this must be false
                          // before next non-bitwise read
 
-    uint8_t _m_bit_buffer { };
-    uint8_t _m_bit_buffer_size { };
+    uint64_t _m_bit_buffer { };
+    size_t _m_bit_buffer_size { };
+    static constexpr size_t bit_buffer_limit = sizeof(_m_bit_buffer) * CHAR_BIT;
 
     static_assert(CHAR_BIT == 8);
 };
 
 using ostream_ptr = std::shared_ptr<binary_ostream>;
+
+class binary_iostream : public binary_istream, public binary_ostream {
+    public:
+    explicit binary_iostream(const std::shared_ptr<std::iostream>& stream);
+
+    std::iostream* stream() const;
+
+    private:
+    std::shared_ptr<std::iostream> _m_stream;
+};
+
+using iostream_ptr = std::shared_ptr<binary_iostream>;
 
 template <typename T>
 class bitwise_lock {
@@ -274,14 +306,3 @@ class bitwise_lock {
     }
 };
 
-class binary_iostream : public binary_istream, public binary_ostream {
-    public:
-    explicit binary_iostream(const std::shared_ptr<std::iostream>& stream);
-
-    std::iostream* stream() const;
-
-    private:
-    std::shared_ptr<std::iostream> _m_stream;
-};
-
-using iostream_ptr = std::shared_ptr<binary_iostream>;

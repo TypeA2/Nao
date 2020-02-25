@@ -223,6 +223,7 @@
     <ClInclude Include="nao_view.h" />
     <ClInclude Include="ogg_pcm_provider.h" />
     <ClInclude Include="ogg_handler.h" />
+    <ClInclude Include="ogg_stream.h" />
     <ClInclude Include="opus_decoder.h" />
     <ClInclude Include="opus_vorbis_decoder.h" />
     <ClInclude Include="pcm_provider.h" />
@@ -240,11 +241,13 @@
     <ClInclude Include="utils.h" />
     <ClInclude Include="vdf_parser.h" />
     <ClInclude Include="vorbis_decoder.h" />
+    <ClInclude Include="vorbis_encoder.h" />
     <ClInclude Include="wav_handler.h" />
     <ClInclude Include="wav_pcm_provider.h" />
     <ClInclude Include="wem_handler.h" />
     <ClInclude Include="wem_pcm_provider.h" />
     <ClInclude Include="wsp_handler.h" />
+    <ClInclude Include="wwriff.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="audio_player.cpp" />
@@ -273,6 +276,7 @@
     <ClCompile Include="nao_view.cpp" />
     <ClCompile Include="ogg_pcm_provider.cpp" />
     <ClCompile Include="ogg_handler.cpp" />
+    <ClCompile Include="ogg_stream.cpp" />
     <ClCompile Include="opus_decoder.cpp" />
     <ClCompile Include="opus_vorbis_decoder.cpp" />
     <ClCompile Include="pcm_provider.cpp" />
@@ -287,11 +291,13 @@
     <ClCompile Include="ui_element.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="vorbis_decoder.cpp" />
+    <ClCompile Include="vorbis_encoder.cpp" />
     <ClCompile Include="wav_handler.cpp" />
     <ClCompile Include="wav_pcm_provider.cpp" />
     <ClCompile Include="wem_handler.cpp" />
     <ClCompile Include="wem_pcm_provider.cpp" />
     <ClCompile Include="wsp_handler.cpp" />
+    <ClCompile Include="wwriff.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="Nao.exe.manifest" />
