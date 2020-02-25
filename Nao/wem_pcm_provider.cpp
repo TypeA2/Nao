@@ -12,30 +12,7 @@
 
 #include "namespaces.h"
 
-#include <vorbis/vorbisenc.h>
-#include <vorbis/vorbisfile.h>
-
 #include "vorbis_decoder.h"
-
-struct wwriff_chunk {
-    std::streamoff offset;
-    std::streamoff size;
-};
-
-enum known_chunks {
-    FMT,
-    CUE,
-    LIST,
-    SMPL,
-    VORB,
-    DATA,
-
-    CHUNK_COUNT
-};
-
-static std::string chunk_map[CHUNK_COUNT] {
-    "fmt ", "cue ", "LIST", "smpl", "vorb", "data"
-};
 
 wem_pcm_provider::wem_pcm_provider(const istream_ptr& stream) : pcm_provider(stream) {
     _m_buf = std::make_shared<binary_iostream>(

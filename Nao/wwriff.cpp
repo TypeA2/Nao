@@ -64,7 +64,7 @@ namespace wwriff {
         }
     }
 
-    
+
 
     bool wwriff_to_ogg(const istream_ptr& in, const ostream_ptr& out) {
         auto start = std::chrono::steady_clock::now();
@@ -247,7 +247,6 @@ void codebook_library::rebuild(binary_istream& in, binary_ostream& out) {
 
 }
 
-#define CHECK(cond) if (!(cond)) { utils::coutln("Error in:", #cond); return false; }
 wwriff_converter::wwriff_converter(const istream_ptr& in) : in { in } {
     
 }
@@ -891,7 +890,7 @@ bool wwriff_converter::_write_mapping(binary_ostream& out) {
 
     _mapping_count = mapping_count_less1 + 1;
 
-    for (uint8_t i = 0; i < _mapping_count; ++i) {
+    for (uint32_t i = 0; i < _mapping_count; ++i) {
         out.write<16>(0); // mapping type
 
         auto flag = in->read<1>();
@@ -930,7 +929,7 @@ bool wwriff_converter::_write_mapping(binary_ostream& out) {
         CHECK(reserved == 0);
 
         if (submaps > 1) {
-            for (uint16_t j = 0; j < _channels; ++j) {
+            for (uint32_t j = 0; j < _channels; ++j) {
                 auto mux = in->read<4>();
                 out.write<4>(mux);
 

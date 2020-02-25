@@ -13,10 +13,17 @@
     utils::coutln(str); \
     throw std::runtime_error(str); }} while (0)
 
+#define CHECK(cond) if (!(cond)) { utils::coutln("Error in:", #cond); return false; }
+
 #else
 #include <cassert>
 #define ASSERT(cond) assert(cond);
+
+#include "frameworks.h"
+#define CHECK(cond) if (!(cond)) { utils::coutln("Error in:", #cond); DebugBreak(); return false; }
 #endif
+
+
 
 #define HASSERT(hr) ASSERT(SUCCEEDED(hr))
 
