@@ -26,8 +26,8 @@ static bool supports(const istream_ptr& stream, const std::string& path) {
         fmt_chunk fmt;
         stream->read(&fmt, sizeof(fmt));
 
-        if (memcmp(hdr.riff.header, "RIFF", 4) == 0 &&
-            memcmp(hdr.wave, "WAVE", 4) == 0 &&
+        if (std::string(hdr.riff.header , 4) == "RIFF" &&
+            std::string(hdr.wave, 4) == "WAVE" &&
             fmt.riff.size == 66 && fmt.format == 0xFFFF) {
             return true;
         }

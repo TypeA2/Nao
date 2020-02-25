@@ -207,6 +207,7 @@
     <ClInclude Include="file_info.h" />
     <ClInclude Include="flac_handler.h" />
     <ClInclude Include="flac_pcm_provider.h" />
+    <ClInclude Include="partial_file_streambuf.h" />
     <ClInclude Include="namespaces.h" />
     <ClInclude Include="icon.h" />
     <ClInclude Include="label.h" />
@@ -279,6 +280,7 @@
     <ClCompile Include="ogg_stream.cpp" />
     <ClCompile Include="opus_decoder.cpp" />
     <ClCompile Include="opus_vorbis_decoder.cpp" />
+    <ClCompile Include="partial_file_streambuf.cpp" />
     <ClCompile Include="pcm_provider.cpp" />
     <ClCompile Include="preview.cpp" />
     <ClCompile Include="push_button.cpp" />

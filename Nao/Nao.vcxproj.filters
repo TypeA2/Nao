@@ -247,6 +247,9 @@
     <ClInclude Include="vorbis_encoder.h">
       <Filter>Header Files\AV\Codec</Filter>
     </ClInclude>
+    <ClInclude Include="partial_file_streambuf.h">
+      <Filter>Header Files\Utils\IO</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="nao.cpp">
@@ -392,6 +395,9 @@
     </ClCompile>
     <ClCompile Include="vorbis_encoder.cpp">
       <Filter>Source Files\AV\Codec</Filter>
+    </ClCompile>
+    <ClCompile Include="partial_file_streambuf.cpp">
+      <Filter>Source Files\Utils\IO</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

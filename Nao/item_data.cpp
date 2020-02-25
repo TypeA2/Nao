@@ -6,7 +6,12 @@ std::string item_data::path() const {
         return drive ? std::string { drive_letter, ':', '\\' } : name;
     }
 
+    std::string parent = handler->get_path();
+    if (parent.back() != '\\') {
+        parent.push_back('\\');
+    }
+
     return drive
         ? std::string { drive_letter, ':', '\\' }
-        : handler->get_path() + name + (dir ? "\\" : "");
+        : parent + name + (dir ? "\\" : "");
 }

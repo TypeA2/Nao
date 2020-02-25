@@ -4,6 +4,7 @@
 #include "binary_stream.h"
 #include "utils.h"
 #include "frameworks.h"
+#include "partial_file_streambuf.h"
 
 wsp_handler::wsp_handler(const istream_ptr& stream, const std::string& path)
     : file_handler(stream, path), item_file_handler(stream, path) {
@@ -38,30 +39,25 @@ wsp_handler::wsp_handler(const istream_ptr& stream, const std::string& path)
     size_t i = 0;
 
     SHFILEINFOW finfo {};
+    DWORD_PTR hr = SHGetFileInfoW(L".wem", FILE_ATTRIBUTE_NORMAL, &finfo, sizeof(finfo),
+        SHGFI_TYPENAME | SHGFI_ICON | SHGFI_ICONLOCATION | SHGFI_ADDOVERLAYS | SHGFI_USEFILEATTRIBUTES);
+    ASSERT(hr != 0);
 
     std::string filename = std::filesystem::path(path).stem().string();
 
     for (const auto& wwriff : _m_riff) {
-        DWORD_PTR hr = SHGetFileInfoW(L".wem", FILE_ATTRIBUTE_NORMAL, &finfo, sizeof(finfo),
-            SHGFI_TYPENAME | SHGFI_ICON | SHGFI_ICONLOCATION | SHGFI_ADDOVERLAYS | SHGFI_USEFILEATTRIBUTES);
-
-        if (hr == 0) {
-            continue;
-        }
-
         std::stringstream ss;
-        ss << filename << "_" << std::setfill('0') << std::setw(name_width) << i++;
+        ss << filename << "_" << std::setfill('0') << std::setw(name_width) << i++ << ".wem";
 
         items.push_back(item_data {
             .handler = this,
-            .name    = ss.str() + ".wem",
+            .name    = ss.str(),
             .type    = utils::utf8(finfo.szTypeName),
             .size    = wwriff.size,
             .icon    = finfo.iIcon,
-            .stream  = nullptr,
+            .stream  = std::make_shared<binary_istream>(std::make_unique<partial_file_streambuf>(stream, wwriff.offset, wwriff.size)),
             .data    = std::make_shared<wwriff_file>(wwriff)
             });
-
     }
 }
 

@@ -72,6 +72,7 @@ void nao_model::move_down(item_data* to) {
 }
 
 void nao_model::fetch_preview(item_data* item) {
+    
     // Do nothing if preview is already shown
     if (_m_preview_provider && _m_preview_provider->get_path() == item->path()) {
         return;
@@ -90,11 +91,13 @@ void nao_model::fetch_preview(item_data* item) {
     if (file_handler_ptr p = _provider_for(item->path()); p != nullptr) {
         // Nothing changed
         if (_m_preview_provider && p == _m_preview_provider) {
+            utils::coutln("preview not changed");
             return;
         }
 
         _m_preview_provider = std::move(p);
     } else {
+        utils::coutln("no preview found");
         _m_preview_provider.reset();
     }
 
@@ -249,10 +252,29 @@ file_handler_ptr nao_model::_provider_for(std::string path, bool* result, file_h
         // If not, it may be virtual
     }
 
+    file_handler_tag _tag;
+
     if (info.invalid()) {
         // Virtual (in-archive) file
+        const std::vector<item_data>& items = _m_tree.back()->data();
+
+        auto find_func = [&path](const item_data& data) {
+            return data.path() == path;
+        };
+
+        auto it = std::find_if(items.begin(), items.end(), find_func);
+
+        if (it == items.end()) {
+            throw std::runtime_error("element not child of current provider");
+        }
+
+        const auto& data = *it;
+
+        if (size_t id = file_handler_factory::supports(data.stream, path, _tag); id != file_handler_factory::npos) {
+            return retvalf(_tag, [&] { return file_handler_factory::create(id, data.stream, path); });
+        }
     } else {
-        file_handler_tag _tag;
+        
         if (info.directory()) {
             // file_info considers "\" a directory as well, so that is included in this
 
@@ -260,7 +282,6 @@ file_handler_ptr nao_model::_provider_for(std::string path, bool* result, file_h
                 return retvalf(_tag, [&] { return file_handler_factory::create(id, nullptr, path); });
             }
         } else {
-
             // Create file stream
             auto stream = std::make_shared<istream_ptr::element_type>(path);
 
