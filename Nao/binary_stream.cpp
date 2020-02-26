@@ -161,8 +161,11 @@ binary_ostream& binary_ostream::write_bits(uintmax_t val, size_t bits) {
     if (bits >= (bit_buffer_limit - _m_bit_buffer_size)) {
         size_t bits_to_put = bit_buffer_limit - _m_bit_buffer_size;
         _m_bit_buffer |= (static_cast<uint64_t>(val & ((1ui64 << bits_to_put) - 1)) << _m_bit_buffer_size);
-        flush_bits();
+
         val >>= bits_to_put;
+        _m_bit_buffer_size += bits_to_put;
+
+        flush_bits();
 
         if (bits_to_put != bits) {
             _m_bit_buffer |= static_cast<uint64_t>(val);
@@ -242,12 +245,13 @@ binary_ostream& binary_ostream::put_bit(bool value) {
 }
 
 binary_ostream& binary_ostream::flush_bits() {
-    if (_m_bit_buffer_size != 0) {
-        file->write(reinterpret_cast<char*>(&_m_bit_buffer), sizeof(_m_bit_buffer));
-        _m_bit_buffer_size = 0;
+    if (_m_bit_buffer_size > 0) {
+        size_t bytes = (_m_bit_buffer_size + (CHAR_BIT - 1)) / CHAR_BIT;
+        file->write(reinterpret_cast<char*>(&_m_bit_buffer), bytes);
     }
-    
+
     _m_bit_buffer = 0;
+    _m_bit_buffer_size = 0;
 
     return *this;
 }

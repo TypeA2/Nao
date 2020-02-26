@@ -14,11 +14,19 @@ size_t file_handler_factory::register_class(const factory_entry& entry) {
 
 file_handler_ptr file_handler_factory::create(size_t id, const istream_ptr& stream, const std::string& path) {
     ASSERT(id < _next_id());
+    
+    if (stream != nullptr) {
+        stream->seekg(0);
+    }
 
     return _registered_classes()[id].creator(stream, path);
 }
 
 file_handler_ptr file_handler_factory::create(const std::string& name, const istream_ptr& stream, const std::string& path) {
+    if (stream != nullptr) {
+        stream->seekg(0);
+    }
+
     if (auto it = std::find_if(_registered_classes().begin(),
         _registered_classes().end(),
         [name](const factory_registry& reg) { return reg.name == name; });
@@ -30,15 +38,12 @@ file_handler_ptr file_handler_factory::create(const std::string& name, const ist
 }
 
 file_handler_ptr file_handler_factory::create(const istream_ptr& stream, const std::string& path) {
-    const bool should_reset = !!stream;
-    const auto start_pos = should_reset ? stream->tellg() : std::istream::pos_type(0);
-
     for (const factory_registry& reg : _registered_classes()) {
         // Should support this setup
         bool provider = reg.supports(stream, path);
 
-        if (should_reset && stream->tellg() != start_pos) {
-            stream->seekg(start_pos);
+        if (stream != nullptr) {
+            stream->seekg(0);
         }
 
         if (!provider) {
@@ -50,26 +55,18 @@ file_handler_ptr file_handler_factory::create(const istream_ptr& stream, const s
         if (p != nullptr) {
             return p;
         }
-
-        if (should_reset && stream->tellg() != start_pos) {
-            stream->seekg(start_pos);
-        }
     }
 
     return nullptr;
 }
 
-
 size_t file_handler_factory::supports(const istream_ptr& stream, const std::string& path) {
-    const bool should_reset = !!stream;
-    const auto start_pos = should_reset ? stream->tellg() : std::istream::pos_type(0);
-
     for (const factory_registry& reg : _registered_classes()) {
         // Should support this setup
         bool supported = reg.supports(stream, path);
 
-        if (should_reset && stream->tellg() != start_pos) {
-            stream->seekg(start_pos);
+        if (stream != nullptr) {
+            stream->seekg(0);
         }
 
         if (supported) {
@@ -81,6 +78,10 @@ size_t file_handler_factory::supports(const istream_ptr& stream, const std::stri
 }
 
 size_t file_handler_factory::supports(const istream_ptr& stream, const std::string& path, file_handler_tag& tag) {
+    if (stream != nullptr) {
+        stream->seekg(0);
+    }
+
     size_t id = supports(stream, path);
 
     if (id != npos) {

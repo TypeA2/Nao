@@ -72,7 +72,6 @@ void nao_model::move_down(item_data* to) {
 }
 
 void nao_model::fetch_preview(item_data* item) {
-    
     // Do nothing if preview is already shown
     if (_m_preview_provider && _m_preview_provider->get_path() == item->path()) {
         return;
@@ -130,14 +129,12 @@ const item_file_handler_ptr& nao_model::parent_provider() const {
 }
 
 bool nao_model::can_open(item_data* data) {
-    if (data->drive) {
-        if (file_handler_ptr p = _provider_for({ data->drive_letter, ':', '\\' }); p != nullptr) {
-            return true;
-        }
-    } else {
-        if (file_handler_ptr p = _provider_for(data->handler->get_path() + data->name); p != nullptr) {
-            return true;
-        }
+    bool supports;
+    file_handler_tag tag;
+    _provider_for(data->path(), &supports, &tag);
+
+    if (supports && (tag & TAG_ITEMS)) {
+        return true;
     }
 
     return false;

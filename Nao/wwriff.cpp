@@ -535,9 +535,9 @@ bool wwriff_converter::_write_comment(ogg_stream& os, vorbis_encoder& vc) const 
     {
         bitwise_lock lock { temp };
 
-        static constexpr char vendor[] = "ww2ogg Nao implementation";
+        static constexpr std::string_view vendor = "ww2ogg Nao implementation";
 
-        temp.write<32>(static_cast<uint32_t>(std::size(vendor) - 1));
+        temp.write<32>(static_cast<uint32_t>(vendor.size()));
 
         for (char c : vendor) {
             if (!c) {
@@ -557,16 +557,20 @@ bool wwriff_converter::_write_comment(ogg_stream& os, vorbis_encoder& vc) const 
             std::stringstream loop_ss;
             loop_ss << "LoopStart=" << _loop_start;
 
-            temp.write<32>(static_cast<uint32_t>(loop_ss.str().size()));
-            temp.flush_bits();
-            *ss << "LoopStart=" << _loop_start;
+            std::string str = loop_ss.str();
+            temp.write<32>(static_cast<uint32_t>(str.size()));
+            for (char c : str) {
+                temp.write<8>(c);
+            }
 
             loop_ss.str("");
             loop_ss << "LoopEnd=" << _loop_end;
 
-            temp.write<32>(static_cast<uint32_t>(loop_ss.str().size()));
-            temp.flush_bits();
-            *ss << "LoopEnd=" << _loop_end;
+            str = loop_ss.str();
+            temp.write<32>(static_cast<uint32_t>(str.size()));
+            for (char c : str) {
+                temp.write<8>(c);
+            }
         }
 
         temp.write<1>(1); // Framing
@@ -577,7 +581,7 @@ bool wwriff_converter::_write_comment(ogg_stream& os, vorbis_encoder& vc) const 
     ogg_packet packet = os.packet(packet_data.data(), packet_data.size());
     os.packetin(packet);
     os.pageout();
-
+    
     CHECK(vc.headerin(packet));
 
     return true;

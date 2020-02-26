@@ -231,8 +231,11 @@ class binary_ostream {
             size_t bits_to_put = bit_buffer_limit - _m_bit_buffer_size;
             _m_bit_buffer |= (static_cast<uint64_t>(val & ((1ui64 << bits_to_put) - 1))
                                     << _m_bit_buffer_size);
-            flush_bits();
+
+            _m_bit_buffer_size += bits_to_put;
             val >>= bits_to_put;
+
+            flush_bits();
 
             if (bits_to_put != bits) {
                 _m_bit_buffer = static_cast<uint64_t>(val);
@@ -261,7 +264,7 @@ class binary_ostream {
                          // before next non-bitwise read
 
     uint64_t _m_bit_buffer { };
-    size_t _m_bit_buffer_size { };
+    int64_t _m_bit_buffer_size { };
     static constexpr size_t bit_buffer_limit = sizeof(_m_bit_buffer) * CHAR_BIT;
 
     static_assert(CHAR_BIT == 8);

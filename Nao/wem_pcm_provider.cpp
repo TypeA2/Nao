@@ -18,6 +18,7 @@ wem_pcm_provider::wem_pcm_provider(const istream_ptr& stream) : pcm_provider(str
     _m_buf = std::make_shared<binary_iostream>(
         std::make_unique<std::stringstream>(std::ios::in | std::ios::out | std::ios::binary));
 
+    stream->seekg(0);
     ASSERT(wwriff::wwriff_to_ogg(stream, _m_buf));
 ;
     _m_buf->seekg(0);
