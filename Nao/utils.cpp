@@ -155,4 +155,17 @@ namespace utils {
 
         return ss.str();
     }
+
+    bool same_path(const std::string& left, const std::string& right) {
+        if (left.back() == '\\' && right.back() != '\\') {
+            return left == (right + '\\');
+        }
+
+        if (left.back() != '\\' && right.back() == '\\') {
+            return (left + '\\') == right;
+        }
+
+        return left == right;
+    }
+
 }

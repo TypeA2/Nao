@@ -84,4 +84,6 @@ namespace utils {
 
     std::string format_hours(std::chrono::nanoseconds ns, bool ms = true);
     std::string format_minutes(std::chrono::nanoseconds ns, bool ms = true);
+
+    bool same_path(const std::string& left, const std::string& right);
 }

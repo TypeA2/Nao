@@ -199,7 +199,7 @@ void nao_controller::create_context_menu(item_data* data, POINT pt) {
                 const auto& d = p->data();
 
                 auto search_func = [&current_path](const item_data& data) {
-                    return data.path() == current_path;
+                    return utils::same_path(data.path(), current_path);
                 };
 
                 if (auto it = std::find_if(d.begin(), d.end(), search_func);
