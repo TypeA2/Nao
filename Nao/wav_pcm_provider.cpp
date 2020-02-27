@@ -29,7 +29,7 @@ wav_pcm_provider::wav_pcm_provider(const istream_ptr& stream) : pcm_provider(str
 
             if (_fmt.format == 0xFFFE) {
                 stream->read(&_fmt_ex, sizeof(_fmt_ex));
-                ASSERT(_fmt_ex.valid_bits == 16);
+                // ASSERT(_fmt_ex.valid_bits == 16);
                 stream->seekg(_fmt_ex.extra_size - sizeof(_fmt_ex) + sizeof(_fmt_ex.extra_size), std::ios::cur);
             }
 
