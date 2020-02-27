@@ -41,7 +41,27 @@ void nao_model::move_to(std::string path) {
     _provider_for(path, &supported, &tag);
     if (supported) {
         if (!(tag & TAG_ITEMS)) {
-            return;
+            // if a preview is available open the parent and select it
+            if (tag != TAG_FILE) {
+
+                // If a preview is shown
+                if (_m_preview_provider && _m_preview_provider->tag() & TAG_ITEMS) {
+                    const std::vector<item_data>& items = _m_preview_provider->query<TAG_ITEMS>()->data();
+
+                    auto find_func = [&path](const item_data& data) {
+                        return utils::same_path(data.path(), path);
+                    };
+
+                    auto it = std::find_if(items.begin(), items.end(), find_func);
+
+                    // And the target item is an element of the preview
+                    if (it != items.end()) {
+                        path = _m_preview_provider->get_path() + '\\';
+                    } else {
+                        return;
+                    }
+                }
+            }
         }
     } else {
         return;
@@ -271,7 +291,17 @@ file_handler_ptr nao_model::_provider_for(std::string path, bool* result, file_h
         auto it = std::find_if(items.begin(), items.end(), find_func);
 
         if (it == items.end()) {
-            throw std::runtime_error("element not child of current provider");
+            if (_m_preview_provider && _m_preview_provider->tag() & TAG_ITEMS) {
+                const auto& items1 = _m_preview_provider->query<TAG_ITEMS>()->data();
+
+                it = std::find_if(items1.begin(), items1.end(), find_func);
+
+                if (it == items1.end()) {
+                    throw std::runtime_error("element not child of current or preview provider");
+                }
+            } else {
+                throw std::runtime_error("element not child of current provider");
+            }
         }
 
         const auto& data = *it;
