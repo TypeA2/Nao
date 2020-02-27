@@ -22,17 +22,17 @@ PaSampleFormat pcm_samples::pa_format(sample_type type) {
 }
 
 pcm_samples::pcm_samples(pcm_samples&& other) noexcept
-    : _m_data { std::move(other._m_data) }, _m_frames { other._m_frames }, _m_channels { other._m_channels }
-    , _m_type { other._m_type }, _m_order { other._m_order } {
+    : _data { std::move(other._data) }, _frames { other._frames }, _channels { other._channels }
+    , _type { other._type }, _order { other._order } {
     
 }
 
 pcm_samples& pcm_samples::operator=(pcm_samples&& other) noexcept {
-    _m_data = std::move(other._m_data);
-    _m_frames = other._m_frames;
-    _m_channels = other._m_channels;
-    _m_type = other._m_type;
-    _m_order = other._m_order;
+    _data = std::move(other._data);
+    _frames = other._frames;
+    _channels = other._channels;
+    _type = other._type;
+    _order = other._order;
 
     return *this;
 }
@@ -42,53 +42,53 @@ pcm_samples::pcm_samples(pcm_state state) : pcm_samples(SAMPLE_NONE, state, 0, C
 }
 
 pcm_samples::pcm_samples(sample_type type, int64_t frames, int64_t channels, channel_order order)
-    : _m_data(sample_size(type) * frames * channels, 0)
-    , _m_frames { frames }, _m_channels { channels }, _m_type { type }, _m_order { order } {
+    : _data(sample_size(type) * frames * channels, 0)
+    , _frames { frames }, _channels { channels }, _type { type }, _order { order } {
     
 }
 
 char* pcm_samples::data() {
-    return _m_data.data();
+    return _data.data();
 }
 
 const char* pcm_samples::data() const {
-    return _m_data.data();
+    return _data.data();
 }
 
 pcm_samples::operator bool() const {
-    return !_m_data.empty();
+    return !_data.empty();
 }
 
 int64_t pcm_samples::frames() const {
-    return _m_frames;
+    return _frames;
 }
 
 int64_t pcm_samples::channels() const {
-    return _m_channels;
+    return _channels;
 }
 
 sample_type pcm_samples::type() const {
-    return _m_type;
+    return _type;
 }
 
 channel_order pcm_samples::order() const {
-    return _m_order;
+    return _order;
 }
 
 int64_t pcm_samples::samples() const {
-    return _m_frames * _m_channels;
+    return _frames * _channels;
 }
 
 size_t pcm_samples::sample_size() const {
-    return sample_size(_m_type);
+    return sample_size(_type);
 }
 
 size_t pcm_samples::frame_size() const {
-    return sample_size(_m_type) * _m_channels;
+    return sample_size(_type) * _channels;
 }
 
 pcm_samples& pcm_samples::scale(float scalar) {
-    switch (_m_type) {
+    switch (_type) {
         case SAMPLE_INT16: {
             sample_int16_t* src = data<SAMPLE_INT16>();
 
@@ -114,14 +114,14 @@ pcm_samples& pcm_samples::scale(float scalar) {
 }
 
 pcm_samples& pcm_samples::resize(int64_t frames) {
-    ASSERT(frames <= _m_frames);
+    ASSERT(frames <= _frames);
 
-    if (frames == _m_frames) {
+    if (frames == _frames) {
         return *this;
     }
 
-    _m_frames = frames;
-    _m_data.resize(_m_frames * _m_channels * sample_size(_m_type));
+    _frames = frames;
+    _data.resize(_frames * _channels * sample_size(_type));
 
     return *this;
 }
@@ -133,33 +133,33 @@ pcm_samples& pcm_samples::resize_samples(int64_t samples) {
         return *this;
     }
 
-    _m_frames = samples / _m_channels;
-    _m_data.resize(samples * sample_size(_m_type));
+    _frames = samples / _channels;
+    _data.resize(samples * sample_size(_type));
     return *this;
 }
 
 pcm_samples& pcm_samples::resize_bytes(size_t bytes) {
-    ASSERT(bytes <= _m_data.size());
+    ASSERT(bytes <= _data.size());
 
-    if (bytes == _m_data.size()) {
+    if (bytes == _data.size()) {
         return *this;
     }
 
-    _m_frames = bytes / _m_channels / sample_size(_m_type);
-    _m_data.resize(bytes);
+    _frames = bytes / _channels / sample_size(_type);
+    _data.resize(bytes);
     return *this;
 }
 
 
 pcm_samples pcm_samples::as(sample_type type) const {
-    if (type == _m_type) {
+    if (type == _type) {
         return *this;
     }
 
-    pcm_samples res { type, _m_frames, _m_channels, _m_order };
+    pcm_samples res { type, _frames, _channels, _order };
 
     // Source type
-    switch (_m_type) {
+    switch (_type) {
         case SAMPLE_INT16: {
             auto src = data<SAMPLE_INT16>();
 
@@ -204,25 +204,59 @@ pcm_samples pcm_samples::as(sample_type type) const {
 }
 
 pcm_samples pcm_samples::downmix(int64_t channels) const {
-    ASSERT(_m_channels == 6 && channels == 2);
-    ASSERT(_m_order == CHANNELS_VORBIS);
+    ASSERT(_channels == 6 && channels == 2);
+    pcm_samples res { _type, _frames, channels, _order };
+
+    // For 6 channels to 2:
+    // L = L + k * C + k * Ls
+    // R = R + k * C + k * Rs
+
+    int64_t off_left = 0;
+    int64_t off_left_s = 0;
+    int64_t off_center = 0;
+    int64_t off_right_s = 0;
+    int64_t off_right = 0;
+    switch (_order) {
+        case CHANNELS_VORBIS:
+            off_left = 0;
+            off_left_s = 3;
+            off_center = 1;
+            off_right_s = 4;
+            off_right = 2;
+            break;
+        case CHANNELS_WAV:
+            off_left = 0;
+            off_left_s = 4;
+            off_center = 2;
+            off_right = 1;
+            off_right_s = 5;
+            break;
+
+        case CHANNELS_SMPTE:
+        case CHANNELS_NONE: ASSERT(false);
+    }
 
     static constexpr float k = 0.7071f;
 
-    pcm_samples res { _m_type, _m_frames, channels, _m_order };
-
     size_t res_index = 0;
-    switch (_m_type) {
+    switch (_type) {
         case SAMPLE_INT16: {
-            auto src = data<SAMPLE_INT16>();
+            const sample_int16_t* src = data<SAMPLE_INT16>();
             sample_int16_t* dest = res.data<SAMPLE_INT16>();
 
-            for (int64_t i = 0; i < samples(); i += _m_channels) {
-                dest[res_index++] = static_cast<sample_int16_t>(std::clamp<float>(src[i] + k * src[i + 1] + k * src[i + 3],
-                    std::numeric_limits<sample_int16_t>::min(), std::numeric_limits<sample_int16_t>::max()));
+            static constexpr float min = std::numeric_limits<sample_int16_t>::min();
+            static constexpr float max = std::numeric_limits<sample_int16_t>::max();
 
-                dest[res_index++] = static_cast<sample_int16_t>(std::clamp<float>(src[i + 2] + k * src[i + 1] + k * src[i + 4],
-                    std::numeric_limits<sample_int16_t>::min(), std::numeric_limits<sample_int16_t>::max()));
+            for (int64_t i = 0; i < samples(); i += _channels) {
+                dest[res_index++] = static_cast<sample_int16_t>(std::clamp(
+                    static_cast<float>(src[i + off_left]) +
+                    (k * static_cast<float>(src[i + off_center])) +
+                    (k * static_cast<float>(src[i + off_left_s])), min, max));
+
+                dest[res_index++] = static_cast<sample_int16_t>(std::clamp(
+                    static_cast<float>(src[i + off_right]) +
+                    (k * static_cast<float>(src[i + off_center])) +
+                    (k * static_cast<float>(src[i + off_right_s])), min, max));
             }
             break;
         }
@@ -231,9 +265,12 @@ pcm_samples pcm_samples::downmix(int64_t channels) const {
             auto src = data<SAMPLE_FLOAT32>();
             auto dest = res.data<SAMPLE_FLOAT32>();
 
-            for (int64_t i = 0; i < samples(); i += _m_channels) {
-                dest[res_index++] = std::clamp(src[i] + k * src[i + 1] + k * src[i + 3], 0.f, 1.f);
-                dest[res_index++] = std::clamp(src[i + 2] + k * src[i + 1] + k * src[i + 4], 0.f, 1.f);
+            for (int64_t i = 0; i < samples(); i += _channels) {
+                dest[res_index++] = std::clamp(
+                    src[i + off_left] + k * src[i + off_center] + k * src[i + off_left_s], -1.f, 1.f);
+
+                dest[res_index++] = std::clamp(
+                    src[i + off_right] + k * src[i + off_center] + k * src[i + off_right_s], -1.f, 1.f);
             }
             break;
         }

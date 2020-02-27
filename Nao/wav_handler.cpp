@@ -18,17 +18,32 @@ static file_handler_ptr create(const istream_ptr& stream, const std::string& pat
 
 static bool supports(const istream_ptr& stream, const std::string& path) {
     if (path.substr(path.size() - 4) == ".wav") {
-        wave_header hdr;
+        riff_header hdr;
         stream->read(&hdr, sizeof(hdr));
+        if (std::string(hdr.header, 4) != "RIFF") {
+            return false;
+        }
+
+        wave_chunk wave;
+        stream->read(&wave, sizeof(wave));
+        if (std::string(wave.wave, 4) != "WAVE") {
+            return false;
+        }
+
+        stream->read(&hdr, sizeof(hdr));
+        if (std::string(hdr.header, 4) != "fmt ") {
+            return false;
+        }
 
         fmt_chunk fmt;
         stream->read(&fmt, sizeof(fmt));
 
-        if (memcmp(hdr.riff.header, "RIFF", 4) == 0 &&
-            memcmp(hdr.wave, "WAVE", 4) == 0 &&
-            fmt.riff.size == 16 && fmt.format == 1) {
-            return true;
+        // PCM or WAVEFORMATEXTENSIBLE
+        if (fmt.format != 1 && fmt.format != 0xFFFE) {
+            return false;
         }
+
+        return true;
     }
 
     return false;

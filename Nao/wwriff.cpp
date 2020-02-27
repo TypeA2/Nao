@@ -277,14 +277,18 @@ bool wwriff_converter::convert(const ostream_ptr& out) {
 }
 
 bool wwriff_converter::_validate_header() {
-    wave_header wave;
-    in->read(&wave, sizeof(wave));
+    riff_header hdr;
+    in->read(&hdr, sizeof(hdr));
 
+    CHECK(in->gcount() == sizeof(hdr));
+    CHECK(std::string(hdr.header, 4) == "RIFF");
+
+    wave_chunk wave;
+    in->read(&wave, sizeof(wave));
     CHECK(in->gcount() == sizeof(wave));
-    CHECK(std::string(wave.riff.header, 4) == "RIFF");
     CHECK(std::string(wave.wave, 4) == "WAVE");
 
-    _riff_size = wave.riff.size + 8;
+    _riff_size = hdr.size + 8;
 
     return true;
 }
@@ -352,8 +356,7 @@ bool wwriff_converter::_parse_chunks() {
 bool wwriff_converter::_parse_fmt() {
     wwriff_chunk& fmt = _chunks[FMT];
 
-    // Search back too far to read the format chunk entirely
-    in->seekg(fmt.offset - 8);
+    in->seekg(fmt.offset);
 
     fmt_chunk _fmt;
     in->read(&_fmt, sizeof(_fmt));

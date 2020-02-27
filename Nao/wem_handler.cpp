@@ -20,15 +20,27 @@ static file_handler_ptr create(const istream_ptr& stream, const std::string& pat
 
 static bool supports(const istream_ptr& stream, const std::string& path) {
     if (path.substr(path.size() - 4) == ".wem") {
-        wave_header hdr;
+        riff_header hdr;
         stream->read(&hdr, sizeof(hdr));
+        if (std::string(hdr.header, 4) != "RIFF") {
+            return false;
+        }
+
+        wave_chunk wave;
+        stream->read(&wave, sizeof(wave));
+        if (std::string(wave.wave, 4) != "WAVE") {
+            return false;
+        }
+
+        stream->read(&hdr, sizeof(hdr));
+        if (std::string(hdr.header, 4) != "fmt ") {
+            return false;
+        }
 
         fmt_chunk fmt;
         stream->read(&fmt, sizeof(fmt));
 
-        if (std::string(hdr.riff.header , 4) == "RIFF" &&
-            std::string(hdr.wave, 4) == "WAVE" &&
-            fmt.riff.size == 66 && fmt.format == 0xFFFF) {
+        if (hdr.size == 66 && fmt.format == 0xFFFF) {
             return true;
         }
     }

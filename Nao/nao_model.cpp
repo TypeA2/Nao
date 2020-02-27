@@ -7,6 +7,7 @@
 #include "binary_stream.h"
 #include "nao_controller.h"
 #include "steam_utils.h"
+#include "audio_player.h"
 
 #include <filesystem>
 
@@ -87,6 +88,8 @@ void nao_model::fetch_preview(item_data* item) {
         throw std::runtime_error("element not child of current provider");
     }
 
+    void* lparam = nullptr;
+
     if (file_handler_ptr p = _provider_for(item->path()); p != nullptr) {
         // Nothing changed
         if (_m_preview_provider && p == _m_preview_provider) {
@@ -95,12 +98,18 @@ void nao_model::fetch_preview(item_data* item) {
         }
 
         _m_preview_provider = std::move(p);
+
+        file_handler_tag tag = _m_preview_provider->tag();
+
+        if (tag & TAG_PCM) {
+            lparam = new audio_player(_m_preview_provider->query<TAG_PCM>()->make_provider());
+        }
     } else {
         utils::coutln("no preview found");
         _m_preview_provider.reset();
     }
 
-    controller.post_message(TM_PREVIEW_CHANGED, 0, item);
+    controller.post_message(TM_PREVIEW_CHANGED, reinterpret_cast<WPARAM>(item), lparam);
 }
 
 void nao_model::clear_preview() {

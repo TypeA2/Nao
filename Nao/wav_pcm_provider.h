@@ -5,6 +5,15 @@
 #include "riff.h"
 
 class wav_pcm_provider : public pcm_provider {
+    static constexpr size_t frames_per_block = 1024;
+
+    fmt_chunk _fmt {};
+    fmt_chunk_extensible _fmt_ex {};
+    riff_header _data {};
+
+    std::streampos _data_start;
+    std::chrono::nanoseconds _ns_per_frame {};
+
     public:
     explicit wav_pcm_provider(const istream_ptr& stream);
     ~wav_pcm_provider() override = default;
@@ -21,14 +30,4 @@ class wav_pcm_provider : public pcm_provider {
 
     sample_type types() override;
     sample_type preferred_type() override;
-
-    private:
-    static constexpr size_t frames_per_block = 1024;
-
-    wave_header _m_wave;
-    fmt_chunk _m_fmt;
-    riff_header _m_data;
-
-    std::streampos _m_data_start;
-    std::chrono::nanoseconds _m_ns_per_frame;
 };

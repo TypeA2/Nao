@@ -21,23 +21,20 @@ class preview : public ui_element {
     nao_controller& controller;
 };
 
-template <typename T>
-class preview_t : public preview {
-    public:
-    preview_t(nao_view& view, T* handler)
-        : preview(view), handler(handler) { }
-    virtual ~preview_t() = default;
-
-    protected:
-    T* handler;
-};
-
 using preview_ptr = std::unique_ptr<preview>;
 
 class list_view;
 
 // Multi-use list-view preview
-class list_view_preview : public preview_t<item_file_handler> {
+class list_view_preview : public preview {
+    item_file_handler* _handler;
+
+    std::unique_ptr<list_view> _list;
+
+    // Current column ordering of the view
+    std::map<data_key, sort_order> _sort_order = nao_view::list_view_default_sort();
+    data_key _selected_column = KEY_NAME;
+
     public:
     list_view_preview(nao_view& view, item_file_handler* handler);
 
@@ -49,12 +46,6 @@ class list_view_preview : public preview_t<item_file_handler> {
 
     private:
     LRESULT _wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
-
-    std::unique_ptr<list_view> _m_list;
-
-    // Current column ordering of the view
-    std::map<data_key, sort_order> _m_sort_order;
-    data_key _m_selected_column;
 };
 
 class push_button;
@@ -65,9 +56,47 @@ class separator;
 class seekable_progress_bar;
 
 // A preview which plays audio
-class audio_player_preview : public preview_t<pcm_file_handler> {
+class audio_player_preview : public preview {
+    icon _play_icon;
+    icon _pause_icon;
+
+    std::unique_ptr<seekable_progress_bar> _progress_bar;
+    std::unique_ptr<push_button> _toggle_button;
+    std::unique_ptr<slider> _volume_slider;
+    std::unique_ptr<label> _volume_display;
+    std::unique_ptr<label> _progress_display;
+    std::unique_ptr<label> _duration_display;
+
+    std::unique_ptr<separator> _separator;
+
+    std::unique_ptr<label> _codec_label;
+    std::unique_ptr<line_edit> _codec_edit;
+
+    std::unique_ptr<label> _rate_label;
+    std::unique_ptr<line_edit> _rate_edit;
+
+    std::unique_ptr<label> _channels_label;
+    std::unique_ptr<line_edit> _channels_edit;
+
+    std::unique_ptr<label> _order_label;
+    std::unique_ptr<line_edit> _order_edit;
+
+    std::unique_ptr<label> _type_label;
+    std::unique_ptr<line_edit> _type_edit;
+
+    std::unique_ptr<audio_player> _player;
+
+    std::chrono::nanoseconds _duration {};
+
+    size _volume_display_size {};
+
+    size _progress_size {};
+    size _duration_size {};
+
+    bool _resume_after_seek = false;
+
     public:
-    explicit audio_player_preview(nao_view& view, pcm_file_handler* handler);
+    explicit audio_player_preview(nao_view& view, std::unique_ptr<audio_player> player);
 
     protected:
     bool wm_create(CREATESTRUCTW* create) override;
@@ -77,42 +106,4 @@ class audio_player_preview : public preview_t<pcm_file_handler> {
     LRESULT _wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
     void _set_progress(std::chrono::nanoseconds progress);
-
-    icon _m_play_icon;
-    icon _m_pause_icon;
-
-    std::unique_ptr<seekable_progress_bar> _m_progress_bar;
-    std::unique_ptr<push_button> _m_toggle_button;
-    std::unique_ptr<slider> _m_volume_slider;
-    std::unique_ptr<label> _m_volume_display;
-    std::unique_ptr<label> _m_progress_display;
-    std::unique_ptr<label> _m_duration_display;
-
-    std::unique_ptr<separator> _m_separator;
-
-    std::unique_ptr<label> _m_codec_label;
-    std::unique_ptr<line_edit> _m_codec_edit;
-
-    std::unique_ptr<label> _m_rate_label;
-    std::unique_ptr<line_edit> _m_rate_edit;
-
-    std::unique_ptr<label> _m_channels_label;
-    std::unique_ptr<line_edit> _m_channels_edit;
-
-    std::unique_ptr<label> _m_order_label;
-    std::unique_ptr<line_edit> _m_order_edit;
-
-    std::unique_ptr<label> _m_type_label;
-    std::unique_ptr<line_edit> _m_type_edit;
-
-    std::unique_ptr<audio_player> _m_player;
-
-    std::chrono::nanoseconds _m_duration;
-
-    size _m_volume_display_size;
-
-    size _m_progress_size;
-    size _m_duration_size;
-
-    bool _m_resume_after_seek;
 };

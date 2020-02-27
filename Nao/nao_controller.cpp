@@ -264,7 +264,6 @@ void nao_controller::create_context_menu_preview(item_data* data, POINT pt) {
     }
 }
 
-
 void nao_controller::move_to(const std::string& to) {
     _m_worker.push(&nao_model::move_to, &model, to);
 }
@@ -277,7 +276,7 @@ void nao_controller::_handle_message(nao_thread_message msg, WPARAM wparam, LPAR
             break;
 
         case TM_PREVIEW_CHANGED:
-            _refresh_preview(reinterpret_cast<item_data*>(lparam));
+            _refresh_preview(reinterpret_cast<item_data*>(wparam), reinterpret_cast<void*>(lparam));
             break;
 
         //// End model messages
@@ -311,7 +310,7 @@ void nao_controller::_refresh_view() {
     view.fill_view(transform_data_to_row(p->data()));
 }
 
-void nao_controller::_refresh_preview(item_data* data) {
+void nao_controller::_refresh_preview(item_data* data, void* lparam) {
     const file_handler_ptr& pv = model.preview_provider();
 
     file_handler_tag tag;
@@ -322,9 +321,9 @@ void nao_controller::_refresh_preview(item_data* data) {
         if (tag & TAG_ITEMS) {
             preview = std::make_unique<list_view_preview>(view, pv->query<TAG_ITEMS>());
         } else if (tag & TAG_PCM) {
-            preview = std::make_unique<audio_player_preview>(view, pv->query<TAG_PCM>());
+            preview = std::make_unique<audio_player_preview>(view,
+                std::unique_ptr<audio_player>(reinterpret_cast<audio_player*>(lparam)));
         }
-
 
         if (preview) {
             view.set_preview(std::move(preview));

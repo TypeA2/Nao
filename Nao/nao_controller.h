@@ -111,7 +111,7 @@ class nao_controller {
     void _refresh_view();
 
     // Retrieve the current preview provider and item and display it
-    void _refresh_preview(item_data* data);
+    void _refresh_preview(item_data* data, void* lparam);
 
     protected:
     nao_view view;

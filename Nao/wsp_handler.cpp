@@ -5,6 +5,7 @@
 #include "utils.h"
 #include "frameworks.h"
 #include "partial_file_streambuf.h"
+#include "riff.h"
 
 wsp_handler::wsp_handler(const istream_ptr& stream, const std::string& path)
     : file_handler(stream, path), item_file_handler(stream, path) {
@@ -15,16 +16,16 @@ wsp_handler::wsp_handler(const istream_ptr& stream, const std::string& path)
         std::string fcc(4, '\0');
         stream->read(fcc);
 
-        if (fcc != "RIFF") {
-            utils::coutln("invalid fourcc at", stream->tellg(), fcc);
-            return;
+        if (fcc == "RIFF") {
+            f.size = stream->read<uint32_t>() + 8i64;
+
+            stream->read(fcc);
+            ASSERT(fcc == "WAVE");
+            _m_riff.push_back(f);
+
+            stream->seekg(f.size, std::ios::cur);
         }
 
-        f.size = stream->read<uint32_t>() + 8i64;
-
-        _m_riff.push_back(f);
-
-        stream->rseek(f.size);
         stream->ignore(std::numeric_limits<std::streamsize>::max(), 'R');
 
         if (!stream->eof()) {
@@ -38,8 +39,13 @@ wsp_handler::wsp_handler(const istream_ptr& stream, const std::string& path)
 
     size_t i = 0;
 
-    SHFILEINFOW finfo {};
-    DWORD_PTR hr = SHGetFileInfoW(L".wem", FILE_ATTRIBUTE_NORMAL, &finfo, sizeof(finfo),
+    SHFILEINFOW finfo_wem {};
+    DWORD_PTR hr = SHGetFileInfoW(L".wem", FILE_ATTRIBUTE_NORMAL, &finfo_wem, sizeof(finfo_wem),
+        SHGFI_TYPENAME | SHGFI_ICON | SHGFI_ICONLOCATION | SHGFI_ADDOVERLAYS | SHGFI_USEFILEATTRIBUTES);
+    ASSERT(hr != 0);
+
+    SHFILEINFOW finfo_wav {};
+    hr = SHGetFileInfoW(L".wav", FILE_ATTRIBUTE_NORMAL, &finfo_wav, sizeof(finfo_wav),
         SHGFI_TYPENAME | SHGFI_ICON | SHGFI_ICONLOCATION | SHGFI_ADDOVERLAYS | SHGFI_USEFILEATTRIBUTES);
     ASSERT(hr != 0);
 
@@ -47,14 +53,37 @@ wsp_handler::wsp_handler(const istream_ptr& stream, const std::string& path)
 
     for (const auto& wwriff : _m_riff) {
         std::stringstream ss;
-        ss << filename << "_" << std::setfill('0') << std::setw(name_width) << i++ << ".wem";
+        ss << filename << "_" << std::setfill('0') << std::setw(name_width) << i++;
+
+        stream->seekg(wwriff.offset + 12);
+        riff_header hdr;
+        stream->read(&hdr, sizeof(hdr));
+        ASSERT(std::string(hdr.header, 4) == "fmt ");
+
+        fmt_chunk fmt;
+        stream->read(&fmt, sizeof(fmt));
+        ASSERT(stream->gcount() == sizeof(fmt));
+
+        std::reference_wrapper<SHFILEINFOW> finfo { finfo_wem };
+        switch (fmt.format) {
+            case 0xFFFF:
+                ss << ".wem";
+                break;
+
+            case 0xFFFE:
+                finfo = finfo_wav;
+                ss << ".wav";
+                break;
+
+            default: ASSERT(false);
+        }
 
         items.push_back(item_data {
             .handler = this,
             .name    = ss.str(),
-            .type    = utils::utf8(finfo.szTypeName),
+            .type    = utils::utf8(finfo.get().szTypeName),
             .size    = wwriff.size,
-            .icon    = finfo.iIcon,
+            .icon    = finfo.get().iIcon,
             .stream  = std::make_shared<binary_istream>(std::make_unique<partial_file_streambuf>(stream, wwriff.offset, wwriff.size)),
             .data    = std::make_shared<wwriff_file>(wwriff)
             });

@@ -67,6 +67,14 @@ class pcm_samples final {
     static size_t sample_size(sample_type type);
     static PaSampleFormat pa_format(sample_type type);
 
+    private:
+    std::vector<char> _data;
+    int64_t _frames;
+    int64_t _channels;
+    sample_type _type;
+    channel_order _order;
+
+    public:
     pcm_samples() = delete;
     pcm_samples(pcm_samples&& other) noexcept;
     pcm_samples& operator=(pcm_samples&& other) noexcept;
@@ -77,12 +85,12 @@ class pcm_samples final {
 
     template <sample_type type>
     underlying_type_t<type>* data() {
-        return reinterpret_cast<underlying_type_t<type>*>(_m_data.data());
+        return reinterpret_cast<underlying_type_t<type>*>(_data.data());
     }
 
     template <sample_type type>
     const underlying_type_t<type>* data() const {
-        return reinterpret_cast<const underlying_type_t<type>*>(_m_data.data());
+        return reinterpret_cast<const underlying_type_t<type>*>(_data.data());
     }
 
     char* data();
@@ -116,12 +124,6 @@ class pcm_samples final {
     private:
     pcm_samples(const pcm_samples&) = default;
     pcm_samples& operator=(const pcm_samples& other) = default;
-
-    std::vector<char> _m_data;
-    int64_t _m_frames;
-    int64_t _m_channels;
-    sample_type _m_type;
-    channel_order _m_order;
 };
 
 class pcm_provider {
