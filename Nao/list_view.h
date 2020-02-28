@@ -8,7 +8,7 @@
 
 #include "concepts.h"
 
-class list_view : public ui_element {
+class list_view : public virtual ui_element {
     public:
     enum sort_arrow {
         NoArrow,
@@ -61,10 +61,13 @@ class list_view : public ui_element {
 
     void clear(const std::function<void(void*)>& deleter = { }) const;
 
-    int index_of(LPARAM lparam) const;
+    int index_of(void* data) const;
+
+    int selected() const;
+    void* selected_data() const;
 
     void select(int index) const;
-    void select(LPARAM lparam) const;
+    void select(void* data) const;
 
     private:
     com_ptr<IImageList> _m_image_list;

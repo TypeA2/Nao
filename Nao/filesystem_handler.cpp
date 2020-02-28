@@ -24,8 +24,8 @@ filesystem_handler::filesystem_handler(const std::string& path)
             std::stringstream ss;
             ss << utils::bytes(total) << " ("
                 << utils::bytes(free) << " free)";
-            
-            items.push_back(item_data {
+
+            items.push_back({
                 .handler      = this,
                 .name         = name,
                 .type         = utils::utf8(finfo.szTypeName),

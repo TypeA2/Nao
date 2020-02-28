@@ -40,6 +40,8 @@ class list_view_preview : public preview {
 
     ~list_view_preview() override = default;
 
+    list_view* list() const;
+
     protected:
     bool wm_create(CREATESTRUCTW* create) override;
     void wm_size(int type, int width, int height) override;

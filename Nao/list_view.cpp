@@ -207,19 +207,27 @@ void list_view::clear(const std::function<void(void*)>& deleter) const {
     ListView_DeleteAllItems(handle());
 }
 
-int list_view::index_of(LPARAM lparam) const {
+int list_view::index_of(void* data) const {
     LVFINDINFOW find {
         .flags = LVFI_PARAM,
-        .lParam = lparam
+        .lParam = reinterpret_cast<LPARAM>(data)
     };
 
     return ListView_FindItem(handle(), -1, &find);
+}
+
+int list_view::selected() const {
+    return ListView_GetNextItem(handle(), -1, LVNI_SELECTED);
+}
+
+void* list_view::selected_data() const {
+    return get_item_data(selected());
 }
 
 void list_view::select(int index) const {
     ListView_SetItemState(handle(), index, LVIS_FOCUSED | LVIS_SELECTED, 0x000f);
 }
 
-void list_view::select(LPARAM lparam) const {
-    select(index_of(lparam));
+void list_view::select(void* data) const {
+    select(index_of(data));
 }

@@ -51,6 +51,14 @@ using context_menu = std::vector<context_menu_entry>;
 class preview;
 
 class nao_view {
+    std::unique_ptr<main_window> _main_window;
+
+    friend class preview;
+
+    // Current column ordering of the view
+    std::map<data_key, sort_order> _sort_order = list_view_default_sort();
+    data_key _selected_column = KEY_NAME;
+
     public:
     static const std::vector<std::string>& list_view_header();
     static const std::map<data_key, sort_order>& list_view_default_sort();
@@ -88,7 +96,7 @@ class nao_view {
     void execute_context_menu(const context_menu& menu, POINT pt) const;
 
     // Select the item with the specified lparam
-    void select(LPARAM lparam) const;
+    void select(void* data) const;
 
     // Retrieve main window
     main_window* window() const;
@@ -99,13 +107,4 @@ class nao_view {
 
     protected:
     nao_controller& controller;
-
-    private:
-    std::unique_ptr<main_window> _m_main_window;
-
-    friend class preview;
-
-    // Current column ordering of the view
-    std::map<data_key, sort_order> _m_sort_order;
-    data_key _m_selected_column;
 };

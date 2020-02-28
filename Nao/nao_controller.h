@@ -83,6 +83,9 @@ class nao_controller {
         post_message(message, wparam, reinterpret_cast<LPARAM>(lparam));
     }
 
+    // Post work to the work queue
+    void post_work(const std::function<void()>& func);
+
     // A view element has been clicked
     void clicked(click_event which);
     void clicked(click_event which, void* arg);

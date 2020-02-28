@@ -6,8 +6,8 @@
 
 enum file_handler_tag : uintmax_t {
     TAG_FILE  = 0b00,
-    TAG_PCM   = 0b01,
-    TAG_ITEMS = 0b10
+    TAG_ITEMS = 0b01,
+    TAG_PCM   = 0b10
 };
 
 file_handler_tag operator|(file_handler_tag left, file_handler_tag right) noexcept;

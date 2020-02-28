@@ -68,6 +68,10 @@ void nao_controller::post_message(nao_thread_message message, WPARAM wparam, LPA
     PostThreadMessageW(_m_main_threadid, message, wparam, lparam);
 }
 
+void nao_controller::post_work(const std::function<void()>& func) {
+    _m_worker.push(func);
+}
+
 void nao_controller::clicked(click_event which) {
     switch (which) {
         case CLICK_MOVE_UP:
@@ -180,11 +184,27 @@ void nao_controller::create_context_menu(item_data* data, POINT pt) {
 
         // Only add "open" if the passed element is not null
         if (data) {
+            bool added = false;
             if (data->dir || data->drive || model.can_open(data)) {
+                added = true;
+
                 menu.push_back({
                     .text = "Open",
                     .func = std::bind(&nao_model::move_down, &model, data)
                     });
+                
+            }
+
+            if (model.has_preview(data)) {
+                added = true;
+
+                menu.push_back({
+                    .text = "Show preview",
+                    .func = std::bind(&nao_view::select, &view, data)
+                    });
+            }
+
+            if (added) {
                 menu.push_back({});
             }
         }
@@ -312,7 +332,7 @@ void nao_controller::_refresh_view(LPARAM lparam) {
     view.fill_view(transform_data_to_row(data));
 
     if (lparam != 0) {
-        view.select(lparam);
+        view.select(reinterpret_cast<void*>(lparam));
     }
 }
 

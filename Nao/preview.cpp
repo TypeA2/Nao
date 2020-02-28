@@ -40,6 +40,10 @@ list_view_preview::list_view_preview(nao_view& view, item_file_handler* handler)
     ASSERT(handle);
 }
 
+list_view* list_view_preview::list() const {
+    return _list.get();
+}
+
 bool list_view_preview::wm_create(CREATESTRUCTW*) {
     _list = std::make_unique<list_view>(this, nao_view::list_view_header(), nao_view::shell_image_list());
     _list->set_column_alignment(2, list_view::Right);

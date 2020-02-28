@@ -39,6 +39,9 @@ class nao_model {
     // Whether we can "open" the given item
     bool can_open(item_data* data);
 
+    // If there is a preview available
+    bool has_preview(item_data* data);
+
     private:
     void _create_tree(const std::string& to);
 

@@ -176,6 +176,19 @@ bool nao_model::can_open(item_data* data) {
     return false;
 }
 
+bool nao_model::has_preview(item_data* data) {
+    bool supports;
+    file_handler_tag tag;
+    _provider_for(data->path(), &supports, &tag);
+
+    if (supports && (tag >= TAG_ITEMS)) {
+        return true;
+    }
+
+    return false;
+}
+
+
 void nao_model::_create_tree(const std::string& to) {
     // Modify the current tree to match the supplied path
 
