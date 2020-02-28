@@ -299,16 +299,11 @@ void nao_view::select(void* data) const {
     list_view* list = _main_window->left()->list();
     if (int i = list->index_of(data); i >= 0) {
         list->select(i);
-    } else {
-        preview* p = _main_window->right()->get_preview();
-
-        if (list_view_preview* lv = dynamic_cast<list_view_preview*>(p); lv) {
-            utils::coutln("selecting preview item", list->selected());
-            controller.clicked(CLICK_DOUBLE_ITEM, list->selected_data());
-            controller.clicked(CLICK_SINGLE_ITEM, data);
-            controller.post_work(std::bind(&nao_view::select, this, lv->list()->selected_data()));
-            return;
-        }
+    } else if (list_view_preview* p = dynamic_cast<list_view_preview*>(_main_window->right()->get_preview()); p) {
+        controller.clicked(CLICK_DOUBLE_ITEM, list->selected_data());
+        controller.clicked(CLICK_SINGLE_ITEM, data);
+        controller.post_work(std::bind(&nao_view::select, this, p->list()->selected_data()));
+        return;
     }
     
     controller.clicked(CLICK_SINGLE_ITEM, data);
