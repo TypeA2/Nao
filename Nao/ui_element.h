@@ -93,6 +93,11 @@ class ui_element : public std::enable_shared_from_this<ui_element> {
     // Specifically enable or disable
     virtual void set_enabled(bool enabled = true);
 
+    // Set focus on a window
+    virtual void set_focus() const;
+
+    virtual void activate();
+
     // Manually send or post messages
     virtual [[maybe_unused]] LRESULT send_message(UINT msg, WPARAM wparam = 0, LPARAM lparam = 0) const;
     template <concepts::pointer_or_integral W, concepts::pointer_or_integral L>

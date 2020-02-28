@@ -16,7 +16,7 @@ enum nao_thread_message : unsigned {
     TM_MODEL_FIRST,
 
     // Model view contents changed.
-    // No parameters
+    // LPARAM: item_data* to select, or nullptr
     TM_CONTENTS_CHANGED,
 
     // Preview has changed, fetch new preview
@@ -108,7 +108,7 @@ class nao_controller {
     void _handle_message(nao_thread_message msg, WPARAM wparam, LPARAM lparam);
 
     // Retrieve the current provider and fill the view from that
-    void _refresh_view();
+    void _refresh_view(LPARAM lparam);
 
     // Retrieve the current preview provider and item and display it
     void _refresh_preview(item_data* data, void* lparam);

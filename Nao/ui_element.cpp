@@ -160,6 +160,14 @@ void ui_element::set_enabled(bool enabled) {
     EnableWindow(handle(), enabled);
 }
 
+void ui_element::set_focus() const {
+    SetFocus(handle());
+}
+
+void ui_element::activate() {
+    SetActiveWindow(handle());
+}
+
 LRESULT ui_element::send_message(UINT msg, WPARAM wparam, LPARAM lparam) const {
     return SendMessageW(handle(), msg, wparam, lparam);
 }

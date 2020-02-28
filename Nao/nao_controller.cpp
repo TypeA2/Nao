@@ -272,7 +272,7 @@ void nao_controller::_handle_message(nao_thread_message msg, WPARAM wparam, LPAR
     switch (msg) {
         //// Begin model messages
         case TM_CONTENTS_CHANGED:
-            _refresh_view();
+            _refresh_view(lparam);
             break;
 
         case TM_PREVIEW_CHANGED:
@@ -298,7 +298,7 @@ void nao_controller::_handle_message(nao_thread_message msg, WPARAM wparam, LPAR
     }
 }
 
-void nao_controller::_refresh_view() {
+void nao_controller::_refresh_view(LPARAM lparam) {
     (void) this;
 
     view.set_path(model.current_path());
@@ -307,7 +307,13 @@ void nao_controller::_refresh_view() {
     view.clear_preview();
 
     const item_file_handler_ptr& p = model.current_provider();
-    view.fill_view(transform_data_to_row(p->data()));
+    const auto& data = p->data();
+
+    view.fill_view(transform_data_to_row(data));
+
+    if (lparam != 0) {
+        view.select(lparam);
+    }
 }
 
 void nao_controller::_refresh_preview(item_data* data, void* lparam) {

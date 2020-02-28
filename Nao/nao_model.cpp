@@ -39,6 +39,8 @@ void nao_model::move_to(std::string path) {
     bool supported;
     file_handler_tag tag;
     _provider_for(path, &supported, &tag);
+
+    item_data const* item = nullptr;
     if (supported) {
         if (!(tag & TAG_ITEMS)) {
             // if a preview is available open the parent and select it
@@ -56,7 +58,12 @@ void nao_model::move_to(std::string path) {
 
                     // And the target item is an element of the preview
                     if (it != items.end()) {
-                        path = _m_preview_provider->get_path() + '\\';
+                        item = &(*it);
+                        path = _m_preview_provider->get_path();
+
+                        if (path.back() != '\\') {
+                            path.push_back('\\');
+                        }
                     } else {
                         return;
                     }
@@ -73,7 +80,7 @@ void nao_model::move_to(std::string path) {
 
     _m_path = path;
     
-    controller.post_message(TM_CONTENTS_CHANGED);
+    controller.post_message(TM_CONTENTS_CHANGED, 0, item);
 }
 
 void nao_model::move_up() {

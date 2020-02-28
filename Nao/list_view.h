@@ -61,6 +61,11 @@ class list_view : public ui_element {
 
     void clear(const std::function<void(void*)>& deleter = { }) const;
 
+    int index_of(LPARAM lparam) const;
+
+    void select(int index) const;
+    void select(LPARAM lparam) const;
+
     private:
     com_ptr<IImageList> _m_image_list;
 };

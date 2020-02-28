@@ -296,6 +296,11 @@ void nao_view::execute_context_menu(const context_menu& menu, POINT pt) const {
     DestroyMenu(popup);
 }
 
+void nao_view::select(LPARAM lparam) const {
+    _m_main_window->left()->list()->select(lparam);
+
+    controller.clicked(CLICK_SINGLE_ITEM, reinterpret_cast<void*>(lparam));
+}
 
 main_window* nao_view::window() const {
     return _m_main_window.get();

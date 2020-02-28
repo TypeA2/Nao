@@ -87,6 +87,8 @@ class nao_view {
     // Constructs and executes the given context menu
     void execute_context_menu(const context_menu& menu, POINT pt) const;
 
+    // Select the item with the specified lparam
+    void select(LPARAM lparam) const;
 
     // Retrieve main window
     main_window* window() const;
