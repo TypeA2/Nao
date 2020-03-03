@@ -59,7 +59,7 @@ wav_pcm_provider::wav_pcm_provider(const istream_ptr& stream) : pcm_provider(str
     stream->seekg(_data_start);
 }
 
-pcm_samples wav_pcm_provider::get_samples(sample_type type) {
+pcm_samples wav_pcm_provider::get_samples(sample_format type) {
     if (type != SAMPLE_INT16) {
         return pcm_samples::error(PCM_ERR);
     }
@@ -110,11 +110,11 @@ void wav_pcm_provider::seek(std::chrono::nanoseconds pos) {
     stream->seekg(_data_start + ((pos / _ns_per_frame) * _fmt.align));
 }
 
-sample_type wav_pcm_provider::types() {
+sample_format wav_pcm_provider::types() {
     return SAMPLE_INT16;
 }
 
-sample_type wav_pcm_provider::preferred_type() {
+sample_format wav_pcm_provider::preferred_type() {
     return SAMPLE_INT16;
 }
 

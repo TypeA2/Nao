@@ -113,7 +113,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions);NOMINMAX;WIN32_LEAN_AND_MEAN</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -126,7 +126,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LargeAddressAware>true</LargeAddressAware>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>comctl32.lib;uxtheme.lib;comsupp.lib;libogg.lib;libvorbis.lib;libvorbisfile.lib;portaudio_x64.lib;libsamplerate-0.lib;libopus.lib;libopusfile.lib;libFLAC.lib;libFLAC++.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;uxtheme.lib;comsupp.lib;libogg.lib;libvorbis.lib;libvorbisfile.lib;portaudio_x64.lib;libsamplerate-0.lib;libopus.lib;libopusfile.lib;libFLAC.lib;libFLAC++.lib;Shlwapi.lib;d2d1.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)lib\bin\$(Configuration)</AdditionalLibraryDirectories>
     </Link>
     <ResourceCompile>
@@ -161,7 +161,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_WINDOWS;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;%(PreprocessorDefinitions);NOMINMAX;WIN32_LEAN_AND_MEAN</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -179,7 +179,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <LargeAddressAware>true</LargeAddressAware>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>comctl32.lib;uxtheme.lib;comsupp.lib;libogg.lib;libvorbis.lib;libvorbisfile.lib;portaudio_x64.lib;libsamplerate-0.lib;libopus.lib;libopusfile.lib;libFLAC.lib;libFLAC++.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;uxtheme.lib;comsupp.lib;libogg.lib;libvorbis.lib;libvorbisfile.lib;portaudio_x64.lib;libsamplerate-0.lib;libopus.lib;libopusfile.lib;libFLAC.lib;libFLAC++.lib;Shlwapi.lib;d2d1.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)lib\bin\$(Configuration)</AdditionalLibraryDirectories>
     </Link>
     <ResourceCompile>
@@ -197,9 +197,14 @@
     <ClInclude Include="audio_player.h" />
     <ClInclude Include="auto_wrapper.h" />
     <ClInclude Include="binary_stream.h" />
+    <ClInclude Include="direct2d.h" />
+    <ClInclude Include="wic.h" />
+    <ClInclude Include="wic_handler.h" />
+    <ClInclude Include="wic_image_provider.h" />
     <ClInclude Include="byte_array_streambuf.h" />
     <ClInclude Include="concepts.h" />
     <ClInclude Include="dimensions.h" />
+    <ClInclude Include="direct2d_window.h" />
     <ClInclude Include="drive_list.h" />
     <ClInclude Include="dynamic_library.h" />
     <ClInclude Include="filesystem_handler.h" />
@@ -207,6 +212,8 @@
     <ClInclude Include="file_info.h" />
     <ClInclude Include="flac_handler.h" />
     <ClInclude Include="flac_pcm_provider.h" />
+    <ClInclude Include="image_provider.h" />
+    <ClInclude Include="jpeg_handler.h" />
     <ClInclude Include="partial_file_streambuf.h" />
     <ClInclude Include="namespaces.h" />
     <ClInclude Include="icon.h" />
@@ -254,7 +261,12 @@
     <ClCompile Include="audio_player.cpp" />
     <ClCompile Include="auto_wrapper.cpp" />
     <ClCompile Include="binary_stream.cpp" />
+    <ClCompile Include="direct2d.cpp" />
+    <ClCompile Include="wic.cpp" />
+    <ClCompile Include="wic_handler.cpp" />
+    <ClCompile Include="wic_image_provider.cpp" />
     <ClCompile Include="byte_array_streambuf.cpp" />
+    <ClCompile Include="direct2d_window.cpp" />
     <ClCompile Include="drive_list.cpp" />
     <ClCompile Include="dynamic_library.cpp" />
     <ClCompile Include="filesystem_handler.cpp" />
@@ -263,7 +275,9 @@
     <ClCompile Include="flac_handler.cpp" />
     <ClCompile Include="flac_pcm_provider.cpp" />
     <ClCompile Include="icon.cpp" />
+    <ClCompile Include="image_provider.cpp" />
     <ClCompile Include="item_data.cpp" />
+    <ClCompile Include="jpeg_handler.cpp" />
     <ClCompile Include="label.cpp" />
     <ClCompile Include="left_window.cpp" />
     <ClCompile Include="line_edit.cpp" />
@@ -306,6 +320,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\MSVC.ruleset" />
+    <None Include="packed_codebooks_aoTuV_603.bin" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

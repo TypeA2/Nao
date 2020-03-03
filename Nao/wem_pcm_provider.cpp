@@ -27,7 +27,7 @@ wem_pcm_provider::wem_pcm_provider(const istream_ptr& stream) : pcm_provider(str
     ASSERT(_m_dec->valid());
 }
 
-pcm_samples wem_pcm_provider::get_samples(sample_type type) {
+pcm_samples wem_pcm_provider::get_samples(sample_format type) {
     static constexpr int block_size = 1024;
     switch (type) {
         case SAMPLE_INT16: {
@@ -98,11 +98,11 @@ void wem_pcm_provider::seek(std::chrono::nanoseconds pos) {
     _m_dec->seek(pos);
 }
 
-sample_type wem_pcm_provider::types() {
+sample_format wem_pcm_provider::types() {
     return SAMPLE_INT16 | SAMPLE_FLOAT32;
 }
 
-sample_type wem_pcm_provider::preferred_type() {
+sample_format wem_pcm_provider::preferred_type() {
     return SAMPLE_FLOAT32;
 }
 

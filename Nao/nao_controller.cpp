@@ -349,6 +349,9 @@ void nao_controller::_refresh_preview(item_data* data, void* lparam) {
         } else if (tag & TAG_PCM) {
             preview = std::make_unique<audio_player_preview>(view,
                 std::unique_ptr<audio_player>(reinterpret_cast<audio_player*>(lparam)));
+        } else if (tag & TAG_IMAGE) {
+            preview = std::make_unique<image_viewer_preview>(view,
+                std::unique_ptr<image_provider>(reinterpret_cast<image_provider*>(lparam)));
         }
 
         if (preview) {

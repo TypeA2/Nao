@@ -22,9 +22,9 @@ right_window::right_window(ui_element* parent, nao_view* view) : ui_element(pare
 
     ASSERT(RegisterClassExW(&wcx) != 0);
 
-    auto [x, y, width, height] = parent->dimensions();
+    auto [width, height] = parent->dims();
 
-    int window_width = (width - dims::gutter_size) / 2;
+    int64_t window_width = (width - dims::gutter_size) / 2;
 
     HWND handle = create_window(class_name, L"", WS_CHILD | WS_VISIBLE | SS_SUNKEN,
         { window_width + dims::gutter_size, 0, window_width, height }, parent,

@@ -90,10 +90,10 @@ class audio_player_preview : public preview {
 
     std::chrono::nanoseconds _duration {};
 
-    size _volume_display_size {};
+    dimensions _volume_display_size {};
 
-    size _progress_size {};
-    size _duration_size {};
+    dimensions _progress_size {};
+    dimensions _duration_size {};
 
     bool _resume_after_seek = false;
 
@@ -102,10 +102,28 @@ class audio_player_preview : public preview {
 
     protected:
     bool wm_create(CREATESTRUCTW* create) override;
-    void wm_size(int type, int width, int height) override;
+    void wm_size(int, int width, int height) override;
 
     private:
     LRESULT _wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
     void _set_progress(std::chrono::nanoseconds progress);
+};
+
+class direct2d_window;
+
+// Display a single image
+class image_viewer_preview : public preview {
+    std::unique_ptr<direct2d_window> _window;
+    std::unique_ptr<image_provider> _image;
+
+    public:
+    explicit image_viewer_preview(nao_view& view, std::unique_ptr<image_provider> image);
+
+    protected:
+    bool wm_create(CREATESTRUCTW*) override;
+    void wm_size(int, int width, int height) override;
+
+    private:
+    LRESULT _wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 };

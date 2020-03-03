@@ -5,7 +5,7 @@ pcm_samples pcm_samples::error(int64_t code) {
     return pcm_samples { SAMPLE_NONE, code, 0, CHANNELS_NONE };
 }
 
-size_t pcm_samples::sample_size(sample_type type) {
+size_t pcm_samples::sample_size(sample_format type) {
     switch (type) {
         case SAMPLE_INT16:   return sizeof(sample_int16_t);
         case SAMPLE_FLOAT32: return sizeof(sample_float32_t);
@@ -13,7 +13,7 @@ size_t pcm_samples::sample_size(sample_type type) {
     }
 }
 
-PaSampleFormat pcm_samples::pa_format(sample_type type) {
+PaSampleFormat pcm_samples::pa_format(sample_format type) {
     switch (type) {
         case SAMPLE_INT16:   return paInt16;
         case SAMPLE_FLOAT32: return paFloat32;
@@ -41,7 +41,7 @@ pcm_samples::pcm_samples(pcm_state state) : pcm_samples(SAMPLE_NONE, state, 0, C
     
 }
 
-pcm_samples::pcm_samples(sample_type type, int64_t frames, int64_t channels, channel_order order)
+pcm_samples::pcm_samples(sample_format type, int64_t frames, int64_t channels, channel_order order)
     : _data(sample_size(type) * frames * channels, 0)
     , _frames { frames }, _channels { channels }, _type { type }, _order { order } {
     
@@ -67,7 +67,7 @@ int64_t pcm_samples::channels() const {
     return _channels;
 }
 
-sample_type pcm_samples::type() const {
+sample_format pcm_samples::type() const {
     return _type;
 }
 
@@ -151,7 +151,7 @@ pcm_samples& pcm_samples::resize_bytes(size_t bytes) {
 }
 
 
-pcm_samples pcm_samples::as(sample_type type) const {
+pcm_samples pcm_samples::as(sample_format type) const {
     if (type == _type) {
         return *this;
     }

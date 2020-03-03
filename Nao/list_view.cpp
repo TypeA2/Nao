@@ -8,11 +8,13 @@
 #include <ranges>
 
 list_view::list_view(ui_element* parent) : ui_element(parent), _m_image_list(nullptr) {
+    auto [width, height] = parent->dims();
+
     HWND handle = CreateWindowExW(0,
         WC_LISTVIEWW, L"",
         WS_CHILD | WS_VISIBLE |
         LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS,
-        0, 0, parent->width(), parent->height(),
+        0, 0, utils::narrow<int>(width), utils::narrow<int>(height),
         parent->handle(), nullptr, instance(),
         nullptr);
 
@@ -37,11 +39,12 @@ void list_view::set_columns(const std::vector<std::string>& hdr) const {
     ASSERT(handle());
     ASSERT(!hdr.empty() && hdr.size() <= std::numeric_limits<int>::max());
 
-    int columns = int(hdr.size());
+    int columns = static_cast<int>(hdr.size());
+    int width = static_cast<int>(this->width());
 
     LVCOLUMNW col;
     col.mask = LVCF_TEXT | LVCF_FMT | LVCF_WIDTH | LVCF_MINWIDTH;
-    col.cx = width() / columns;
+    col.cx = width / columns;
     col.cxMin = col.cx;
     col.fmt = LVCFMT_LEFT;
     int i = 0;
@@ -54,7 +57,7 @@ void list_view::set_columns(const std::vector<std::string>& hdr) const {
 
         if (col.iOrder == (columns - 1)) {
             // Pad with last item
-            col.cx = (width() + (columns - 1)) / columns;
+            col.cx = (width + (columns - 1)) / columns;
             col.cxMin = col.cx;
         }
 
@@ -136,7 +139,7 @@ void list_view::sort(PFNLVCOMPARE cb, LPARAM extra) const {
     ListView_SortItems(handle(), cb, extra);
 }
 
-void list_view::set_sort_arrow(int col, sort_arrow direction) const {
+void list_view::set_sort_arrow(int64_t col, sort_arrow direction) const {
     HWND header = ListView_GetHeader(handle());
 
     if (header) {
@@ -161,7 +164,7 @@ void list_view::set_sort_arrow(int col, sort_arrow direction) const {
     }
 }
 
-void list_view::set_column_width(int col, int width, int min) const {
+void list_view::set_column_width(int64_t col, int64_t width, int64_t min) const {
     ListView_SetColumnWidth(handle(), col, width);
 
     if (width == LVSCW_AUTOSIZE) {
@@ -172,7 +175,7 @@ void list_view::set_column_width(int col, int width, int min) const {
     }
 }
 
-void list_view::set_column_alignment(int col, column_alignment align) const {
+void list_view::set_column_alignment(int64_t col, column_alignment align) const {
     LVCOLUMNW c { };
     c.mask = LVCF_FMT;
     c.fmt = align;
@@ -224,7 +227,7 @@ void* list_view::selected_data() const {
     return get_item_data(selected());
 }
 
-void list_view::select(int index) const {
+void list_view::select(int64_t index) const {
     ListView_SetItemState(handle(), index, LVIS_FOCUSED | LVIS_SELECTED, 0x000f);
 }
 

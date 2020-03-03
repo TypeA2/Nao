@@ -104,7 +104,7 @@ void nao_view::fill_view(std::vector<list_view_row> items) const {
 
     // Fit columns
     for (int i = 0; i < list->column_count() - 1; ++i) {
-        int min = 0;
+        int64_t min = 0;
 
         if (i == 0) {
             min = list->width() / list->column_count();

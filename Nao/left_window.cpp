@@ -31,8 +31,8 @@ left_window::left_window(ui_element* parent, nao_view* view) : ui_element(parent
 
     ASSERT(RegisterClassExW(&wcx) != 0);
 
-    auto [x, y, width, height] = parent->dimensions();
-    int window_width = (width - dims::gutter_size) / 2;
+    auto [width, height] = parent->dims();
+    int64_t window_width = (width - dims::gutter_size) / 2;
 
     HWND handle = create_window(class_name, L"", WS_CHILD | WS_VISIBLE | SS_SUNKEN,
         { .x = 0, .y = 0, .width = window_width, .height = height },

@@ -38,13 +38,15 @@ HINSTANCE ui_element::instance() {
     return _instance;
 }
 
-HWND ui_element::create_window(const std::wstring& class_name, const std::wstring& window_name, DWORD style, const ::dimensions& at, ui_element* parent, void* param) {
+HWND ui_element::create_window(const std::wstring& class_name, const std::wstring& window_name, DWORD style, const ::rectangle& at, ui_element* parent, void* param) {
     return create_window_ex(class_name, window_name, style, at, parent, 0, param);
 }
 
-HWND ui_element::create_window_ex(const std::wstring& class_name, const std::wstring& window_name, DWORD style, const ::dimensions& at, ui_element* parent, DWORD ex_style, void* param) {
+HWND ui_element::create_window_ex(const std::wstring& class_name, const std::wstring& window_name, DWORD style, const ::rectangle& at, ui_element* parent, DWORD ex_style, void* param) {
     return CreateWindowExW(ex_style, class_name.c_str(), window_name.c_str(), style,
-        at.x, at.y, at.width, at.height, parent ? parent->handle() : nullptr, nullptr, instance(), param);
+        static_cast<int>(at.x), static_cast<int>(at.y),
+        static_cast<int>(at.width), static_cast<int>(at.height),
+        parent ? parent->handle() : nullptr, nullptr, instance(), param);
 }
 
 
@@ -78,7 +80,7 @@ HDC ui_element::device_context() const {
     return GetDC(_m_handle);
 }
 
-size ui_element::text_extent_point(const std::string& str) const {
+dimensions ui_element::text_extent_point(const std::string& str) const {
     std::wstring wide = utils::utf16(str);
     SIZE size;
     ASSERT(GetTextExtentPoint32W(device_context(), wide.c_str(), static_cast<int>(wide.size()), &size));
@@ -86,7 +88,7 @@ size ui_element::text_extent_point(const std::string& str) const {
     return { .width = size.cx, .height = size.cy };
 }
 
-long ui_element::width() const {
+int64_t ui_element::width() const {
     RECT rect;
     bool res = GetWindowRect(handle(), &rect);
     ASSERT(res);
@@ -94,7 +96,7 @@ long ui_element::width() const {
     return rect.right - rect.left;
 }
 
-long ui_element::height() const {
+int64_t ui_element::height() const {
     RECT rect;
     bool res = GetWindowRect(handle(), &rect);
     ASSERT(res);
@@ -102,13 +104,27 @@ long ui_element::height() const {
     return rect.bottom - rect.top;
 }
 
-coords ui_element::position() const {
-    auto [x, y, w, h] = dimensions();
+coordinates ui_element::coords() const {
+    RECT rect;
+    GetClientRect(handle(), &rect);
 
-    return { .x = x, .y = y };
+    return {
+        .x = rect.left,
+        .y = rect.top
+    };
 }
 
-dimensions ui_element::dimensions() const {
+dimensions ui_element::dims() const {
+    RECT rect;
+    GetClientRect(handle(), &rect);
+
+    return {
+        .width = rect.right,
+        .height = rect.bottom
+    };
+}
+
+rectangle ui_element::rect() const {
     RECT rect;
     GetClientRect(handle(), &rect);
 
@@ -120,12 +136,16 @@ dimensions ui_element::dimensions() const {
     };
 }
 
-void ui_element::move(int x, int y, int width, int height) {
-    SetWindowPos(handle(), nullptr, x, y, width, height, 0);
+void ui_element::move(const rectangle& rect) {
+    SetWindowPos(handle(), nullptr,
+        utils::narrow<int>(rect.x), utils::narrow<int>(rect.y),
+        utils::narrow<int>(rect.width), utils::narrow<int>(rect.height), 0);
 }
 
-HDWP& ui_element::move_dwp(HDWP& dwp, int x, int y, int width, int height) {
-    dwp = DeferWindowPos(dwp, handle(), nullptr, x, y, width, height, 0);
+HDWP& ui_element::move_dwp(HDWP& dwp, const rectangle& rect) {
+    dwp = DeferWindowPos(dwp, handle(), nullptr,
+        utils::narrow<int>(rect.x), utils::narrow<int>(rect.y),
+        utils::narrow<int>(rect.width), utils::narrow<int>(rect.height), 0);
 
     return dwp;
 }
@@ -142,7 +162,7 @@ void ui_element::set_style(DWORD style, bool enable) {
 }
 
 void ui_element::set_ex_style(DWORD style, bool enable) {
-    DWORD old_ex_style = static_cast<DWORD>(GetWindowLongPtrW(handle(), GWL_EXSTYLE));
+    DWORD old_ex_style = utils::narrow<DWORD>(GetWindowLongPtrW(handle(), GWL_EXSTYLE));
 
     if (enable && !(old_ex_style & style)) {
         SetWindowLongPtrW(handle(), GWL_EXSTYLE, old_ex_style | style);

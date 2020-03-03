@@ -14,6 +14,7 @@
 #include "seekable_progress_bar.h"
 #include "separator.h"
 #include "line_edit.h"
+#include "direct2d_window.h"
 
 #include "dimensions.h"
 #include "dynamic_library.h"
@@ -31,7 +32,7 @@ list_view_preview::list_view_preview(nao_view& view, item_file_handler* handler)
 
     std::wstring class_name =  register_once(IDS_LIST_VIEW_PREVIEW);
 
-    auto [x, y, width, height] = parent()->dimensions();
+    auto [width, height] = parent()->dims();
 
     HWND handle = create_window(class_name, L"", WS_CHILD | WS_VISIBLE | SS_SUNKEN,
         { 0, 0, width, height }, parent(),
@@ -73,7 +74,7 @@ bool list_view_preview::wm_create(CREATESTRUCTW*) {
 
     // Fit columns
     for (int i = 0; i < _list->column_count() - 1; ++i) {
-        int min = 0;
+        int64_t min = 0;
 
         if (i == 0) {
             min = _list->width() / _list->column_count();
@@ -181,13 +182,11 @@ LRESULT list_view_preview::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM 
 
 
 audio_player_preview::audio_player_preview(nao_view& view, std::unique_ptr<audio_player> player)
-    : preview(view) {
-
-    _player = std::move(player);
+    : preview(view), _player { std::move(player) } {
 
     std::wstring class_name = register_once(IDS_AUDIO_PLAYER_PREVIEW);
 
-    auto [x, y, width, height] = parent()->dimensions();
+    auto [width, height] = parent()->dims();
 
     HWND handle = create_window(class_name, L"", WS_CHILD | WS_VISIBLE | SS_SUNKEN,
         { 0, 0, width, height }, parent(),
@@ -475,3 +474,39 @@ void audio_player_preview::_set_progress(std::chrono::nanoseconds progress) {
 
     _progress_size = _progress_display->text_extent_point();
 }
+
+image_viewer_preview::image_viewer_preview(nao_view& view, std::unique_ptr<image_provider> image)
+    : preview(view), _image { std::move(image) } {
+
+    std::wstring class_name = register_once(IDS_IMAGE_PREVIEW);
+
+    auto [width, height] = parent()->dims();
+
+    HWND handle = create_window(class_name, L"", WS_CHILD | WS_VISIBLE | SS_SUNKEN,
+        { 0, 0, width, height }, parent(),
+        new wnd_init(this, &image_viewer_preview::_wnd_proc));
+
+    ASSERT(handle);
+}
+
+bool image_viewer_preview::wm_create(CREATESTRUCTW*) {
+    _window = std::make_unique<direct2d_window>(this);
+    image_data data = _image->data();
+
+    if (data.format() != PIXEL_BGRA32) {
+        data = data.as(PIXEL_BGRA32);
+    }
+
+    _window->set_bitmap(data.data(), _image->dims());
+    return true;
+}
+
+void image_viewer_preview::wm_size(int, int width, int height) {
+    defer_window_pos().move(_window, { .x = 0, .y = 0, .width = width, .height = height });
+}
+
+LRESULT image_viewer_preview::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
+    return DefWindowProcW(hwnd, msg, wparam, lparam);
+}
+
+

@@ -13,7 +13,7 @@ label::label(ui_element* parent, const std::string& text, label_type type) : ui_
     set_text(text);
 }
 
-size label::text_extent_point(const std::string& str) const {
+dimensions label::text_extent_point(const std::string& str) const {
     if (str.empty()) {
         return ui_element::text_extent_point(_m_text);
     }

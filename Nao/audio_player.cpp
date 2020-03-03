@@ -78,8 +78,8 @@ void audio_player::reset() {
     PaDeviceIndex device = Pa_GetDefaultOutputDevice();
     auto info = Pa_GetDeviceInfo(device);
 
-    sample_type supported_samples = _m_provider->types();
-    sample_type output_format = _m_provider->preferred_type();
+    sample_format supported_samples = _m_provider->types();
+    sample_format output_format = _m_provider->preferred_type();
 
     ASSERT(supported_samples && output_format);
 
@@ -163,7 +163,7 @@ pcm_provider* audio_player::provider() const {
     return _m_provider.get();
 }
 
-sample_type audio_player::pcm_format() const {
+sample_format audio_player::pcm_format() const {
     // If the rate is converted but the format isn't, we're getting float32
     // from the provider, whether this is preferred or not
     if (_m_convert_rate && !_m_convert_format) {
@@ -174,7 +174,7 @@ sample_type audio_player::pcm_format() const {
     return _m_provider->preferred_type();
 }
 
-void audio_player::_playback_loop_passthrough(sample_type output_format) {
+void audio_player::_playback_loop_passthrough(sample_format output_format) {
     while (true) {
         _wait_pause();
         
@@ -205,7 +205,7 @@ void audio_player::_playback_loop_resample(const PaDeviceInfo* info) {
         pcm_provider* provider;
         bool convert_format;
         pcm_samples prev_pcm;
-        sample_type src_type;
+        sample_format src_type;
         int64_t channels;
     } args {
         .provider = _m_provider.get(),

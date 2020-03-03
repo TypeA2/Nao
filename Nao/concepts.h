@@ -5,6 +5,10 @@
 
 namespace concepts {
 
+    // Floating point type
+    template <typename T>
+    concept floating_point = std::is_floating_point_v<T>;
+
     // Any integral or floating-point type
     template <typename T>
     concept arithmetic = std::integral<T> || std::is_floating_point_v<T>;

@@ -2,6 +2,11 @@
 
 #include <sstream>
 #include <chrono>
+#include <algorithm>
+#include <limits>
+
+#include "frameworks.h"
+#include "concepts.h"
 
 #define LINE_STRINGIFY(x) LINE_STRINGIFY2(x)
 #define LINE_STRINGIFY2(x) #x
@@ -19,11 +24,8 @@
 #include <cassert>
 #define ASSERT(cond) assert(cond);
 
-#include "frameworks.h"
 #define CHECK(cond) if (!(cond)) { utils::coutln("Error in:", #cond); DebugBreak(); return false; }
 #endif
-
-
 
 #define HASSERT(hr) ASSERT(SUCCEEDED(hr))
 
@@ -86,4 +88,31 @@ namespace utils {
     std::string format_minutes(std::chrono::nanoseconds ns, bool ms = true);
 
     bool same_path(const std::string& left, const std::string& right);
+
+    template <std::integral Out, concepts::arithmetic In >
+    Out narrow(In val) requires (std::numeric_limits<Out>::digits < std::numeric_limits<In>::digits) {
+        return static_cast<Out>(std::clamp<In>(val, std::numeric_limits<Out>::min(), std::numeric_limits<Out>::max()));
+    }
+
+    template <concepts::floating_point Out, concepts::arithmetic In>
+    Out narrow(In val) requires (std::numeric_limits<Out>::digits < std::numeric_limits<In>::digits) {
+        return static_cast<Out>(std::clamp<In>(val, -1i64 * (1i64 << std::numeric_limits<Out>::digits), (1i64 << std::numeric_limits<Out>::digits) - 1));
+    }
 }
+
+struct coordinates {
+    int64_t x;
+    int64_t y;
+};
+
+struct dimensions {
+    int64_t width;
+    int64_t height;
+};
+
+struct rectangle {
+    int64_t x;
+    int64_t y;
+    int64_t width;
+    int64_t height;
+};

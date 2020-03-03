@@ -57,12 +57,12 @@ void seekable_progress_bar::wm_paint() {
     PAINTSTRUCT ps;
     HDC hdc = BeginPaint(handle(), &ps);
 
-    auto [x, y, width, height] = dimensions();
+    auto [width, height] = dims();
 
     SelectObject(hdc, _m_background_pen);
     SelectObject(hdc, _m_background_brush);
 
-    Rectangle(hdc, 0, 0, width, height);
+    Rectangle(hdc, 0, 0, utils::narrow<int>(width), utils::narrow<int>(height));
 
     _draw_fill(hdc);
 
@@ -73,7 +73,7 @@ void seekable_progress_bar::wm_paint() {
 LRESULT seekable_progress_bar::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
     switch (msg) {
         case WM_MOUSEMOVE: {
-            coords at {
+            coordinates at {
                 .x = GET_X_LPARAM(lparam),
                 .y = GET_Y_LPARAM(lparam)
             };
@@ -107,7 +107,7 @@ LRESULT seekable_progress_bar::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPA
         }
 
         case WM_LBUTTONDOWN: {
-            coords at {
+            coordinates at {
                 .x = GET_X_LPARAM(lparam),
                 .y = GET_Y_LPARAM(lparam)
             };
@@ -144,17 +144,17 @@ void seekable_progress_bar::_draw_fill(HDC hdc, bool clear_nondrawn) const {
     HGDIOBJ old_pen = SelectObject(hdc, _m_foreground_pen);
     HGDIOBJ old_brush = SelectObject(hdc, _m_foreground_brush);
 
-    auto [x, y, width, height] = dimensions();
+    auto [width, height] = dims();
 
     double percent = _m_current / static_cast<double>(_m_max);
-    int drawn_width = static_cast<int>(round(width * percent));
+    int drawn_width = utils::narrow<int>(round(width * percent));
 
-    Rectangle(hdc, 1, 1, drawn_width, height);
+    Rectangle(hdc, 1, 1, drawn_width, utils::narrow<int>(height));
 
     if (clear_nondrawn) {
         SelectObject(hdc, stock_object(NULL_PEN));
         SelectObject(hdc, _m_background_brush);
-        Rectangle(hdc, std::max(drawn_width, 1), 1, width, height);
+        Rectangle(hdc, std::max(drawn_width, 1), 1, utils::narrow<int>(width), utils::narrow<int>(height));
     }
 
     SelectObject(hdc, old_pen);

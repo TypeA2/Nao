@@ -58,7 +58,7 @@ flac_pcm_provider::flac_pcm_provider(const istream_ptr& stream) : pcm_provider(s
         1s / static_cast<double>(_m_decoder->get_sample_rate()));
 }
 
-pcm_samples flac_pcm_provider::get_samples(sample_type type) {
+pcm_samples flac_pcm_provider::get_samples(sample_format type) {
     if (type != preferred_type()) {
         return PCM_ERR;
     }
@@ -129,11 +129,11 @@ void flac_pcm_provider::seek(std::chrono::nanoseconds pos) {
     _m_decoder->seek_absolute(pos / _m_ns_per_frame);
 }
 
-sample_type flac_pcm_provider::types() {
+sample_format flac_pcm_provider::types() {
     return preferred_type();
 }
 
-sample_type flac_pcm_provider::preferred_type() {
+sample_format flac_pcm_provider::preferred_type() {
     switch (_m_decoder->get_bits_per_sample()) {
         case 16: return SAMPLE_INT16;
         default: return SAMPLE_NONE;

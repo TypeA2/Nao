@@ -3,11 +3,13 @@
 #include "item_data.h"
 
 #include "pcm_provider.h"
+#include "image_provider.h"
 
 enum file_handler_tag : uintmax_t {
-    TAG_FILE  = 0b00,
-    TAG_ITEMS = 0b01,
-    TAG_PCM   = 0b10
+    TAG_FILE  = 0b000,
+    TAG_ITEMS = 0b001,
+    TAG_PCM   = 0b010,
+    TAG_IMAGE = 0b100
 };
 
 file_handler_tag operator|(file_handler_tag left, file_handler_tag right) noexcept;
@@ -16,11 +18,13 @@ file_handler_tag operator&(file_handler_tag left, file_handler_tag right) noexce
 class file_handler;
 class pcm_file_handler;
 class item_file_handler;
+class image_file_handler;
 
 template <file_handler_tag> struct file_handler_type { };
-template <> struct file_handler_type<TAG_FILE>  { using type = file_handler; };
-template <> struct file_handler_type<TAG_ITEMS> { using type = item_file_handler; };
-template <> struct file_handler_type<TAG_PCM>   { using type = pcm_file_handler; };
+template <> struct file_handler_type<TAG_FILE>  { using type = file_handler;       };
+template <> struct file_handler_type<TAG_ITEMS> { using type = item_file_handler;  };
+template <> struct file_handler_type<TAG_PCM>   { using type = pcm_file_handler;   };
+template <> struct file_handler_type<TAG_IMAGE> { using type = image_file_handler; };
 
 template <file_handler_tag tag>
 using file_handler_t = typename file_handler_type<tag>::type;
@@ -95,7 +99,16 @@ class pcm_file_handler : public virtual file_handler {
     virtual ~pcm_file_handler() = default;
 
     virtual pcm_provider_ptr make_provider() = 0;
-
 };
 
 using pcm_file_handler_ptr = std::shared_ptr<pcm_file_handler>;
+
+class image_file_handler : public virtual file_handler {
+    public:
+    using file_handler::file_handler;
+    virtual ~image_file_handler() = default;
+
+    virtual image_provider_ptr make_provider() = 0;
+};
+
+using image_file_handler_ptr = std::shared_ptr<image_file_handler>;

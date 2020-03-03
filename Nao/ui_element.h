@@ -4,26 +4,10 @@
 
 #include "icon.h"
 #include "concepts.h"
+#include "utils.h"
 
 #include <memory>
 #include <functional>
-
-struct coords {
-    long x;
-    long y;
-};
-
-struct size {
-    long width;
-    long height;
-};
-
-struct dimensions {
-    long x;
-    long y;
-    long width;
-    long height;
-};
 
 class ui_element : public std::enable_shared_from_this<ui_element> {
     static HINSTANCE _instance;
@@ -46,13 +30,13 @@ class ui_element : public std::enable_shared_from_this<ui_element> {
     static HWND create_window(
         const std::wstring& class_name,
         const std::wstring& window_name,
-        DWORD style, const dimensions& at,
+        DWORD style, const rectangle& at,
         ui_element* parent, void* param = nullptr);
 
     static HWND create_window_ex(
         const std::wstring& class_name,
         const std::wstring& window_name,
-        DWORD style, const dimensions& at,
+        DWORD style, const rectangle& at,
         ui_element* parent, DWORD ex_style, void* param = nullptr);
 
     explicit ui_element(ui_element* parent);
@@ -68,18 +52,20 @@ class ui_element : public std::enable_shared_from_this<ui_element> {
     HWND handle() const;
     HDC device_context() const;
 
-    virtual size text_extent_point(const std::string& str) const;
+    virtual dimensions text_extent_point(const std::string& str) const;
 
-    virtual long width() const;
-    virtual long height() const;
-    virtual coords position() const;
-    virtual dimensions dimensions() const;
+    virtual int64_t width() const;
+    virtual int64_t height() const;
+
+    virtual dimensions dims() const;
+    virtual coordinates coords() const;
+    virtual rectangle rect() const;
 
     // Move using SetWindowPos
-    virtual void move(int x, int y, int width, int height);
+    virtual void move(const rectangle& rect);
 
     // Move using DeferWindowPos, for multiple windows
-    virtual HDWP& move_dwp(HDWP& dwp, int x, int y, int width, int height);
+    virtual HDWP& move_dwp(HDWP& dwp, const rectangle& rect);
 
     // Set the window style
     virtual void set_style(DWORD style, bool enable = true);
@@ -197,7 +183,7 @@ class ui_element : public std::enable_shared_from_this<ui_element> {
 
 class defer_window_pos {
     struct move_entry {
-        dimensions to;
+        rectangle to;
         ui_element* ptr;
     };
 
@@ -209,19 +195,19 @@ class defer_window_pos {
         HDWP dwp = BeginDeferWindowPos(static_cast<int>(_m_entries.size()));
 
         for (const move_entry& entry : _m_entries) {
-            entry.ptr->move_dwp(dwp, entry.to.x, entry.to.y, entry.to.width, entry.to.height);
+            entry.ptr->move_dwp(dwp, entry.to);
         }
 
         EndDeferWindowPos(dwp);
     }
 
-    defer_window_pos& move(ui_element* element, const dimensions& at) {
+    defer_window_pos& move(ui_element* element, const rectangle& at) {
         _m_entries.push_back({ .to = at, .ptr = element });
         return *this;
     }
 
     template <concepts::smart_pointer Ptr> requires std::derived_from<typename Ptr::element_type, ui_element>
-    auto move(const Ptr& element, const dimensions& at) {
+    auto move(const Ptr& element, const rectangle& at) {
         return move(element.get(), at);
     }
 };

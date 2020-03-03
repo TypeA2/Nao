@@ -73,6 +73,12 @@
     <Filter Include="Source Files\AV\Codec">
       <UniqueIdentifier>{20d3ef5f-aaf4-448f-874c-69a3722a43ec}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\AV\Image">
+      <UniqueIdentifier>{d7a9fd2c-326f-41d8-8b2e-a69bbc4a742c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\AV\Image">
+      <UniqueIdentifier>{4577d43f-005e-42e6-9a16-ad6be1558d1f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Nao.rc">
@@ -250,6 +256,27 @@
     <ClInclude Include="partial_file_streambuf.h">
       <Filter>Header Files\Utils\IO</Filter>
     </ClInclude>
+    <ClInclude Include="image_provider.h">
+      <Filter>Header Files\AV\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="jpeg_handler.h">
+      <Filter>Header Files\Handlers</Filter>
+    </ClInclude>
+    <ClInclude Include="direct2d_window.h">
+      <Filter>Header Files\UI\Generic</Filter>
+    </ClInclude>
+    <ClInclude Include="wic_image_provider.h">
+      <Filter>Header Files\AV\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="wic_handler.h">
+      <Filter>Header Files\Handlers</Filter>
+    </ClInclude>
+    <ClInclude Include="wic.h">
+      <Filter>Header Files\Win32</Filter>
+    </ClInclude>
+    <ClInclude Include="direct2d.h">
+      <Filter>Header Files\Win32</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="nao.cpp">
@@ -399,11 +426,35 @@
     <ClCompile Include="partial_file_streambuf.cpp">
       <Filter>Source Files\Utils\IO</Filter>
     </ClCompile>
+    <ClCompile Include="image_provider.cpp">
+      <Filter>Source Files\AV\Image</Filter>
+    </ClCompile>
+    <ClCompile Include="jpeg_handler.cpp">
+      <Filter>Source Files\Handlers</Filter>
+    </ClCompile>
+    <ClCompile Include="direct2d_window.cpp">
+      <Filter>Source Files\UI\Generic</Filter>
+    </ClCompile>
+    <ClCompile Include="wic_image_provider.cpp">
+      <Filter>Source Files\AV\Image</Filter>
+    </ClCompile>
+    <ClCompile Include="wic_handler.cpp">
+      <Filter>Source Files\Handlers</Filter>
+    </ClCompile>
+    <ClCompile Include="wic.cpp">
+      <Filter>Source Files\Win32</Filter>
+    </ClCompile>
+    <ClCompile Include="direct2d.cpp">
+      <Filter>Source Files\Win32</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Manifest Include="Nao.exe.manifest" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\MSVC.ruleset" />
+    <None Include="packed_codebooks_aoTuV_603.bin">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

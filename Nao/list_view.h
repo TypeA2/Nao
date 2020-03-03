@@ -55,9 +55,9 @@ class list_view : public virtual ui_element {
         sort(cb, reinterpret_cast<LPARAM>(extra));
     }
 
-    void set_sort_arrow(int col, sort_arrow direction) const;
-    void set_column_width(int col, int width, int min = 0) const;
-    void set_column_alignment(int col, column_alignment align) const;
+    void set_sort_arrow(int64_t col, sort_arrow direction) const;
+    void set_column_width(int64_t col, int64_t width, int64_t min = 0) const;
+    void set_column_alignment(int64_t col, column_alignment align) const;
 
     void clear(const std::function<void(void*)>& deleter = { }) const;
 
@@ -66,7 +66,7 @@ class list_view : public virtual ui_element {
     int selected() const;
     void* selected_data() const;
 
-    void select(int index) const;
+    void select(int64_t index) const;
     void select(void* data) const;
 
     private:

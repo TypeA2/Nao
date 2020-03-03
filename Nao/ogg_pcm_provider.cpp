@@ -36,7 +36,7 @@ ogg_pcm_provider::ogg_pcm_provider(const istream_ptr& stream) : pcm_provider(str
     }
 }
 
-pcm_samples ogg_pcm_provider::get_samples(sample_type type) {
+pcm_samples ogg_pcm_provider::get_samples(sample_format type) {
     static constexpr int block_size = 1024;
 
     switch (type) {
@@ -109,11 +109,11 @@ void ogg_pcm_provider::seek(std::chrono::nanoseconds pos) {
     _m_dec->seek(pos);
 }
 
-sample_type ogg_pcm_provider::types() {
+sample_format ogg_pcm_provider::types() {
     return SAMPLE_INT16 | SAMPLE_FLOAT32;
 }
 
-sample_type ogg_pcm_provider::preferred_type() {
+sample_format ogg_pcm_provider::preferred_type() {
     return SAMPLE_FLOAT32;
 }
 

@@ -14,7 +14,7 @@ class ogg_pcm_provider : public pcm_provider {
     explicit ogg_pcm_provider(const istream_ptr& stream);
     ~ogg_pcm_provider() override = default;
 
-    pcm_samples get_samples(sample_type type) override;
+    pcm_samples get_samples(sample_format type) override;
     int64_t rate() override;
     int64_t channels() override;
     channel_order order() override;
@@ -24,8 +24,8 @@ class ogg_pcm_provider : public pcm_provider {
     std::chrono::nanoseconds pos() override;
     void seek(std::chrono::nanoseconds pos) override;
 
-    sample_type types() override;
-    sample_type preferred_type() override;
+    sample_format types() override;
+    sample_format preferred_type() override;
 
     private:
     std::unique_ptr<opus_vorbis_decoder> _m_dec;
