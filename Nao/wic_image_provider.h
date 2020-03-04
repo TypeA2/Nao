@@ -2,10 +2,16 @@
 
 #include "image_provider.h"
 
-class wic_image_provider : public image_provider {
-    dimensions _dims;
+#include "wic.h"
 
-    std::vector<char> _data;
+class wic_image_provider : public image_provider {
+    wic::imaging_factory _factory;
+    wic::format_converter _converter;
+
+    wic::bitmap_decoder _decoder;
+    wic::bitmap_frame_decode _frame;
+
+    dimensions _dims;
 
     public:
     static bool supports(const istream_ptr& stream);

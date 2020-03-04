@@ -10,24 +10,21 @@ bool wic_image_provider::supports(const istream_ptr& stream) {
 }
 
 
-wic_image_provider::wic_image_provider(const istream_ptr& stream) : image_provider(stream) {
-    wic::imaging_factory factory;
-    wic::bitmap_decoder decoder(factory, this->stream);
+wic_image_provider::wic_image_provider(const istream_ptr& stream)
+    : image_provider(stream)
+    , _converter { _factory }, _decoder { _factory, this->stream } {
 
-    wic::bitmap_frame_decode frame = decoder.get_frame(0);
-    wic::format_converter converter { factory };
+    _frame = _decoder.get_frame(0);
 
-    ASSERT(converter.can_convert(frame.pixel_format(), GUID_WICPixelFormat32bppPBGRA));
-    ASSERT(converter.initialize(frame, GUID_WICPixelFormat32bppPBGRA));
+    ASSERT(_converter.can_convert(_frame.pixel_format(), GUID_WICPixelFormat32bppPBGRA));
+    ASSERT(_converter.initialize(_frame, GUID_WICPixelFormat32bppPBGRA));
 
-    _dims = converter.size();
+    _dims = _converter.size();
 
-    _data = converter.get_pixels();
-    ASSERT(!_data.empty());
 }
 
 image_data wic_image_provider::data() {
-    return image_data(PIXEL_BGRA32, _dims, _data);
+    return image_data(PIXEL_BGRA32, _dims, _converter.get_pixels());
 }
 
 dimensions wic_image_provider::dims() {

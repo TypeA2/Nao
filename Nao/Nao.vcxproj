@@ -204,7 +204,7 @@
     <ClInclude Include="byte_array_streambuf.h" />
     <ClInclude Include="concepts.h" />
     <ClInclude Include="dimensions.h" />
-    <ClInclude Include="direct2d_window.h" />
+    <ClInclude Include="direct2d_image_display.h" />
     <ClInclude Include="drive_list.h" />
     <ClInclude Include="dynamic_library.h" />
     <ClInclude Include="filesystem_handler.h" />
@@ -266,7 +266,7 @@
     <ClCompile Include="wic_handler.cpp" />
     <ClCompile Include="wic_image_provider.cpp" />
     <ClCompile Include="byte_array_streambuf.cpp" />
-    <ClCompile Include="direct2d_window.cpp" />
+    <ClCompile Include="direct2d_image_display.cpp" />
     <ClCompile Include="drive_list.cpp" />
     <ClCompile Include="dynamic_library.cpp" />
     <ClCompile Include="filesystem_handler.cpp" />

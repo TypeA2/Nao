@@ -110,18 +110,17 @@ class audio_player_preview : public preview {
     void _set_progress(std::chrono::nanoseconds progress);
 };
 
-class direct2d_window;
+class direct2d_image_display;
 
 // Display a single image
 class image_viewer_preview : public preview {
-    std::unique_ptr<direct2d_window> _window;
-    std::unique_ptr<image_provider> _image;
+    std::unique_ptr<direct2d_image_display> _window;
 
     public:
     explicit image_viewer_preview(nao_view& view, std::unique_ptr<image_provider> image);
 
     protected:
-    bool wm_create(CREATESTRUCTW*) override;
+    bool wm_create(CREATESTRUCTW* create) override;
     void wm_size(int, int width, int height) override;
 
     private:

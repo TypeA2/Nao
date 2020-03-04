@@ -14,7 +14,7 @@
 #include "seekable_progress_bar.h"
 #include "separator.h"
 #include "line_edit.h"
-#include "direct2d_window.h"
+#include "direct2d_image_display.h"
 
 #include "dimensions.h"
 #include "dynamic_library.h"
@@ -475,34 +475,36 @@ void audio_player_preview::_set_progress(std::chrono::nanoseconds progress) {
     _progress_size = _progress_display->text_extent_point();
 }
 
-image_viewer_preview::image_viewer_preview(nao_view& view, std::unique_ptr<image_provider> image)
-    : preview(view), _image { std::move(image) } {
 
+
+image_viewer_preview::image_viewer_preview(nao_view& view, std::unique_ptr<image_provider> image) : preview(view) {
     std::wstring class_name = register_once(IDS_IMAGE_PREVIEW);
 
     auto [width, height] = parent()->dims();
 
     HWND handle = create_window(class_name, L"", WS_CHILD | WS_VISIBLE | SS_SUNKEN,
         { 0, 0, width, height }, parent(),
-        new wnd_init(this, &image_viewer_preview::_wnd_proc));
+        new wnd_init(this, &image_viewer_preview::_wnd_proc, image.get()));
 
     ASSERT(handle);
 }
 
-bool image_viewer_preview::wm_create(CREATESTRUCTW*) {
-    _window = std::make_unique<direct2d_window>(this);
-    image_data data = _image->data();
+bool image_viewer_preview::wm_create(CREATESTRUCTW* create) {
+    image_provider* p = static_cast<image_provider*>(create->lpCreateParams);
+    image_data data = p->data();
+    
 
     if (data.format() != PIXEL_BGRA32) {
         data = data.as(PIXEL_BGRA32);
     }
 
-    _window->set_bitmap(data.data(), _image->dims());
+    _window = std::make_unique<direct2d_image_display>(this, data.data(), data.dims());
+
     return true;
 }
 
 void image_viewer_preview::wm_size(int, int width, int height) {
-    defer_window_pos().move(_window, { .x = 0, .y = 0, .width = width, .height = height });
+    defer_window_pos().move(_window, { .x = 0, .y = 0, .width = width, .height = height - 150 });
 }
 
 LRESULT image_viewer_preview::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
