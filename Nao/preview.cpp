@@ -528,9 +528,8 @@ HRESULT GetEventObject(IMFMediaEvent* pEvent, Q** ppObject) {
     return hr;
 }
 
-video_player_preview::video_player_preview(nao_view& view, av_file_handler* handler) : preview(view), _handler { handler } {
-    HASSERT(MFStartup(MF_VERSION));
-
+video_player_preview::video_player_preview(nao_view& view, av_file_handler* handler) : preview(view)
+    , _source { handler->get_stream(), handler->get_path() } {
     std::wstring class_name = register_once(IDS_VIDEO_PLAYER_PREVIEW);
 
     auto [width, height] = parent()->dims();
@@ -541,256 +540,103 @@ video_player_preview::video_player_preview(nao_view& view, av_file_handler* hand
 
     ASSERT(handle);
 
-    _close_event = CreateEventW(nullptr, false, false, nullptr);
-    ASSERT(_close_event);
-
-    com_ptr<IMFTopology> topology;
-
-    ASSERT(_create_session());
-    _source = mf::media_source { _handler->get_stream(), _handler->get_path() };
-    ASSERT(_source)
-
-    com_ptr<IMFPresentationDescriptor> pd = _source.create_presentation_descriptor();
-    ASSERT(pd);
-
-    ASSERT(_create_topology(pd, this->handle(), &topology));
-
-    ASSERT(_session.set_topology(topology));
-
-    _state = open_pending;
+    ASSERT(_session.begin_get_event(this));
+    ASSERT(_session.set_topology(_source, this->handle()));
 }
 
 video_player_preview::~video_player_preview() {
-    _close_session();
-    if (_close_event) {
-        CloseHandle(_close_event);
-    }
-    HASSERT(MFShutdown());
+    _state = closing;
+
+    ASSERT(_session.close());
+
+    std::unique_lock lock { _close_mutex };
+    _close_event.wait(lock, [this] { return _can_continue; });
+
+    _state = closed;
 }
 
 void video_player_preview::pause() {
     ASSERT(_state == started);
-    ASSERT(_source);
-
     ASSERT(_session.pause());
     _state = paused;
 }
 
 void video_player_preview::stop() {
     ASSERT(_state != started && _state != paused);
-
     ASSERT(_session.stop());
     _state = stopped;
 }
 
-void video_player_preview::repaint() {
-    (void) this;
-    if (_display) {
-        _display.repaint();
-    }
-}
-
-void video_player_preview::resize(LONG width, LONG height) {
-    (void) this;
-    if (_display) {
-        ASSERT(_display.set_position({ 0, 0, width, height }));
-    }
-}
-
 bool video_player_preview::wm_create(CREATESTRUCTW*) {
-    utils::coutln("yeet");
     return true;
 }
 
-HRESULT video_player_preview::Invoke(IMFAsyncResult* pAsyncResult) {
-    MediaEventType type = MEUnknown;
-    com_ptr<IMFMediaEvent> event;
-    ASSERT(_session.end_get_event(pAsyncResult, &event));
-    HASSERT(event->GetType(&type));
+bool video_player_preview::invoke(IMFAsyncResult* result) {
+    mf::media_event event = _session.end_get_event(result);
+    if (!event) {
+        return false;
+    }
+
+    auto type = event.type();
     if (type == MESessionClosed) {
-        SetEvent(_close_event);
+        _can_continue = true;
+        _close_event.notify_all();
     } else {
         ASSERT(_session.begin_get_event(this));
     }
 
     if (_state != closing) {
-        event->AddRef();
-        (void)post_message(WM_APP_PLAYER_EVENT, event.GetInterfacePtr(), type);
+        event.object()->AddRef();
+        (void)post_message(WM_APP_PLAYER_EVENT, event.object(), 0);
     }
-    return S_OK;
+
+    return true;
 }
 
-void video_player_preview::session_topology_status(const com_ptr<IMFMediaEvent>& event) {
-    UINT32 status;
-    HASSERT(event->GetUINT32(MF_EVENT_TOPOLOGY_STATUS, &status));
-    if (status == MF_TOPOSTATUS_READY) {
-        ASSERT(_session.get_service(MR_VIDEO_RENDER_SERVICE, IID_PPV_ARGS(&_display)));
-        start_playback();
-    }
-}
+void video_player_preview::handle_event(const mf::media_event& event) {
+    ASSERT(event.good());
 
-void video_player_preview::presentation_ended(const com_ptr<IMFMediaEvent>& event) {
-    _state = stopped;
-}
-
-void video_player_preview::new_presentation(const com_ptr<IMFMediaEvent>& event) {
-    com_ptr<IMFPresentationDescriptor> pd;
-    com_ptr<IMFTopology> topo;
-    HASSERT(GetEventObject(event, &pd));
-    _create_topology(pd, handle(), &topo);
-    _state = open_pending;
-}
-
-void video_player_preview::handle_event(IMFMediaEvent* ev) {
-    com_ptr<IMFMediaEvent> event { ev };
-    ev->Release();
-
-    ASSERT(event);
-    MediaEventType type = MEUnknown;
-    HASSERT(event->GetType(&type));
-    HRESULT status = S_OK;
-    HASSERT(event->GetStatus(&status));
-    HASSERT(status);
-
-    switch (type) {
-        case MESessionTopologyStatus: session_topology_status(event); break;
-        case MEEndOfPresentation: presentation_ended(event); break;
-        case MENewPresentation: new_presentation(event); break;
+    switch (event.type()) {
+        case MESessionTopologyStatus: {
+            if (event.attributes().get_uint32(MF_EVENT_TOPOLOGY_STATUS) == MF_TOPOSTATUS_READY) {
+                _display = _session.display();
+                ASSERT(_session.start());
+                _state = started;
+            }
+            break;
+        }
+        case MEEndOfPresentation: _state = stopped; break;
+        case MENewPresentation:   ASSERT(false);    break;
         default: break;
     }
-}
-
-void video_player_preview::start_playback() {
-    ASSERT(_session.start());
-    _state = started;
 }
 
 void video_player_preview::play() {
     ASSERT(_state != paused && _state != stopped);
     ASSERT(_source);
-    start_playback();
+    ASSERT(_session.start());
+    _state = started;
 }
 
 void video_player_preview::wm_paint() {
-    repaint();
-}
-
-void video_player_preview::wm_size(int type, int width, int height) {
-    resize(width, height);
-}
-
-bool video_player_preview::_create_session() {
-    if (_state != closed) { return false; }
-
-    ASSERT(_session.begin_get_event(this));
-
-    _state = ready;
-    return true;
-}
-
-bool video_player_preview::_create_topology(IMFPresentationDescriptor* pd, HWND hwnd, IMFTopology** topology) {
-    HASSERT(MFCreateTopology(topology));
-
-    DWORD count;
-    HASSERT(pd->GetStreamDescriptorCount(&count));
-    utils::coutln("branches:", count);
-    for (DWORD i =  0; i < count; ++i) {
-        _add_branch(*topology, i, hwnd, pd);
-    }
-
-    return true;
-}
-
-bool video_player_preview::_close_session() {
-    _state = closing;
-
-    ASSERT(_session.close());
-
-    ASSERT(WaitForSingleObject(_close_event, 5000) != WAIT_TIMEOUT);
-    
-
-    ASSERT(_source.shutdown());
-    ASSERT(_session.shutdown());
-
-    _state = closed;
-    
-    return true;
-}
-
-void video_player_preview::_add_branch(IMFTopology* topology, uint32_t index, HWND hwnd, IMFPresentationDescriptor* pd) {
-    com_ptr<IMFStreamDescriptor> sd;
-    BOOL selected;
-    HASSERT(pd->GetStreamDescriptorByIndex(index, &selected, &sd));
-    if (selected) {
-        com_ptr<IMFActivate> activate;
-        _create_sink_activate(sd, hwnd, &activate);
-
-        com_ptr<IMFTopologyNode> source;
-        _add_source_node(topology, pd, sd, &source);
-        com_ptr<IMFTopologyNode> output;
-        _add_output_node(topology, activate, 0, &output);
-
-        HASSERT(source->ConnectOutput(0, output, 0));
+    if (_display) {
+        _display.repaint();
     }
 }
 
-void video_player_preview::_create_sink_activate(IMFStreamDescriptor* sd, HWND hwnd, IMFActivate** activate) {
-    (void) this;
-    com_ptr<IMFMediaTypeHandler> handler;
-    HASSERT(sd->GetMediaTypeHandler(&handler));
-
-    GUID major;
-    HASSERT(handler->GetMajorType(&major));
-
-    com_ptr<IMFActivate> act;
-    if (major == MFMediaType_Audio) {
-        utils::coutln("audio", hwnd);
-        HASSERT(MFCreateAudioRendererActivate(&act));
-    } else if (major == MFMediaType_Video) {
-        utils::coutln("video", hwnd);
-        HASSERT(MFCreateVideoRendererActivate(hwnd, &act));
-    } else {
-        ASSERT(false);
+void video_player_preview::wm_size(int, int width, int height) {
+    if (_display) {
+        ASSERT(_display.set_position({ 0, 0, width, height }));
     }
-
-    act->AddRef();
-    *activate = act.GetInterfacePtr();
 }
-
-void video_player_preview::_add_source_node(IMFTopology* topology, IMFPresentationDescriptor* pd, IMFStreamDescriptor* sd, IMFTopologyNode** node) {
-    (void) this;
-    com_ptr<IMFTopologyNode> _node;
-    HASSERT(MFCreateTopologyNode(MF_TOPOLOGY_SOURCESTREAM_NODE, &_node));
-    HASSERT(_node->SetUnknown(MF_TOPONODE_SOURCE, _source.object()));
-    HASSERT(_node->SetUnknown(MF_TOPONODE_PRESENTATION_DESCRIPTOR, pd));
-    HASSERT(_node->SetUnknown(MF_TOPONODE_STREAM_DESCRIPTOR, sd));
-    HASSERT(topology->AddNode(_node));
-
-    _node->AddRef();
-    *node = _node.GetInterfacePtr();
-
-}
-
-void video_player_preview::_add_output_node(IMFTopology* topology, IMFActivate* activate, DWORD id, IMFTopologyNode** node) {
-    (void) this;
-    com_ptr<IMFTopologyNode> _node;
-    HASSERT(MFCreateTopologyNode(MF_TOPOLOGY_OUTPUT_NODE, &_node));
-    HASSERT(_node->SetObject(activate));
-    HASSERT(_node->SetUINT32(MF_TOPONODE_STREAMID, id));
-    HASSERT(_node->SetUINT32(MF_TOPONODE_NOSHUTDOWN_ON_REMOVE, FALSE));
-    HASSERT(topology->AddNode(_node));
-    _node->AddRef();
-    *node = _node.GetInterfacePtr();
-}
-
-
 
 LRESULT video_player_preview::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
     switch (msg) {
         case WM_APP_PLAYER_EVENT: {
-            handle_event(reinterpret_cast<IMFMediaEvent*>(wparam));
+            handle_event(mf::media_event { reinterpret_cast<IMFMediaEvent*>(wparam), false });
             return 0;
         }
     }
+
     return DefWindowProcW(hwnd, msg, wparam, lparam);
 }

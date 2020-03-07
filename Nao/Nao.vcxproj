@@ -267,7 +267,7 @@
     <ClCompile Include="direct2d.cpp" />
     <ClCompile Include="media_foundation_handler.cpp" />
     <ClCompile Include="mf.cpp" />
-    <ClCompile Include="Source.cpp" />
+    <ClCompile Include="win32.cpp" />
     <ClCompile Include="wic.cpp" />
     <ClCompile Include="wic_handler.cpp" />
     <ClCompile Include="wic_image_provider.cpp" />

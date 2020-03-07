@@ -47,15 +47,56 @@ namespace mf {
         STDMETHODIMP Invoke(IMFAsyncResult* pAsyncResult) override;
     };
 
-    class media_session : public com::com_interface<IMFMediaSession> {
+    // MFStartup / MFShutdown RAII guard
+    class mf_interface {
+        public:
+        mf_interface();
+        ~mf_interface();
+    };
+
+    class topology;
+    class media_source;
+    class presentation_descriptor;
+
+    class display_control : mf_interface, public com::com_interface<IMFVideoDisplayControl> {
+        public:
+        using com_interface::com_interface;
+
+        void repaint() const;
+
+        bool set_position(const rectangle& rect) const;
+    };
+
+    class attributes : mf_interface, public virtual com::com_interface<IMFAttributes> {
+        public:
+        using com_interface::com_interface;
+
+        uint32_t get_uint32(const GUID& guid) const;
+    };
+
+    class media_event : mf_interface, public com::com_interface<IMFMediaEvent> {
+        public:
+        using com_interface::com_interface;
+
+        MediaEventType type() const;
+        HRESULT status() const;
+        bool good() const;
+
+        attributes attributes() const;
+    };
+
+    class async_callback;
+    class media_session : mf_interface, public com::com_interface<IMFMediaSession> {
         public:
         media_session();
         ~media_session();
 
-        bool begin_get_event(IMFAsyncCallback* callback) const;
-        bool end_get_event(IMFAsyncResult* result, IMFMediaEvent** event) const;
+        bool begin_get_event(async_callback* callback) const;
+        media_event end_get_event(IMFAsyncResult* result) const;
 
-        bool set_topology(IMFTopology* topology, DWORD flags = 0) const;
+        bool set_topology(const media_source& src, HWND hwnd = nullptr, DWORD flags = 0) const;
+        bool set_topology(const presentation_descriptor& pd, const media_source& src, HWND hwnd = nullptr, DWORD flags = 0) const;
+        bool set_topology(const topology& topology, DWORD flags = 0) const;
 
         bool pause() const;
         bool stop() const;
@@ -65,32 +106,69 @@ namespace mf {
         bool shutdown() const;
 
         bool get_service(const GUID& service, const IID& riid, LPVOID* object) const;
+
+        display_control display() const;
     };
 
-    class media_source : public com::com_interface<IMFMediaSource> {
+    class presentation_descriptor : mf_interface, public com::com_interface<IMFPresentationDescriptor> {
+        public:
+        using com_interface::com_interface;
+
+        int64_t descriptor_count() const;
+        bool descriptor(int64_t index, bool& selected, IMFStreamDescriptor** sd) const;
+    };
+
+    class source_resolver;
+    class media_source : mf_interface, public com::com_interface<IMFMediaSource> {
         std::unique_ptr<binary_stream_imfbytestream> _stream;
+
         public:
         media_source() = default;
-        explicit media_source(const istream_ptr& stream, const std::string& path);
+        media_source(const istream_ptr& stream, const std::string& path);
+        media_source(const source_resolver& resolver, const istream_ptr& stream, const std::string& path);
 
-        com_ptr<IMFPresentationDescriptor> create_presentation_descriptor() const;
+        ~media_source();
+
+        presentation_descriptor create_presentation_descriptor() const;
 
 
         bool shutdown() const;
     };
 
-    class source_resolver : public com::com_interface<IMFSourceResolver> {
+    class source_resolver : mf_interface, public com::com_interface<IMFSourceResolver> {
         public:
         source_resolver();
 
         com_ptr<IUnknown> create_source(binary_stream_imfbytestream& bs, const std::string& path) const;
     };
 
-    class display_control : public com::com_interface<IMFVideoDisplayControl> {
+    class topology : mf_interface, public com::com_interface<IMFTopology> {
         public:
+        topology();
+        explicit topology(const presentation_descriptor& pd, const media_source& src, HWND hwnd = nullptr);
 
-        void repaint() const;
+        private:
+        void _add_branch(const presentation_descriptor& pd, const media_source& src, HWND hwnd, DWORD index);
 
-        bool set_position(const rectangle& rect) const;
+        void _create_sink_activate(IMFStreamDescriptor* sd, HWND hwnd, IMFActivate** activate);
+        void _add_source_node(const presentation_descriptor& pd, const media_source& src, IMFStreamDescriptor* sd, IMFTopologyNode** node);
+        void _add_output_node(IMFActivate* activate, DWORD id, IMFTopologyNode** node);
+    };
+
+    class async_callback : IMFAsyncCallback {
+        volatile uint32_t _refcount = 1;
+        public:
+        virtual ~async_callback() = default;
+
+        virtual bool invoke(IMFAsyncResult* result) = 0;
+
+        private:
+        STDMETHODIMP QueryInterface(const IID& riid, void** ppvObject) override;
+        STDMETHODIMP_(ULONG) AddRef() override;
+        STDMETHODIMP_(ULONG) Release() override;
+        STDMETHODIMP GetParameters(DWORD*, DWORD*) override;
+        STDMETHODIMP Invoke(IMFAsyncResult* pAsyncResult) override;
+
+        friend class media_session;
     };
 }

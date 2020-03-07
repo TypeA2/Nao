@@ -272,6 +272,18 @@ LRESULT ui_element::wnd_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
     // Retrieve instance
     ui_element* _this = reinterpret_cast<ui_element*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
 
+    // Custom functions
+    switch (msg) {
+        case WM_EXECUTE_FUNC: {
+            auto func = reinterpret_cast<std::function<void()>*>(wparam);
+            (*func)();
+            delete func;
+            break;
+        }
+
+        default: break;
+    }
+
     if (_this) {
         // Predefined handlers
         switch (msg) {
