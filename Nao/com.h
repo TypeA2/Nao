@@ -16,5 +16,8 @@ namespace com {
         explicit com_interface(const com_ptr<Interface>& ptr) : com_object { ptr } {}
         Interface* object() { return com_object; }
         const Interface* object() const { return com_object; }
+        Interface** operator&() { return &com_object; }
+
+        operator bool() const { return com_object; }
     };
 }

@@ -545,12 +545,14 @@ video_player_preview::video_player_preview(nao_view& view, av_file_handler* hand
     ASSERT(_close_event);
 
     com_ptr<IMFTopology> topology;
-    com_ptr<IMFPresentationDescriptor> pd;
 
     ASSERT(_create_session());
-    ASSERT(_create_source(_handler->get_stream()));
+    _source = mf::media_source { _handler->get_stream(), _handler->get_path() };
+    ASSERT(_source)
 
-    HASSERT(_source->CreatePresentationDescriptor(&pd));
+    com_ptr<IMFPresentationDescriptor> pd = _source.create_presentation_descriptor();
+    ASSERT(pd);
+
     ASSERT(_create_topology(pd, this->handle(), &topology));
 
     ASSERT(_session.set_topology(topology));
@@ -584,15 +586,14 @@ void video_player_preview::stop() {
 void video_player_preview::repaint() {
     (void) this;
     if (_display) {
-        _display->RepaintVideo();
+        _display.repaint();
     }
 }
 
 void video_player_preview::resize(LONG width, LONG height) {
     (void) this;
     if (_display) {
-        RECT dest { 0, 0, width, height };
-        HASSERT(_display->SetVideoPosition(nullptr, &dest));
+        ASSERT(_display.set_position({ 0, 0, width, height }));
     }
 }
 
@@ -623,8 +624,6 @@ void video_player_preview::session_topology_status(const com_ptr<IMFMediaEvent>&
     UINT32 status;
     HASSERT(event->GetUINT32(MF_EVENT_TOPOLOGY_STATUS, &status));
     if (status == MF_TOPOSTATUS_READY) {
-        if (_display) { _display->Release(); }
-
         ASSERT(_session.get_service(MR_VIDEO_RENDER_SERVICE, IID_PPV_ARGS(&_display)));
         start_playback();
     }
@@ -689,20 +688,6 @@ bool video_player_preview::_create_session() {
     return true;
 }
 
-bool video_player_preview::_create_source(const istream_ptr& stream) {
-    MF_OBJECT_TYPE type = MF_OBJECT_INVALID;
-    com_ptr<IMFSourceResolver> resolver;
-    com_ptr<IUnknown> source;
-    HASSERT(MFCreateSourceResolver(&resolver));
-
-    _bs = std::make_unique<mf::binary_stream_imfbytestream>(stream);
-
-    HRESULT hr;
-    HASSERT(hr = resolver->CreateObjectFromByteStream(_bs.get(), utils::utf16(_handler->get_path()).c_str(), MF_RESOLUTION_KEEP_BYTE_STREAM_ALIVE_ON_FAIL | MF_RESOLUTION_MEDIASOURCE, nullptr, &type, &source));
-    HASSERT(source->QueryInterface(&_source));
-    return true;
-}
-
 bool video_player_preview::_create_topology(IMFPresentationDescriptor* pd, HWND hwnd, IMFTopology** topology) {
     HASSERT(MFCreateTopology(topology));
 
@@ -722,8 +707,9 @@ bool video_player_preview::_close_session() {
     ASSERT(_session.close());
 
     ASSERT(WaitForSingleObject(_close_event, 5000) != WAIT_TIMEOUT);
-    if (_source) { _source->Shutdown(); }
+    
 
+    ASSERT(_source.shutdown());
     ASSERT(_session.shutdown());
 
     _state = closed;
@@ -775,7 +761,7 @@ void video_player_preview::_add_source_node(IMFTopology* topology, IMFPresentati
     (void) this;
     com_ptr<IMFTopologyNode> _node;
     HASSERT(MFCreateTopologyNode(MF_TOPOLOGY_SOURCESTREAM_NODE, &_node));
-    HASSERT(_node->SetUnknown(MF_TOPONODE_SOURCE, _source));
+    HASSERT(_node->SetUnknown(MF_TOPONODE_SOURCE, _source.object()));
     HASSERT(_node->SetUnknown(MF_TOPONODE_PRESENTATION_DESCRIPTOR, pd));
     HASSERT(_node->SetUnknown(MF_TOPONODE_STREAM_DESCRIPTOR, sd));
     HASSERT(topology->AddNode(_node));

@@ -67,7 +67,30 @@ namespace mf {
         bool get_service(const GUID& service, const IID& riid, LPVOID* object) const;
     };
 
-    //class imf_topology : public com::com_interface<IMFTopology> {
-        
-    //};
+    class media_source : public com::com_interface<IMFMediaSource> {
+        std::unique_ptr<binary_stream_imfbytestream> _stream;
+        public:
+        media_source() = default;
+        explicit media_source(const istream_ptr& stream, const std::string& path);
+
+        com_ptr<IMFPresentationDescriptor> create_presentation_descriptor() const;
+
+
+        bool shutdown() const;
+    };
+
+    class source_resolver : public com::com_interface<IMFSourceResolver> {
+        public:
+        source_resolver();
+
+        com_ptr<IUnknown> create_source(binary_stream_imfbytestream& bs, const std::string& path) const;
+    };
+
+    class display_control : public com::com_interface<IMFVideoDisplayControl> {
+        public:
+
+        void repaint() const;
+
+        bool set_position(const rectangle& rect) const;
+    };
 }

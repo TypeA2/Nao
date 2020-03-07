@@ -305,4 +305,54 @@ namespace mf {
     }
 
 
+
+    media_source::media_source(const istream_ptr& stream, const std::string& path)
+        : _stream { std::make_unique<binary_stream_imfbytestream>(stream) } {
+        HASSERT(source_resolver().create_source(*_stream, path)->QueryInterface(&com_object));
+    }
+
+    com_ptr<IMFPresentationDescriptor> media_source::create_presentation_descriptor() const {
+        com_ptr<IMFPresentationDescriptor> pd;
+        HRESULT hr = com_object->CreatePresentationDescriptor(&pd);
+
+        return SUCCEEDED(hr) ? pd : nullptr;
+    }
+
+    bool media_source::shutdown() const {
+        return SUCCEEDED(com_object->Shutdown());
+    }
+
+
+    source_resolver::source_resolver() {
+        HASSERT(MFCreateSourceResolver(&com_object));
+    }
+
+    com_ptr<IUnknown> source_resolver::create_source(binary_stream_imfbytestream& bs, const std::string& path) const {
+        com_ptr<IUnknown> unk;
+        MF_OBJECT_TYPE type;
+        HRESULT hr = com_object->CreateObjectFromByteStream(&bs, utils::utf16(path).c_str(),
+            MF_RESOLUTION_KEEP_BYTE_STREAM_ALIVE_ON_FAIL | MF_RESOLUTION_MEDIASOURCE,
+            nullptr, &type, &unk);
+
+        return (SUCCEEDED(hr) && type == MF_OBJECT_MEDIASOURCE) ? unk : nullptr;
+    }
+
+
+
+    void display_control::repaint() const {
+        com_object->RepaintVideo();
+    }
+
+    bool display_control::set_position(const rectangle& rect) const {
+        RECT r {
+            .left   = utils::narrow<LONG>(rect.x),
+            .top    = utils::narrow<LONG>(rect.y),
+            .right  = utils::narrow<LONG>(rect.width),
+            .bottom = utils::narrow<LONG>(rect.height)
+        };
+        return SUCCEEDED(com_object->SetVideoPosition(nullptr, &r));
+    }
+
+
+
 }

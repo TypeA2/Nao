@@ -147,11 +147,11 @@ class video_player_preview : public preview, IMFAsyncCallback {
 
     volatile uint32_t _refcount = 1;
 
-    com_ptr<IMFMediaSource> _source;
-    //com_ptr<IMFMediaSession> _session;
+
+    mf::media_source _source;
     mf::media_session _session;
-    com_ptr<IMFVideoDisplayControl> _display;
-    std::unique_ptr<mf::binary_stream_imfbytestream> _bs;
+    mf::display_control _display;
+
     HANDLE _close_event;
 
     public:
@@ -187,7 +187,6 @@ class video_player_preview : public preview, IMFAsyncCallback {
 
 
     bool _create_session();
-    bool _create_source(const istream_ptr& stream);
     bool _create_topology(IMFPresentationDescriptor* pd, HWND hwnd, IMFTopology** topology);
     bool _close_session();
 
