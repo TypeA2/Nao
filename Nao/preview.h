@@ -133,14 +133,6 @@ class image_viewer_preview : public preview {
 
 // Plays video (and optionally audio)
 class video_player_preview : public preview{
-    enum state {
-        closed,
-        closing,
-        started,
-        paused,
-        stopped
-    } _state = closed;
-
     std::unique_ptr<mf::player> _player;
 
     public:

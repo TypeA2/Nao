@@ -511,23 +511,6 @@ LRESULT image_viewer_preview::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPAR
     return DefWindowProcW(hwnd, msg, wparam, lparam);
 }
 
-template <class Q>
-HRESULT GetEventObject(IMFMediaEvent* pEvent, Q** ppObject) {
-    *ppObject = NULL;   // zero output
-
-    PROPVARIANT var;
-    HRESULT hr = pEvent->GetValue(&var);
-    if (SUCCEEDED(hr)) {
-        if (var.vt == VT_UNKNOWN) {
-            hr = var.punkVal->QueryInterface(ppObject);
-        } else {
-            hr = MF_E_INVALIDTYPE;
-        }
-        PropVariantClear(&var);
-    }
-    return hr;
-}
-
 video_player_preview::video_player_preview(nao_view& view, av_file_handler* handler) : preview(view) {
     std::wstring class_name = register_once(IDS_VIDEO_PLAYER_PREVIEW);
 
