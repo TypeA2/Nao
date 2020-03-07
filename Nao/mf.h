@@ -57,6 +57,8 @@ namespace mf {
     class topology;
     class media_source;
     class presentation_descriptor;
+    class source_resolver;
+    class async_callback;
 
     class display_control : mf_interface, public com::com_interface<IMFVideoDisplayControl> {
         public:
@@ -85,7 +87,6 @@ namespace mf {
         attributes attributes() const;
     };
 
-    class async_callback;
     class media_session : mf_interface, public com::com_interface<IMFMediaSession> {
         public:
         media_session();
@@ -118,7 +119,6 @@ namespace mf {
         bool descriptor(int64_t index, bool& selected, IMFStreamDescriptor** sd) const;
     };
 
-    class source_resolver;
     class media_source : mf_interface, public com::com_interface<IMFMediaSource> {
         std::unique_ptr<binary_stream_imfbytestream> _stream;
 
@@ -170,5 +170,35 @@ namespace mf {
         STDMETHODIMP Invoke(IMFAsyncResult* pAsyncResult) override;
 
         friend class media_session;
+    };
+
+
+
+    class player : async_callback {
+        media_source _source;
+        media_session _session;
+        display_control _display;
+
+        std::mutex _close_mutex;
+        std::condition_variable _close_event;
+        bool _can_continue = false;
+
+        HWND _hwnd;
+
+        public:
+        player(const istream_ptr& stream, const std::string& path, HWND hwnd = nullptr);
+        ~player();
+
+        static constexpr UINT WM_APP_PLAYER_EVENT = WM_APP + 1;
+
+        void pause() const;
+        void stop() const;
+        void start() const;
+
+        bool invoke(IMFAsyncResult* result) override;
+
+        void handle_event(const mf::media_event& event);
+        void repaint() const;
+        void set_position(const rectangle& rect);
     };
 }

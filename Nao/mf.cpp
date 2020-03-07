@@ -541,4 +541,83 @@ namespace mf {
         return invoke(pAsyncResult) ? S_OK : E_FAIL;
     }
 
+
+    player::player(const istream_ptr& stream, const std::string& path, HWND hwnd)
+        : _source { stream, path }, _hwnd { hwnd } {
+        ASSERT(_session.begin_get_event(this));
+        ASSERT(_session.set_topology(_source, hwnd));
+    }
+
+    player::~player() {
+        ASSERT(_session.close());
+
+        std::unique_lock lock { _close_mutex };
+        _close_event.wait(lock, [this] { return _can_continue; });
+    }
+
+    void player::pause() const {
+        ASSERT(_session.pause());
+    }
+
+    void player::stop() const {
+        ASSERT(_session.stop());
+    }
+
+    void player::start() const {
+        ASSERT(_session.start());
+    }
+
+
+    bool player::invoke(IMFAsyncResult* result) {
+        media_event event = _session.end_get_event(result);
+        if (!event) {
+            return false;
+        }
+
+        auto type = event.type();
+        if (type == MESessionClosed) {
+            _can_continue = true;
+            _close_event.notify_all();
+        } else {
+            ASSERT(_session.begin_get_event(this));
+        }
+        
+        event.object()->AddRef();
+        //(void) post_message(_hwnd, WM_APP_PLAYER_EVENT, event.object(), 0);
+        PostMessageW(_hwnd, WM_APP_PLAYER_EVENT, WPARAM(event.object()), 0);
+
+        return true;
+    }
+
+    void player::handle_event(const mf::media_event& event) {
+        ASSERT(event.good());
+
+        switch (event.type()) {
+            case MESessionTopologyStatus: {
+                if (event.attributes().get_uint32(MF_EVENT_TOPOLOGY_STATUS) == MF_TOPOSTATUS_READY) {
+                    _display = _session.display();
+                    ASSERT(_session.start());
+                    //_state = started;
+                }
+                break;
+            }
+            //case MEEndOfPresentation: _state = stopped; break;
+            case MENewPresentation:   ASSERT(false);    break;
+            default: break;
+        }
+    }
+
+    void player::repaint() const {
+        if (_display) {
+            _display.repaint();
+        }
+    }
+
+    void player::set_position(const rectangle& rect) {
+        if (_display) {
+            ASSERT(_display.set_position(rect));
+        }
+    }
+
+
 }

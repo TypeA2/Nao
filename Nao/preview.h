@@ -132,7 +132,7 @@ class image_viewer_preview : public preview {
 
 
 // Plays video (and optionally audio)
-class video_player_preview : public preview, mf::async_callback {
+class video_player_preview : public preview{
     enum state {
         closed,
         closing,
@@ -141,25 +141,11 @@ class video_player_preview : public preview, mf::async_callback {
         stopped
     } _state = closed;
 
-    mf::media_source _source;
-    mf::media_session _session;
-    mf::display_control _display;
-
-    std::mutex _close_mutex;
-    std::condition_variable _close_event;
-    bool _can_continue = false;
+    std::unique_ptr<mf::player> _player;
 
     public:
     video_player_preview(nao_view& view, av_file_handler* handler);
-    ~video_player_preview();
-
-    void pause();
-    void stop();
-    void handle_event(const mf::media_event& event);
-
-    void play();
-
-    static constexpr UINT WM_APP_PLAYER_EVENT = WM_APP + 1;
+    ~video_player_preview() = default;
 
     protected:
     bool wm_create(CREATESTRUCTW*) override;
@@ -167,7 +153,5 @@ class video_player_preview : public preview, mf::async_callback {
     void wm_size(int, int width, int height) override;
 
     private:
-    bool invoke(IMFAsyncResult* result) override;
-
     LRESULT _wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 };

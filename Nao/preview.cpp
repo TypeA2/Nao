@@ -528,8 +528,7 @@ HRESULT GetEventObject(IMFMediaEvent* pEvent, Q** ppObject) {
     return hr;
 }
 
-video_player_preview::video_player_preview(nao_view& view, av_file_handler* handler) : preview(view)
-    , _source { handler->get_stream(), handler->get_path() } {
+video_player_preview::video_player_preview(nao_view& view, av_file_handler* handler) : preview(view) {
     std::wstring class_name = register_once(IDS_VIDEO_PLAYER_PREVIEW);
 
     auto [width, height] = parent()->dims();
@@ -540,100 +539,29 @@ video_player_preview::video_player_preview(nao_view& view, av_file_handler* hand
 
     ASSERT(handle);
 
-    ASSERT(_session.begin_get_event(this));
-    ASSERT(_session.set_topology(_source, this->handle()));
-}
-
-video_player_preview::~video_player_preview() {
-    _state = closing;
-
-    ASSERT(_session.close());
-
-    std::unique_lock lock { _close_mutex };
-    _close_event.wait(lock, [this] { return _can_continue; });
-
-    _state = closed;
-}
-
-void video_player_preview::pause() {
-    ASSERT(_state == started);
-    ASSERT(_session.pause());
-    _state = paused;
-}
-
-void video_player_preview::stop() {
-    ASSERT(_state != started && _state != paused);
-    ASSERT(_session.stop());
-    _state = stopped;
+    _player = std::make_unique<mf::player>(handler->get_stream(), handler->get_path(), handle);
 }
 
 bool video_player_preview::wm_create(CREATESTRUCTW*) {
     return true;
 }
 
-bool video_player_preview::invoke(IMFAsyncResult* result) {
-    mf::media_event event = _session.end_get_event(result);
-    if (!event) {
-        return false;
-    }
-
-    auto type = event.type();
-    if (type == MESessionClosed) {
-        _can_continue = true;
-        _close_event.notify_all();
-    } else {
-        ASSERT(_session.begin_get_event(this));
-    }
-
-    if (_state != closing) {
-        event.object()->AddRef();
-        (void)post_message(WM_APP_PLAYER_EVENT, event.object(), 0);
-    }
-
-    return true;
-}
-
-void video_player_preview::handle_event(const mf::media_event& event) {
-    ASSERT(event.good());
-
-    switch (event.type()) {
-        case MESessionTopologyStatus: {
-            if (event.attributes().get_uint32(MF_EVENT_TOPOLOGY_STATUS) == MF_TOPOSTATUS_READY) {
-                _display = _session.display();
-                ASSERT(_session.start());
-                _state = started;
-            }
-            break;
-        }
-        case MEEndOfPresentation: _state = stopped; break;
-        case MENewPresentation:   ASSERT(false);    break;
-        default: break;
-    }
-}
-
-void video_player_preview::play() {
-    ASSERT(_state != paused && _state != stopped);
-    ASSERT(_source);
-    ASSERT(_session.start());
-    _state = started;
-}
-
 void video_player_preview::wm_paint() {
-    if (_display) {
-        _display.repaint();
+    if (_player) {
+        _player->repaint();
     }
 }
 
 void video_player_preview::wm_size(int, int width, int height) {
-    if (_display) {
-        ASSERT(_display.set_position({ 0, 0, width, height }));
+    if (_player) {
+        _player->set_position({ 0, 0, width, height });
     }
 }
 
 LRESULT video_player_preview::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
     switch (msg) {
-        case WM_APP_PLAYER_EVENT: {
-            handle_event(mf::media_event { reinterpret_cast<IMFMediaEvent*>(wparam), false });
+        case mf::player::WM_APP_PLAYER_EVENT: {
+            _player->handle_event(mf::media_event { reinterpret_cast<IMFMediaEvent*>(wparam), false });
             return 0;
         }
     }
