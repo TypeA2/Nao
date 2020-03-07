@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ui_element.h"
+#include "com.h"
 
 #include <d2d1.h>
 #include <d2d1_1.h>
@@ -12,7 +13,7 @@ class direct2d_image_display : public ui_element {
     com_ptr<ID2D1Bitmap> _bitmap;
     com_ptr<ID2D1Effect> _effect;
 
-    float _ratio;
+    float _ratio {};
 
     public:
     explicit direct2d_image_display(ui_element* parent, char* data, const dimensions& dims);

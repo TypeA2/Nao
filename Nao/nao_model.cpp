@@ -132,6 +132,8 @@ void nao_model::fetch_preview(item_data* item) {
             lparam = new audio_player(_m_preview_provider->query<TAG_PCM>()->make_provider());
         } else if (tag & TAG_IMAGE) {
             lparam = _m_preview_provider->query<TAG_IMAGE>()->make_provider().release();
+        } else if (tag & TAG_AV) {
+            lparam = dynamic_cast<av_file_handler*>(_m_preview_provider.get());
         }
     } else {
         utils::coutln("no preview found");

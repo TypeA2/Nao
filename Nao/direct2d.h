@@ -3,6 +3,7 @@
 #include <d2d1.h>
 
 #include "utils.h"
+#include "com.h"
 
 class ui_element;
 

@@ -7,6 +7,7 @@
 #include <functional>
 
 #include "concepts.h"
+#include "com.h"
 
 class list_view : public virtual ui_element {
     public:

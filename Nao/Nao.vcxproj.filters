@@ -259,9 +259,6 @@
     <ClInclude Include="image_provider.h">
       <Filter>Header Files\AV\Image</Filter>
     </ClInclude>
-    <ClInclude Include="jpeg_handler.h">
-      <Filter>Header Files\Handlers</Filter>
-    </ClInclude>
     <ClInclude Include="wic_image_provider.h">
       <Filter>Header Files\AV\Image</Filter>
     </ClInclude>
@@ -276,6 +273,18 @@
     </ClInclude>
     <ClInclude Include="direct2d_image_display.h">
       <Filter>Header Files\UI\Generic</Filter>
+    </ClInclude>
+    <ClInclude Include="media_foundation_handler.h">
+      <Filter>Header Files\Handlers</Filter>
+    </ClInclude>
+    <ClInclude Include="mf.h">
+      <Filter>Header Files\Win32</Filter>
+    </ClInclude>
+    <ClInclude Include="com.h">
+      <Filter>Header Files\Win32</Filter>
+    </ClInclude>
+    <ClInclude Include="win32.h">
+      <Filter>Header Files\Win32</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -429,9 +438,6 @@
     <ClCompile Include="image_provider.cpp">
       <Filter>Source Files\AV\Image</Filter>
     </ClCompile>
-    <ClCompile Include="jpeg_handler.cpp">
-      <Filter>Source Files\Handlers</Filter>
-    </ClCompile>
     <ClCompile Include="wic_image_provider.cpp">
       <Filter>Source Files\AV\Image</Filter>
     </ClCompile>
@@ -446,6 +452,15 @@
     </ClCompile>
     <ClCompile Include="direct2d_image_display.cpp">
       <Filter>Source Files\UI\Generic</Filter>
+    </ClCompile>
+    <ClCompile Include="media_foundation_handler.cpp">
+      <Filter>Source Files\Handlers</Filter>
+    </ClCompile>
+    <ClCompile Include="mf.cpp">
+      <Filter>Source Files\Win32</Filter>
+    </ClCompile>
+    <ClCompile Include="Source.cpp">
+      <Filter>Source Files\Win32</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

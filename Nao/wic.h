@@ -3,6 +3,7 @@
 #include "frameworks.h"
 
 #include "binary_stream.h"
+#include "com.h"
 
 namespace wic {
     class DECLSPEC_UUID("8D8AE7A1-109B-4491-8CAB-3E059D5680E5") binary_stream_istream : public IStream {
@@ -33,7 +34,7 @@ namespace wic {
 
     class imaging_factory;
 
-    class bitmap_source : public com_interface<IWICBitmapSource> {
+    class bitmap_source : public com::com_interface<IWICBitmapSource> {
         public:
         using com_interface::com_interface;
 
@@ -49,7 +50,7 @@ namespace wic {
         using bitmap_source::bitmap_source;
     };
 
-    class bitmap_decoder : public com_interface<IWICBitmapDecoder >{
+    class bitmap_decoder : public com::com_interface<IWICBitmapDecoder >{
         binary_stream_istream _stream;
 
         public:
@@ -71,7 +72,7 @@ namespace wic {
         bool initialize(bitmap_source& source, const WICPixelFormatGUID& format) const;
     };
 
-    class imaging_factory : public com_interface<IWICImagingFactory> {
+    class imaging_factory : public com::com_interface<IWICImagingFactory> {
         public:
         explicit imaging_factory();
         explicit imaging_factory(const com_ptr<IWICImagingFactory>& ptr);

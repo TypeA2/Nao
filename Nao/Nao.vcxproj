@@ -126,7 +126,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LargeAddressAware>true</LargeAddressAware>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>comctl32.lib;uxtheme.lib;comsupp.lib;libogg.lib;libvorbis.lib;libvorbisfile.lib;portaudio_x64.lib;libsamplerate-0.lib;libopus.lib;libopusfile.lib;libFLAC.lib;libFLAC++.lib;Shlwapi.lib;d2d1.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;uxtheme.lib;comsupp.lib;libogg.lib;libvorbis.lib;libvorbisfile.lib;portaudio_x64.lib;libsamplerate-0.lib;libopus.lib;libopusfile.lib;libFLAC.lib;libFLAC++.lib;Shlwapi.lib;d2d1.lib;dxguid.lib;dxva2.lib;evr.lib;mf.lib;mfplat.lib;mfplay.lib;mfreadwrite.lib;mfuuid.lib;strmiids.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)lib\bin\$(Configuration)</AdditionalLibraryDirectories>
     </Link>
     <ResourceCompile>
@@ -179,7 +179,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <LargeAddressAware>true</LargeAddressAware>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>comctl32.lib;uxtheme.lib;comsupp.lib;libogg.lib;libvorbis.lib;libvorbisfile.lib;portaudio_x64.lib;libsamplerate-0.lib;libopus.lib;libopusfile.lib;libFLAC.lib;libFLAC++.lib;Shlwapi.lib;d2d1.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;uxtheme.lib;comsupp.lib;libogg.lib;libvorbis.lib;libvorbisfile.lib;portaudio_x64.lib;libsamplerate-0.lib;libopus.lib;libopusfile.lib;libFLAC.lib;libFLAC++.lib;Shlwapi.lib;d2d1.lib;dxguid.lib;dxva2.lib;evr.lib;mf.lib;mfplat.lib;mfplay.lib;mfreadwrite.lib;mfuuid.lib;strmiids.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)lib\bin\$(Configuration)</AdditionalLibraryDirectories>
     </Link>
     <ResourceCompile>
@@ -197,7 +197,10 @@
     <ClInclude Include="audio_player.h" />
     <ClInclude Include="auto_wrapper.h" />
     <ClInclude Include="binary_stream.h" />
+    <ClInclude Include="com.h" />
     <ClInclude Include="direct2d.h" />
+    <ClInclude Include="media_foundation_handler.h" />
+    <ClInclude Include="mf.h" />
     <ClInclude Include="wic.h" />
     <ClInclude Include="wic_handler.h" />
     <ClInclude Include="wic_image_provider.h" />
@@ -213,7 +216,6 @@
     <ClInclude Include="flac_handler.h" />
     <ClInclude Include="flac_pcm_provider.h" />
     <ClInclude Include="image_provider.h" />
-    <ClInclude Include="jpeg_handler.h" />
     <ClInclude Include="partial_file_streambuf.h" />
     <ClInclude Include="namespaces.h" />
     <ClInclude Include="icon.h" />
@@ -254,6 +256,7 @@
     <ClInclude Include="wav_pcm_provider.h" />
     <ClInclude Include="wem_handler.h" />
     <ClInclude Include="wem_pcm_provider.h" />
+    <ClInclude Include="win32.h" />
     <ClInclude Include="wsp_handler.h" />
     <ClInclude Include="wwriff.h" />
   </ItemGroup>
@@ -262,6 +265,9 @@
     <ClCompile Include="auto_wrapper.cpp" />
     <ClCompile Include="binary_stream.cpp" />
     <ClCompile Include="direct2d.cpp" />
+    <ClCompile Include="media_foundation_handler.cpp" />
+    <ClCompile Include="mf.cpp" />
+    <ClCompile Include="Source.cpp" />
     <ClCompile Include="wic.cpp" />
     <ClCompile Include="wic_handler.cpp" />
     <ClCompile Include="wic_image_provider.cpp" />
@@ -277,7 +283,6 @@
     <ClCompile Include="icon.cpp" />
     <ClCompile Include="image_provider.cpp" />
     <ClCompile Include="item_data.cpp" />
-    <ClCompile Include="jpeg_handler.cpp" />
     <ClCompile Include="label.cpp" />
     <ClCompile Include="left_window.cpp" />
     <ClCompile Include="line_edit.cpp" />

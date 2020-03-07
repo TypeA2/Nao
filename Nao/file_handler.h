@@ -6,10 +6,11 @@
 #include "image_provider.h"
 
 enum file_handler_tag : uintmax_t {
-    TAG_FILE  = 0b000,
-    TAG_ITEMS = 0b001,
-    TAG_PCM   = 0b010,
-    TAG_IMAGE = 0b100
+    TAG_FILE  = 0b0000,
+    TAG_ITEMS = 0b0001,
+    TAG_PCM   = 0b0010,
+    TAG_IMAGE = 0b0100,
+    TAG_AV    = 0b1000
 };
 
 file_handler_tag operator|(file_handler_tag left, file_handler_tag right) noexcept;
@@ -19,12 +20,14 @@ class file_handler;
 class pcm_file_handler;
 class item_file_handler;
 class image_file_handler;
+class av_file_handler;
 
 template <file_handler_tag> struct file_handler_type { };
 template <> struct file_handler_type<TAG_FILE>  { using type = file_handler;       };
 template <> struct file_handler_type<TAG_ITEMS> { using type = item_file_handler;  };
 template <> struct file_handler_type<TAG_PCM>   { using type = pcm_file_handler;   };
 template <> struct file_handler_type<TAG_IMAGE> { using type = image_file_handler; };
+template <> struct file_handler_type<TAG_AV>    { using type = av_file_handler;    };
 
 template <file_handler_tag tag>
 using file_handler_t = typename file_handler_type<tag>::type;
@@ -112,3 +115,11 @@ class image_file_handler : public virtual file_handler {
 };
 
 using image_file_handler_ptr = std::shared_ptr<image_file_handler>;
+
+class av_file_handler : public virtual file_handler {
+    public:
+    using file_handler::file_handler;
+    virtual ~av_file_handler() = default;
+};
+
+using av_file_handler_ptr = std::shared_ptr<av_file_handler>;

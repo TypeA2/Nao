@@ -7,6 +7,8 @@
 
 #include <chrono>
 
+#include "mf.h"
+
 class nao_controller;
 
 // Wrapper class for preview elements
@@ -124,5 +126,78 @@ class image_viewer_preview : public preview {
     void wm_size(int, int width, int height) override;
 
     private:
+    LRESULT _wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
+};
+
+
+
+// Plays video (and optionally audio)
+class video_player_preview : public preview, IMFAsyncCallback {
+    enum state {
+        closed,
+        open_pending,
+        ready,
+        closing,
+        started,
+        paused,
+        stopped
+    } _state = closed;
+
+    av_file_handler* _handler;
+
+    volatile uint32_t _refcount = 1;
+
+    com_ptr<IMFMediaSource> _source;
+    //com_ptr<IMFMediaSession> _session;
+    mf::media_session _session;
+    com_ptr<IMFVideoDisplayControl> _display;
+    std::unique_ptr<mf::binary_stream_imfbytestream> _bs;
+    HANDLE _close_event;
+
+    public:
+    video_player_preview(nao_view& view, av_file_handler* handler);
+    ~video_player_preview();
+
+    void pause();
+    void stop();
+    void repaint();
+    void resize(LONG width, LONG height);
+    void handle_event(IMFMediaEvent* ev);
+
+    void session_topology_status(const com_ptr<IMFMediaEvent>& event);
+    void presentation_ended(const com_ptr<IMFMediaEvent>& event);
+    void new_presentation(const com_ptr<IMFMediaEvent>& event);
+
+    void start_playback();
+    void play();
+
+    static constexpr UINT WM_APP_PLAYER_EVENT = WM_APP + 1;
+
+    protected:
+    bool wm_create(CREATESTRUCTW*) override;
+    void wm_paint() override;
+    void wm_size(int type, int width, int height) override;
+
+    private:
+    STDMETHODIMP QueryInterface(const IID& riid, void** ppvObject) override { static const QITAB qit[] { QITABENT(video_player_preview, IMFAsyncCallback), { } }; return QISearch(this, qit, riid, ppvObject); }
+    STDMETHODIMP_(ULONG) AddRef() override { return InterlockedIncrement(&_refcount); }
+    STDMETHODIMP_(ULONG) Release() override { uint32_t count = InterlockedDecrement(&_refcount); if (count == 0) { delete this; } return count; }
+    STDMETHODIMP GetParameters(DWORD* pdwFlags, DWORD* pdwQueue) override { return E_NOTIMPL; }
+    STDMETHODIMP Invoke(IMFAsyncResult* pAsyncResult) override;
+
+
+    bool _create_session();
+    bool _create_source(const istream_ptr& stream);
+    bool _create_topology(IMFPresentationDescriptor* pd, HWND hwnd, IMFTopology** topology);
+    bool _close_session();
+
+    void _add_branch(IMFTopology* topology, uint32_t index, HWND hwnd,
+        IMFPresentationDescriptor* pd);
+
+    void _create_sink_activate(IMFStreamDescriptor* sd, HWND hwnd, IMFActivate** activate);
+
+    void _add_source_node(IMFTopology* topology, IMFPresentationDescriptor* pd, IMFStreamDescriptor* sd, IMFTopologyNode** node);
+    void _add_output_node(IMFTopology* topology, IMFActivate* activate, DWORD id, IMFTopologyNode** node);
+
     LRESULT _wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 };

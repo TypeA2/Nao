@@ -19,7 +19,7 @@
 #define IDS_PROGRESS_BAR                110
 #define IDS_D2DWINDOW                   111
 #define IDS_IMAGE_PREVIEW               112
-#define IDS_IMAGE_VIEWER                113
+#define IDS_VIDEO_PLAYER_PREVIEW        113
 #define IDR_MAINFRAME                   128
 #define IDR_PACKED_CODEBOOKS_AOTUV_603  134
 #define IDC_TPL_LINK                    1010
