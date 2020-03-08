@@ -14,14 +14,14 @@
 #include <string>
 
 left_window::left_window(ui_element* parent, nao_view* view) : ui_element(parent), view(view) {
-    std::wstring class_name = load_wstring(IDS_LEFT_WINDOW);
+    std::wstring class_name = win32::load_wstring(IDS_LEFT_WINDOW);
 
     // Register class
     WNDCLASSEXW wcx {
         .cbSize        = sizeof(wcx),
         .style         = CS_HREDRAW | CS_VREDRAW,
         .lpfnWndProc   = wnd_proc_fwd,
-        .hInstance     = instance(),
+        .hInstance     = win32::instance(),
         .hCursor       = LoadCursorW(nullptr, IDC_ARROW),
         .hbrBackground = HBRUSH(COLOR_WINDOW + 1),
         .lpszClassName = class_name.c_str()

@@ -11,13 +11,13 @@ seekable_progress_bar::seekable_progress_bar(ui_element* parent, uintmax_t from,
     , _m_old_cursor { LoadCursorW(nullptr, IDC_ARROW) } {
     ASSERT(from < to);
 
-    std::wstring class_name = load_wstring(IDS_PROGRESS_BAR);
+    std::wstring class_name = win32::load_wstring(IDS_PROGRESS_BAR);
 
     register_once({
         .cbSize = sizeof(WNDCLASSEXW),
         .style = CS_HREDRAW | CS_VREDRAW,
         .lpfnWndProc = wnd_proc_fwd,
-        .hInstance = instance(),
+        .hInstance = win32::instance(),
         .hbrBackground = HBRUSH(COLOR_WINDOW + 1),
         .lpszClassName = class_name.c_str()
         });
@@ -152,7 +152,7 @@ void seekable_progress_bar::_draw_fill(HDC hdc, bool clear_nondrawn) const {
     Rectangle(hdc, 1, 1, drawn_width, utils::narrow<int>(height));
 
     if (clear_nondrawn) {
-        SelectObject(hdc, stock_object(NULL_PEN));
+        SelectObject(hdc, win32::stock_object(NULL_PEN));
         SelectObject(hdc, _m_background_brush);
         Rectangle(hdc, std::max(drawn_width, 1), 1, utils::narrow<int>(width), utils::narrow<int>(height));
     }

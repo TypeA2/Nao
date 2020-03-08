@@ -6,12 +6,12 @@
 
 direct2d_image_display::direct2d_image_display(ui_element* parent, char* data, const dimensions& dims)
     : ui_element(parent), _dims { dims } {
-    std::wstring class_name = load_wstring(IDS_D2DWINDOW);
+    std::wstring class_name = win32::load_wstring(IDS_D2DWINDOW);
     WNDCLASSEXW wcex {
         .cbSize = sizeof(WNDCLASSEXW),
         .style = CS_HREDRAW | CS_VREDRAW,
         .lpfnWndProc = wnd_proc_fwd,
-        .hInstance = instance(),
+        .hInstance = win32::instance(),
         .hCursor = LoadCursorW(nullptr, IDC_ARROW),
         .hbrBackground = nullptr,
         .lpszClassName = class_name.c_str()

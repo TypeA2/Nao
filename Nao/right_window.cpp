@@ -8,13 +8,13 @@
 #include "list_view.h"
 
 right_window::right_window(ui_element* parent, nao_view* view) : ui_element(parent) {
-    std::wstring class_name = load_wstring(IDS_RIGHT_WINDOW);
+    std::wstring class_name = win32::load_wstring(IDS_RIGHT_WINDOW);
 
     WNDCLASSEXW wcx {
         .cbSize        = sizeof(WNDCLASSEXW),
         .style         = CS_HREDRAW | CS_VREDRAW,
         .lpfnWndProc   = wnd_proc_fwd,
-        .hInstance     = instance(),
+        .hInstance     = win32::instance(),
         .hCursor       = LoadCursorW(nullptr, IDC_ARROW),
         .hbrBackground = HBRUSH(COLOR_WINDOW + 1),
         .lpszClassName = class_name.c_str()

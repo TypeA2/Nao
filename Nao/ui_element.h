@@ -9,22 +9,8 @@
 #include <functional>
 
 class ui_element : public std::enable_shared_from_this<ui_element> {
-    static HINSTANCE _instance;
-
     public:
     // Public utility functions
-    static std::wstring load_wstring(int resource);
-    static win32::icon load_icon(int resource);
-
-    static HGDIOBJ stock_object(int obj);
-
-    template <concepts::pointer T>
-    static T stock_object(int obj) {
-        return static_cast<T>(stock_object(obj));
-    }
-
-    static void set_instance(HINSTANCE instance);
-    static HINSTANCE instance();
 
     static HWND create_window(
         const std::wstring& class_name,

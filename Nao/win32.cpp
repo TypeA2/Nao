@@ -66,6 +66,40 @@ namespace win32 {
         }
     }
 
+    inline namespace resource {
+        HINSTANCE instance() {
+            static HINSTANCE inst;
+            if (!inst) {
+                inst = GetModuleHandleW(nullptr);
+            }
+
+            return inst;
+        }
+
+        std::wstring load_wstring(int resource) {
+            union {
+                LPCWSTR str;
+                WCHAR buf[sizeof(str) / sizeof(WCHAR)];
+            } pun { };
+
+            int length = LoadStringW(GetModuleHandleW(nullptr), resource, pun.buf, 0) + 1;
+            std::wstring str(length, L'\0');
+            wcsncpy_s(str.data(), length, pun.str, length - 1i64);
+
+            return str;
+        }
+
+        icon load_icon(int resource) {
+            return icon { LoadIconW(instance(), MAKEINTRESOURCEW(resource)), true };
+        }
+
+        HGDIOBJ stock_object(int obj) {
+            return GetStockObject(obj);
+        }
+
+
+    }
+
     namespace comm_ctrl {
         bool init(DWORD flags) {
             INITCOMMONCONTROLSEX picce {

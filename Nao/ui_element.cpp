@@ -3,41 +3,6 @@
 #include "utils.h"
 #include <unordered_set>
 
-HINSTANCE ui_element::_instance = nullptr;
-
-std::wstring ui_element::load_wstring(int resource) {
-    union {
-        LPCWSTR str;
-        WCHAR buf[sizeof(str) / sizeof(WCHAR)];
-    } pun { };
-
-    int length = LoadStringW(GetModuleHandleW(nullptr), resource, pun.buf, 0) + 1;
-    std::wstring str(length, L'\0');
-    wcsncpy_s(str.data(), length, pun.str, length - 1i64);
-
-    return str;
-}
-
-win32::icon ui_element::load_icon(int resource) {
-    return win32::icon(LoadIconW(instance(), MAKEINTRESOURCEW(resource)), true);
-}
-
-HGDIOBJ ui_element::stock_object(int obj) {
-    return GetStockObject(obj);
-}
-
-void ui_element::set_instance(HINSTANCE instance) {
-    _instance = instance;
-}
-
-HINSTANCE ui_element::instance() {
-    if (!_instance) {
-        _instance = GetModuleHandleW(nullptr);
-    }
-
-    return _instance;
-}
-
 HWND ui_element::create_window(const std::wstring& class_name, const std::wstring& window_name, DWORD style, const ::rectangle& at, ui_element* parent, void* param) {
     return create_window_ex(class_name, window_name, style, at, parent, 0, param);
 }
@@ -46,7 +11,7 @@ HWND ui_element::create_window_ex(const std::wstring& class_name, const std::wst
     return CreateWindowExW(ex_style, class_name.c_str(), window_name.c_str(), style,
         static_cast<int>(at.x), static_cast<int>(at.y),
         static_cast<int>(at.width), static_cast<int>(at.height),
-        parent ? parent->handle() : nullptr, nullptr, instance(), param);
+        parent ? parent->handle() : nullptr, nullptr, win32::instance(), param);
 }
 
 
@@ -203,13 +168,13 @@ void ui_element::set_handle(HWND handle) {
 }
 
 std::wstring ui_element::register_once(int id) {
-    std::wstring class_name = load_wstring(id);
+    std::wstring class_name = win32::load_wstring(id);
 
     return register_once({
         .cbSize = sizeof(WNDCLASSEXW),
         .style = CS_HREDRAW | CS_VREDRAW,
         .lpfnWndProc = wnd_proc_fwd,
-        .hInstance = instance(),
+        .hInstance = win32::instance(),
         .hCursor = LoadCursorW(nullptr, IDC_ARROW),
         .hbrBackground = HBRUSH(COLOR_WINDOW + 1),
         .lpszClassName = class_name.c_str()

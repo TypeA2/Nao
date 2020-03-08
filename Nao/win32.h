@@ -61,6 +61,25 @@ namespace win32 {
         };
     }
 
+    inline namespace resource {
+        HINSTANCE instance();
+
+
+
+        std::wstring load_wstring(int resource);
+
+        icon load_icon(int resource);
+
+
+
+        HGDIOBJ stock_object(int obj);
+
+        template <concepts::pointer T>
+        static T stock_object(int obj) {
+            return static_cast<T>(stock_object(obj));
+        }
+    }
+
     namespace comm_ctrl {
         bool init(DWORD flags =
             ICC_ANIMATE_CLASS | ICC_BAR_CLASSES | ICC_COOL_CLASSES |

@@ -15,7 +15,7 @@ list_view::list_view(ui_element* parent) : ui_element(parent), _m_image_list(nul
         WS_CHILD | WS_VISIBLE |
         LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS,
         0, 0, utils::narrow<int>(width), utils::narrow<int>(height),
-        parent->handle(), nullptr, instance(),
+        parent->handle(), nullptr, win32::instance(),
         nullptr);
 
     ASSERT(handle);

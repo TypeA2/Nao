@@ -17,20 +17,20 @@ main_window::main_window(nao_view* view) : ui_element(nullptr) {
     // CRT locale
     std::setlocale(LC_ALL, "en_US.utf8");
 
-    std::wstring window_class = load_wstring(IDC_NAO);
+    std::wstring window_class = win32::load_wstring(IDC_NAO);
     // Our window class instance
     WNDCLASSEXW wcex {
         .cbSize        = sizeof(WNDCLASSEXW),
         .style         = CS_HREDRAW | CS_VREDRAW,
         // Setting the WndProc to this uses the default WndProc for everything
         .lpfnWndProc   = wnd_proc_fwd,
-        .hInstance     = instance(),
-        .hIcon         = load_icon(IDI_NAO),
+        .hInstance     = win32::instance(),
+        .hIcon         = win32::load_icon(IDI_NAO),
         .hCursor       = LoadCursorW(nullptr, IDC_ARROW),
         .hbrBackground = HBRUSH(COLOR_WINDOW + 1),
         .lpszMenuName  = MAKEINTRESOURCEW(IDC_NAO),
         .lpszClassName = window_class.c_str(),
-        .hIconSm       = load_icon(IDI_NAO)
+        .hIconSm       = win32::load_icon(IDI_NAO)
     };
 
     ASSERT(RegisterClassExW(&wcex) != 0);
@@ -45,7 +45,7 @@ main_window::main_window(nao_view* view) : ui_element(nullptr) {
     // Create the main window
 
     HANDLE hwnd = create_window(
-        window_class, load_wstring(IDS_APP_TITLE), WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+        window_class, win32::load_wstring(IDS_APP_TITLE), WS_OVERLAPPEDWINDOW | WS_VISIBLE,
         { nx_pos, ny_pos, dims::base_window_width, dims::base_window_height },
         nullptr, new wnd_init(this, &main_window::_wnd_proc, view)
     );
@@ -133,7 +133,7 @@ void main_window::wm_command(WPARAM wparam, LPARAM lparam) {
                     return DefWindowProcW(hwnd, msg, wparam, lparam);
                     
                 };
-            DialogBoxW(instance(), MAKEINTRESOURCEW(IDD_ABOUTBOX), handle(), _about);
+            DialogBoxW(win32::instance(), MAKEINTRESOURCEW(IDD_ABOUTBOX), handle(), _about);
             SetFocus(handle());
             break;
         }
