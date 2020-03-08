@@ -2,7 +2,7 @@
 #include "utils.h"
 
 push_button::push_button(ui_element* parent) : ui_element(parent) {
-    HWND handle = create_window(WC_BUTTON, L"",
+    HWND handle = win32::create_window(WC_BUTTON, L"",
         WS_CHILD | WS_VISIBLE | WS_TABSTOP, { }, parent);
 
     ASSERT(handle);

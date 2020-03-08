@@ -8,6 +8,9 @@
 
 #include "concepts.h"
 
+class ui_element;
+struct rectangle;
+
 namespace win32 {
     // RAII-ing Win32 stuff
     inline namespace raii {
@@ -78,6 +81,17 @@ namespace win32 {
         static T stock_object(int obj) {
             return static_cast<T>(stock_object(obj));
         }
+    }
+
+    inline namespace ui {
+        HWND create_window(const std::wstring& class_name, const std::wstring& window_name,
+            DWORD style, const rectangle& at, ui_element* parent, void* param = nullptr);
+
+        HWND create_window_ex(const std::wstring& class_name, const std::wstring& window_name,
+            DWORD style, const rectangle& at, ui_element* parent, DWORD ex_style, void* param = nullptr);
+
+        std::wstring register_once(int class_id);
+        std::wstring register_once(const WNDCLASSEXW& wcx);
     }
 
     namespace comm_ctrl {

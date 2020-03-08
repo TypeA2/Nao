@@ -3,7 +3,7 @@
 #include "utils.h"
 
 slider::slider(ui_element* parent, int64_t min, int64_t max, bool vertical) : ui_element(parent) {
-    HWND handle = create_window(TRACKBAR_CLASSW, L"",
+    HWND handle = win32::create_window(TRACKBAR_CLASSW, L"",
         WS_CHILD | WS_VISIBLE | WS_TABSTOP | (vertical ? TBS_VERT : 0), { }, parent);
 
     ASSERT(handle);

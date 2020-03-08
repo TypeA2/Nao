@@ -44,7 +44,7 @@ main_window::main_window(nao_view* view) : ui_element(nullptr) {
 
     // Create the main window
 
-    HANDLE hwnd = create_window(
+    HANDLE hwnd = win32::create_window(
         window_class, win32::load_wstring(IDS_APP_TITLE), WS_OVERLAPPEDWINDOW | WS_VISIBLE,
         { nx_pos, ny_pos, dims::base_window_width, dims::base_window_height },
         nullptr, new wnd_init(this, &main_window::_wnd_proc, view)

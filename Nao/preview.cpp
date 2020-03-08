@@ -29,11 +29,11 @@ preview::preview(nao_view& view)
 list_view_preview::list_view_preview(nao_view& view, item_file_handler* handler) : preview(view)
     , _handler { handler } {
 
-    std::wstring class_name =  register_once(IDS_LIST_VIEW_PREVIEW);
+    std::wstring class_name =  win32::register_once(IDS_LIST_VIEW_PREVIEW);
 
     auto [width, height] = parent()->dims();
 
-    HWND handle = create_window(class_name, L"", WS_CHILD | WS_VISIBLE | SS_SUNKEN,
+    HWND handle = win32::create_window(class_name, L"", WS_CHILD | WS_VISIBLE | SS_SUNKEN,
         { 0, 0, width, height }, parent(),
         new wnd_init(this, &list_view_preview::_wnd_proc));
 
@@ -183,11 +183,11 @@ LRESULT list_view_preview::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM 
 audio_player_preview::audio_player_preview(nao_view& view, std::unique_ptr<audio_player> player)
     : preview(view), _player { std::move(player) } {
 
-    std::wstring class_name = register_once(IDS_AUDIO_PLAYER_PREVIEW);
+    std::wstring class_name = win32::register_once(IDS_AUDIO_PLAYER_PREVIEW);
 
     auto [width, height] = parent()->dims();
 
-    HWND handle = create_window(class_name, L"", WS_CHILD | WS_VISIBLE | SS_SUNKEN,
+    HWND handle = win32::create_window(class_name, L"", WS_CHILD | WS_VISIBLE | SS_SUNKEN,
         { 0, 0, width, height }, parent(),
         new wnd_init(this, &audio_player_preview::_wnd_proc));
 
@@ -475,11 +475,11 @@ void audio_player_preview::_set_progress(std::chrono::nanoseconds progress) {
 
 
 image_viewer_preview::image_viewer_preview(nao_view& view, std::unique_ptr<image_provider> image) : preview(view) {
-    std::wstring class_name = register_once(IDS_IMAGE_PREVIEW);
+    std::wstring class_name = win32::register_once(IDS_IMAGE_PREVIEW);
 
     auto [width, height] = parent()->dims();
 
-    HWND handle = create_window(class_name, L"", WS_CHILD | WS_VISIBLE | SS_SUNKEN,
+    HWND handle = win32::create_window(class_name, L"", WS_CHILD | WS_VISIBLE | SS_SUNKEN,
         { 0, 0, width, height }, parent(),
         new wnd_init(this, &image_viewer_preview::_wnd_proc, image.get()));
 
@@ -509,11 +509,11 @@ LRESULT image_viewer_preview::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPAR
 }
 
 video_player_preview::video_player_preview(nao_view& view, av_file_handler* handler) : preview(view) {
-    std::wstring class_name = register_once(IDS_VIDEO_PLAYER_PREVIEW);
+    std::wstring class_name = win32::register_once(IDS_VIDEO_PLAYER_PREVIEW);
 
     auto [width, height] = parent()->dims();
 
-    HWND handle = create_window(class_name, L"", WS_CHILD | WS_VISIBLE | SS_SUNKEN,
+    HWND handle = win32::create_window(class_name, L"", WS_CHILD | WS_VISIBLE | SS_SUNKEN,
         { 0, 0, width, height }, parent(),
         new wnd_init(this, &video_player_preview::_wnd_proc));
 

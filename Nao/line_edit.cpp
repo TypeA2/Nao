@@ -3,7 +3,7 @@
 #include "utils.h"
 
 line_edit::line_edit(ui_element* parent) : ui_element(parent) {
-    HWND handle = create_window_ex(WC_EDITW, L"", WS_CHILD | WS_VISIBLE,
+    HWND handle = win32::create_window_ex(WC_EDITW, L"", WS_CHILD | WS_VISIBLE,
         { }, parent, WS_EX_CLIENTEDGE);
 
     ASSERT(handle);

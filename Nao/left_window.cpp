@@ -32,7 +32,7 @@ left_window::left_window(ui_element* parent, nao_view* view) : ui_element(parent
     auto [width, height] = parent->dims();
     int64_t window_width = (width - dims::gutter_size) / 2;
 
-    HWND handle = create_window(class_name, L"", WS_CHILD | WS_VISIBLE | SS_SUNKEN,
+    HWND handle = win32::create_window(class_name, L"", WS_CHILD | WS_VISIBLE | SS_SUNKEN,
         { .x = 0, .y = 0, .width = window_width, .height = height },
         parent, new wnd_init(this, &left_window::_wnd_proc));
 

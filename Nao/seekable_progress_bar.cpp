@@ -13,7 +13,7 @@ seekable_progress_bar::seekable_progress_bar(ui_element* parent, uintmax_t from,
 
     std::wstring class_name = win32::load_wstring(IDS_PROGRESS_BAR);
 
-    register_once({
+    win32::register_once({
         .cbSize = sizeof(WNDCLASSEXW),
         .style = CS_HREDRAW | CS_VREDRAW,
         .lpfnWndProc = wnd_proc_fwd,
@@ -22,7 +22,7 @@ seekable_progress_bar::seekable_progress_bar(ui_element* parent, uintmax_t from,
         .lpszClassName = class_name.c_str()
         });
 
-    HWND handle = create_window(class_name, L"", WS_CHILD | WS_VISIBLE, { },
+    HWND handle = win32::create_window(class_name, L"", WS_CHILD | WS_VISIBLE, { },
         parent, new wnd_init(this, &seekable_progress_bar::_wnd_proc));
 
     ASSERT(handle);

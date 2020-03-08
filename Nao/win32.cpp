@@ -1,6 +1,10 @@
 #include "win32.h"
 
+#include <unordered_set>
+
 #include "utils.h"
+
+#include "ui_element.h"
 
 namespace win32 {
     inline namespace raii {
@@ -98,6 +102,54 @@ namespace win32 {
         }
 
 
+    }
+
+    inline namespace ui {
+        HWND create_window(const std::wstring& class_name, const std::wstring& window_name, DWORD style, const ::rectangle& at, ui_element* parent, void* param) {
+            return create_window_ex(class_name, window_name, style, at, parent, 0, param);
+        }
+
+        HWND create_window_ex(const std::wstring& class_name, const std::wstring& window_name, DWORD style, const ::rectangle& at, ui_element* parent, DWORD ex_style, void* param) {
+            return CreateWindowExW(
+                ex_style,
+                class_name.c_str(),
+                window_name.c_str(),
+                style,
+                utils::narrow<int>(at.x), utils::narrow<int>(at.y),
+                utils::narrow<int>(at.width), utils::narrow<int>(at.height),
+
+                parent ? parent->handle() : nullptr,
+                
+                nullptr,
+                instance(),
+                param);
+        }
+
+        std::wstring register_once(int class_id) {
+            std::wstring class_name = load_wstring(class_id);
+
+            return register_once({
+                .cbSize = sizeof(WNDCLASSEXW),
+                .style = CS_HREDRAW | CS_VREDRAW,
+                .lpfnWndProc = &ui_element::wnd_proc_fwd,
+                .hInstance = instance(),
+                .hCursor = LoadCursorW(nullptr, IDC_ARROW),
+                .hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1),
+                .lpszClassName = class_name.c_str()
+                });
+        }
+
+        std::wstring register_once(const WNDCLASSEXW& wcx) {
+            static std::unordered_set<std::wstring> registered_classes;
+
+            if (!registered_classes.contains(wcx.lpszClassName)) {
+                ASSERT(RegisterClassExW(&wcx) != 0);
+
+                registered_classes.insert(wcx.lpszClassName);
+            }
+
+            return wcx.lpszClassName;
+        }
     }
 
     namespace comm_ctrl {

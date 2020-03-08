@@ -10,20 +10,6 @@
 
 class ui_element : public std::enable_shared_from_this<ui_element> {
     public:
-    // Public utility functions
-
-    static HWND create_window(
-        const std::wstring& class_name,
-        const std::wstring& window_name,
-        DWORD style, const rectangle& at,
-        ui_element* parent, void* param = nullptr);
-
-    static HWND create_window_ex(
-        const std::wstring& class_name,
-        const std::wstring& window_name,
-        DWORD style, const rectangle& at,
-        ui_element* parent, DWORD ex_style, void* param = nullptr);
-
     explicit ui_element(ui_element* parent);
 
     ui_element() = delete;
@@ -118,8 +104,7 @@ class ui_element : public std::enable_shared_from_this<ui_element> {
     protected:
     void set_handle(HWND handle);
 
-    static std::wstring register_once(int id);
-    static std::wstring register_once(WNDCLASSEXW wcx);
+    
 
 
     // Overridable message handlers
@@ -156,6 +141,8 @@ class ui_element : public std::enable_shared_from_this<ui_element> {
 
     static LRESULT CALLBACK wnd_proc_fwd(HWND hwnd, UINT msg,
         WPARAM wparam, LPARAM lparam);
+
+    friend std::wstring win32::register_once(int);
 
     private:
     ui_element* _m_parent;

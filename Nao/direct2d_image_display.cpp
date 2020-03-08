@@ -17,11 +17,11 @@ direct2d_image_display::direct2d_image_display(ui_element* parent, char* data, c
         .lpszClassName = class_name.c_str()
     };
 
-    std::wstring classname = register_once(wcex);
+    std::wstring classname = win32::register_once(wcex);
 
     auto [width, height] = this->parent()->dims();
 
-    HWND handle = create_window(classname, L"", WS_CHILD | WS_VISIBLE | WS_OVERLAPPED,
+    HWND handle = win32::create_window(classname, L"", WS_CHILD | WS_VISIBLE | WS_OVERLAPPED,
         { 0, 0, width, height }, this->parent(),
         new wnd_init(this, &direct2d_image_display::_wnd_proc, data));
 

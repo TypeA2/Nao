@@ -3,7 +3,7 @@
 #include "utils.h"
 
 label::label(ui_element* parent, const std::string& text, label_type type) : ui_element(parent) {
-    HWND handle = create_window(WC_STATICW, L"", WS_CHILD | WS_VISIBLE | type, { }, parent);
+    HWND handle = win32::create_window(WC_STATICW, L"", WS_CHILD | WS_VISIBLE | type, { }, parent);
 
     ASSERT(handle);
 

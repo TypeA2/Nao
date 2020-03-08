@@ -3,18 +3,6 @@
 #include "utils.h"
 #include <unordered_set>
 
-HWND ui_element::create_window(const std::wstring& class_name, const std::wstring& window_name, DWORD style, const ::rectangle& at, ui_element* parent, void* param) {
-    return create_window_ex(class_name, window_name, style, at, parent, 0, param);
-}
-
-HWND ui_element::create_window_ex(const std::wstring& class_name, const std::wstring& window_name, DWORD style, const ::rectangle& at, ui_element* parent, DWORD ex_style, void* param) {
-    return CreateWindowExW(ex_style, class_name.c_str(), window_name.c_str(), style,
-        static_cast<int>(at.x), static_cast<int>(at.y),
-        static_cast<int>(at.width), static_cast<int>(at.height),
-        parent ? parent->handle() : nullptr, nullptr, win32::instance(), param);
-}
-
-
 ui_element::ui_element(ui_element* parent)
     : _m_parent { parent }
     , _m_handle { }
@@ -165,32 +153,6 @@ void ui_element::set_handle(HWND handle) {
     ASSERT(!_m_handle && handle);
 
     _m_handle = handle;
-}
-
-std::wstring ui_element::register_once(int id) {
-    std::wstring class_name = win32::load_wstring(id);
-
-    return register_once({
-        .cbSize = sizeof(WNDCLASSEXW),
-        .style = CS_HREDRAW | CS_VREDRAW,
-        .lpfnWndProc = wnd_proc_fwd,
-        .hInstance = win32::instance(),
-        .hCursor = LoadCursorW(nullptr, IDC_ARROW),
-        .hbrBackground = HBRUSH(COLOR_WINDOW + 1),
-        .lpszClassName = class_name.c_str()
-        });
-}
-
-std::wstring ui_element::register_once(WNDCLASSEXW wcx) {
-    static std::unordered_set<std::wstring> registered_classes;
-
-    if (!registered_classes.contains(wcx.lpszClassName)) {
-        ASSERT(RegisterClassExW(&wcx) != 0);
-
-        registered_classes.insert(wcx.lpszClassName);
-    }
-
-    return wcx.lpszClassName;
 }
 
 bool ui_element::wm_create(CREATESTRUCTW* create) {
