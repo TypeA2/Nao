@@ -30,73 +30,77 @@
 #define HASSERT(hr) ASSERT(SUCCEEDED(hr))
 
 namespace utils {
-    void cout(const char* str);
-    void cout(const wchar_t* wstr);
+    inline namespace logging {
+        void cout(const char* str);
+        void cout(const wchar_t* wstr);
 
-    template <typename T>
-    void cout(std::basic_string<T, std::char_traits<T>, std::allocator<T>> str) {
-        std::basic_stringstream<T, std::char_traits<T>, std::allocator<T>> ss;
-        ss << str;
-        cout(ss.str().c_str());
-    }
+        template <typename T>
+        void cout(std::basic_string<T, std::char_traits<T>, std::allocator<T>> str) {
+            std::basic_stringstream<T, std::char_traits<T>, std::allocator<T>> ss;
+            ss << str;
+            cout(ss.str().c_str());
+        }
 
-    template <typename T>
-    void cout(T&& v) {
-        std::wstringstream ss;
-        ss << v;
-        cout(ss.str().c_str());
-    }
+        template <typename T>
+        void cout(T&& v) {
+            std::wstringstream ss;
+            ss << v;
+            cout(ss.str().c_str());
+        }
 
-    template <typename T>
-    void coutln(T&& v) {
-        cout(std::forward<T>(v));
-        cout("\n");
-    }
+        template <typename T>
+        void coutln(T&& v) {
+            cout(std::forward<T>(v));
+            cout("\n");
+        }
 
-    template <typename T, typename... Args>
-    void cout(T&& v, Args&&... args) {
-        cout(std::forward<T>(v));
-        cout(" ");
+        template <typename T, typename... Args>
+        void cout(T&& v, Args&&... args) {
+            cout(std::forward<T>(v));
+            cout(" ");
 
-        if constexpr (sizeof...(Args) > 0) {
+            if constexpr (sizeof...(Args) > 0) {
+                cout(std::forward<Args>(args)...);
+            }
+        }
+
+        template <typename... Args>
+        void coutln(Args&&... args) {
             cout(std::forward<Args>(args)...);
+            cout("\n");
         }
     }
 
-    template <typename... Args>
-    void coutln(Args&&... args) {
-        cout(std::forward<Args>(args)...);
-        cout("\n");
+    inline namespace formatting {
+        std::string bytes(int64_t n);
+        std::wstring wbytes(int64_t n);
+
+        std::string bits(int64_t n);
+
+        std::string perc(double p);
+        std::wstring wperc(double p);
+
+        std::string utf8(const std::wstring& str);
+        std::wstring utf16(const std::string& str);
+
+        std::string format_hours(std::chrono::nanoseconds ns, bool ms = true);
+        std::string format_minutes(std::chrono::nanoseconds ns, bool ms = true);
     }
 
-    std::string bytes(int64_t n);
-    std::wstring wbytes(int64_t n);
+    inline namespace arithmetic {
+        static constexpr uint64_t make_quad(uint32_t low, uint32_t high) {
+            return (static_cast<uint64_t>(high) << 32) | low;
+        }
 
-    std::string bits(int64_t n);
+        template <std::integral Out, concepts::arithmetic In >
+        static constexpr Out narrow(In val) requires (std::numeric_limits<Out>::digits < std::numeric_limits<In>::digits) {
+            return static_cast<Out>(std::clamp<In>(val, std::numeric_limits<Out>::min(), std::numeric_limits<Out>::max()));
+        }
 
-    std::string perc(double p);
-    std::wstring wperc(double p);
-
-    std::string utf8(const std::wstring& str);
-    std::wstring utf16(const std::string& str);
-
-    static constexpr uint64_t make_quad(uint32_t low, uint32_t high) {
-        return (static_cast<uint64_t>(high) << 32) | low;
-    }
-
-    std::string format_hours(std::chrono::nanoseconds ns, bool ms = true);
-    std::string format_minutes(std::chrono::nanoseconds ns, bool ms = true);
-
-    bool same_path(const std::string& left, const std::string& right);
-
-    template <std::integral Out, concepts::arithmetic In >
-    Out narrow(In val) requires (std::numeric_limits<Out>::digits < std::numeric_limits<In>::digits) {
-        return static_cast<Out>(std::clamp<In>(val, std::numeric_limits<Out>::min(), std::numeric_limits<Out>::max()));
-    }
-
-    template <concepts::floating_point Out, concepts::arithmetic In>
-    Out narrow(In val) requires (std::numeric_limits<Out>::digits < std::numeric_limits<In>::digits) {
-        return static_cast<Out>(std::clamp<In>(val, -1i64 * (1i64 << std::numeric_limits<Out>::digits), (1i64 << std::numeric_limits<Out>::digits) - 1));
+        template <concepts::floating_point Out, concepts::arithmetic In>
+        static constexpr Out narrow(In val) requires (std::numeric_limits<Out>::digits < std::numeric_limits<In>::digits) {
+            return static_cast<Out>(std::clamp<In>(val, -1i64 * (1i64 << std::numeric_limits<Out>::digits), (1i64 << std::numeric_limits<Out>::digits) - 1));
+        }
     }
 }
 

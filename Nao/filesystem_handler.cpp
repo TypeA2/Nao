@@ -4,11 +4,9 @@
 
 #include "frameworks.h"
 
-#include <filesystem>
-
-#include "file_info.h"
 #include "utils.h"
-#include "drive_list.h"
+#include "filesystem_utils.h"
+
 #include "binary_stream.h"
 
 filesystem_handler::filesystem_handler(const std::string& path)
@@ -17,7 +15,7 @@ filesystem_handler::filesystem_handler(const std::string& path)
         // Devices list
 
         SHFILEINFOW finfo { };
-        for (auto [letter, name, icon, total, free] : drive_list()) {
+        for (auto [letter, name, icon, total, free] : fs_utils::drive_list()) {
 
             ASSERT(SHGetFileInfoW(utils::utf16({ letter, ':', '\\'}).c_str(), 0, &finfo, sizeof(finfo), SHGFI_TYPENAME));
 
@@ -41,7 +39,7 @@ filesystem_handler::filesystem_handler(const std::string& path)
 
         SHFILEINFOW finfo { };
         for (const std::filesystem::directory_entry& entry : std::filesystem::directory_iterator(path)) {
-            file_info info(entry);
+            fs_utils::file_info info(entry);
 
             if (info.invalid() || info.system() || info.hidden()) {
                 continue;
@@ -71,18 +69,17 @@ file_handler_tag filesystem_handler::tag() const {
     return TAG_ITEMS;
 }
 
-
 static file_handler_ptr create(const istream_ptr&, const std::string& path) {
     return std::make_shared<filesystem_handler>(path);
 }
 
 static bool supports(const istream_ptr&, const std::string& path) {
-    file_info finfo(path);
+    fs_utils::file_info finfo(path);
 
     return !finfo.invalid() && finfo.directory();
 }
 
-static size_t id = file_handler_factory::register_class({
+[[maybe_unused]] static size_t id = file_handler_factory::register_class({
     .tag = TAG_ITEMS,
     .creator = create,
     .supports = supports,

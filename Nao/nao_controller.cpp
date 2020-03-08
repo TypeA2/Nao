@@ -1,7 +1,8 @@
 #include "nao_controller.h"
 
-#include "file_info.h"
 #include "preview.h"
+
+#include "filesystem_utils.h"
 
 #include <filesystem>
 
@@ -214,12 +215,12 @@ void nao_controller::create_context_menu(item_data* data, POINT pt) {
             const auto& p = model.parent_provider();
 
             // If the parent provider points to an existing path
-            if (p != nullptr && !file_info(p->get_path()).invalid()) {
+            if (p != nullptr && !fs_utils::file_info(p->get_path()).invalid()) {
                 auto current_path = model.current_path();
                 const auto& d = p->data();
 
                 auto search_func = [&current_path](const item_data& data) {
-                    return utils::same_path(data.path(), current_path);
+                    return fs_utils::same_path(data.path(), current_path);
                 };
 
                 if (auto it = std::find_if(d.begin(), d.end(), search_func);
@@ -231,7 +232,7 @@ void nao_controller::create_context_menu(item_data* data, POINT pt) {
             }
         }
 
-        if (data && !file_info(data->path()).invalid()) {
+        if (data && !fs_utils::file_info(data->path()).invalid()) {
             // Exists on disk
             menu.push_back({
                 .text = "Show in explorer",
@@ -262,7 +263,7 @@ void nao_controller::create_context_menu_preview(item_data* data, POINT pt) {
         // Parent element is current provider, just do it manually if the preview exists on disk
 
         auto async_func = [this, pt] {
-            if (!file_info(model.preview_provider()->get_path()).invalid()) {
+            if (!fs_utils::file_info(model.preview_provider()->get_path()).invalid()) {
 
                 auto func = new std::function<void()>(
                     std::bind(&nao_view::execute_context_menu, &view, context_menu { {

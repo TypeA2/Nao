@@ -207,10 +207,8 @@
     <ClInclude Include="concepts.h" />
     <ClInclude Include="dimensions.h" />
     <ClInclude Include="direct2d_image_display.h" />
-    <ClInclude Include="drive_list.h" />
     <ClInclude Include="filesystem_handler.h" />
     <ClInclude Include="filesystem_utils.h" />
-    <ClInclude Include="file_info.h" />
     <ClInclude Include="flac_handler.h" />
     <ClInclude Include="flac_pcm_provider.h" />
     <ClInclude Include="image_provider.h" />
@@ -270,10 +268,8 @@
     <ClCompile Include="wic_image_provider.cpp" />
     <ClCompile Include="byte_array_streambuf.cpp" />
     <ClCompile Include="direct2d_image_display.cpp" />
-    <ClCompile Include="drive_list.cpp" />
     <ClCompile Include="filesystem_handler.cpp" />
     <ClCompile Include="filesystem_utils.cpp" />
-    <ClCompile Include="file_info.cpp" />
     <ClCompile Include="flac_handler.cpp" />
     <ClCompile Include="flac_pcm_provider.cpp" />
     <ClCompile Include="image_provider.cpp" />

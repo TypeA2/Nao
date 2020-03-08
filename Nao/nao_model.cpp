@@ -3,7 +3,6 @@
 #include "utils.h"
 #include "filesystem_utils.h"
 #include "file_handler_factory.h"
-#include "file_info.h"
 #include "binary_stream.h"
 #include "nao_controller.h"
 #include "steam_utils.h"
@@ -51,7 +50,7 @@ void nao_model::move_to(std::string path) {
                     const std::vector<item_data>& items = _m_preview_provider->query<TAG_ITEMS>()->data();
 
                     auto find_func = [&path](const item_data& data) {
-                        return utils::same_path(data.path(), path);
+                        return fs_utils::same_path(data.path(), path);
                     };
 
                     auto it = std::find_if(items.begin(), items.end(), find_func);
@@ -289,14 +288,14 @@ file_handler_ptr nao_model::_provider_for(std::string path, bool* result, file_h
         }
     }
 
-    file_info info(path);
+    fs_utils::file_info info(path);
 
     // If the path was not found
     if (!info) {
         // It may be a file that was hidden by the trailing separator
         if (path.back() == '\\') {
             path.pop_back();
-            info = file_info(path);
+            info = fs_utils::file_info(path);
         }
 
         // If not, it may be virtual

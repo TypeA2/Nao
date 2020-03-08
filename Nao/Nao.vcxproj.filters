@@ -124,9 +124,6 @@
     <ClInclude Include="item_data.h">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
-      <Filter>Header Files\Utils</Filter>
-    </ClInclude>
     <ClInclude Include="dimensions.h">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
@@ -144,12 +141,6 @@
     </ClInclude>
     <ClInclude Include="filesystem_utils.h">
       <Filter>Header Files\Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="file_info.h">
-      <Filter>Header Files\Win32</Filter>
-    </ClInclude>
-    <ClInclude Include="drive_list.h">
-      <Filter>Header Files\Win32</Filter>
     </ClInclude>
     <ClInclude Include="concepts.h">
       <Filter>Header Files\Utils</Filter>
@@ -277,6 +268,9 @@
     <ClInclude Include="win32.h">
       <Filter>Header Files\Win32</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files\Win32</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="nao.cpp">
@@ -323,12 +317,6 @@
     </ClCompile>
     <ClCompile Include="filesystem_utils.cpp">
       <Filter>Source Files\Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="file_info.cpp">
-      <Filter>Source Files\Win32</Filter>
-    </ClCompile>
-    <ClCompile Include="drive_list.cpp">
-      <Filter>Source Files\Win32</Filter>
     </ClCompile>
     <ClCompile Include="item_data.cpp">
       <Filter>Source Files\Utils</Filter>
