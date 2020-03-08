@@ -17,5 +17,4 @@ class push_button : public ui_element {
 
     void set_text(const std::string& text) const;
     void set_icon(const win32::icon& icon) const;
-    void set_font(HFONT font) const;
 };

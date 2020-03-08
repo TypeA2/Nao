@@ -15,7 +15,7 @@ class label : public ui_element {
     explicit label(ui_element* parent, const std::string& text = "", label_type type = LABEL_SIMPLE);
 
     // Use this label's text
-    dimensions text_extent_point(const std::string& str = std::string()) const override;
+    dimensions text_extent_point() const;
 
     void set_text(const std::string& text);
     const std::string& get_text() const;

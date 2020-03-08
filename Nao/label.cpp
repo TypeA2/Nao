@@ -8,17 +8,13 @@ label::label(ui_element* parent, const std::string& text, label_type type) : ui_
     ASSERT(handle);
 
     set_handle(handle);
-    ui_element::set_font(HFONT(GetStockObject(DEFAULT_GUI_FONT)));
+    set_font(HFONT(GetStockObject(DEFAULT_GUI_FONT)));
 
     set_text(text);
 }
 
-dimensions label::text_extent_point(const std::string& str) const {
-    if (str.empty()) {
-        return ui_element::text_extent_point(_m_text);
-    }
-
-    return ui_element::text_extent_point(str);
+dimensions label::text_extent_point() const {
+    return ui_element::text_extent_point(_m_text);
 }
 
 void label::set_text(const std::string& text) {

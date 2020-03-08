@@ -9,11 +9,17 @@
 #include <functional>
 
 class ui_element : public std::enable_shared_from_this<ui_element> {
+    using wnd_proc_func = std::function<LRESULT(HWND, UINT, WPARAM, LPARAM)>;
+
+    wnd_proc_func _wnd_proc;
+
+    ui_element* _parent = nullptr;
+    HWND _handle = nullptr;
+    bool _m_created = false;
+
     public:
+    ui_element() = default;
     explicit ui_element(ui_element* parent);
-
-    ui_element() = delete;
-
     virtual ~ui_element();
 
     // Call DestroyWindow on the window handle
@@ -23,40 +29,39 @@ class ui_element : public std::enable_shared_from_this<ui_element> {
     HWND handle() const;
     HDC device_context() const;
 
-    virtual dimensions text_extent_point(const std::string& str) const;
+    dimensions text_extent_point(const std::string& str) const;
 
-    virtual int64_t width() const;
-    virtual int64_t height() const;
+    int64_t width() const;
+    int64_t height() const;
 
-    virtual dimensions dims() const;
-    virtual coordinates coords() const;
-    virtual rectangle rect() const;
+    dimensions dims() const;
+    coordinates coords() const;
+    rectangle rect() const;
 
     // Move using SetWindowPos
-    virtual void move(const rectangle& rect);
+    void move(const rectangle& rect);
 
     // Move using DeferWindowPos, for multiple windows
-    virtual HDWP& move_dwp(HDWP& dwp, const rectangle& rect);
+    HDWP& move_dwp(HDWP& dwp, const rectangle& rect);
 
     // Set the window style
-    virtual void set_style(DWORD style, bool enable = true);
+    void set_style(DWORD style, bool enable = true);
 
     // Set an extended style
-    virtual void set_ex_style(DWORD style, bool enable = true);
+    void set_ex_style(DWORD style, bool enable = true);
 
     // Set window font
-    virtual void set_font(HFONT font) const;
+    void set_font(HFONT font) const;
 
     // Specifically enable or disable
-    virtual void set_enabled(bool enabled = true);
+    void set_enabled(bool enabled = true);
 
     // Set focus on a window
-    virtual void set_focus() const;
-
-    virtual void activate();
+    void set_focus() const;
+    void activate();
 
     // Manually send or post messages
-    virtual [[maybe_unused]] LRESULT send_message(UINT msg, WPARAM wparam = 0, LPARAM lparam = 0) const;
+    [[maybe_unused]] LRESULT send_message(UINT msg, WPARAM wparam = 0, LPARAM lparam = 0) const;
     template <concepts::pointer_or_integral W, concepts::pointer_or_integral L>
     [[maybe_unused]] LRESULT send_message(UINT msg, W wparam, L lparam) const {
         static_assert(sizeof(WPARAM) == sizeof(void*) && sizeof(LPARAM) == sizeof(void*));
@@ -78,10 +83,10 @@ class ui_element : public std::enable_shared_from_this<ui_element> {
         return send_message(msg, _wparam, _lparam);
     }
 
-    virtual bool post_message(UINT msg, WPARAM wparam, LPARAM lparam) const;
+    [[maybe_unused]] bool post_message(UINT msg, WPARAM wparam = 0, LPARAM lparam = 0) const;
 
     template <concepts::pointer_or_integral W, concepts::pointer_or_integral L>
-    bool post_message(UINT msg, W wparam, L lparam) const {
+    [[maybe_unused]] bool post_message(UINT msg, W wparam, L lparam) const {
         static_assert(sizeof(WPARAM) == sizeof(void*) && sizeof(LPARAM) == sizeof(void*));
 
         WPARAM _wparam;
@@ -104,9 +109,6 @@ class ui_element : public std::enable_shared_from_this<ui_element> {
     protected:
     void set_handle(HWND handle);
 
-    
-
-
     // Overridable message handlers
     virtual bool wm_create(CREATESTRUCTW* create);
     virtual void wm_destroy();
@@ -117,8 +119,7 @@ class ui_element : public std::enable_shared_from_this<ui_element> {
     /*
      * Overridable WndProc
      */
-    using wnd_proc_func = std::function<LRESULT(HWND, UINT, WPARAM, LPARAM)>;
-
+    
     // Struct passed as lparam to CreateWindow to automate setup
     struct wnd_init {
         ui_element* element;
@@ -143,14 +144,6 @@ class ui_element : public std::enable_shared_from_this<ui_element> {
         WPARAM wparam, LPARAM lparam);
 
     friend std::wstring win32::register_once(int);
-
-    private:
-    ui_element* _m_parent;
-    HWND _m_handle;
-
-    wnd_proc_func _m_wnd_proc;
-
-    bool _m_created;
 };
 
 class defer_window_pos {
