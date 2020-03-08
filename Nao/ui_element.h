@@ -2,22 +2,11 @@
 
 #include "frameworks.h"
 
-#include "icon.h"
-#include "concepts.h"
 #include "utils.h"
+#include "win32.h"
 
 #include <memory>
 #include <functional>
-
-enum nao_window_message : unsigned {
-    WM_FIRST = WM_USER + 1,
-
-    // Execute a function
-    // WPARAM: std::function<void()>*, `delete`d after use
-    WM_EXECUTE_FUNC,
-
-    WM_LAST
-};
 
 class ui_element : public std::enable_shared_from_this<ui_element> {
     static HINSTANCE _instance;
@@ -25,7 +14,7 @@ class ui_element : public std::enable_shared_from_this<ui_element> {
     public:
     // Public utility functions
     static std::wstring load_wstring(int resource);
-    static icon load_icon(int resource);
+    static win32::icon load_icon(int resource);
 
     static HGDIOBJ stock_object(int obj);
 

@@ -1,7 +1,7 @@
 #include "nao_model.h"
 #include "nao_controller.h"
 
-#include "auto_wrapper.h"
+#include "com.h"
 
 #include <CommCtrl.h>
 
@@ -14,8 +14,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     (void) lpCmdLine;
     (void) nShowCmd;
 
-    com_wrapper com;
-    comm_ctrl_wrapper comm_ctrl;
+    com::com_wrapper com;
+    ASSERT(win32::comm_ctrl::init());
 
     nao_controller controller;
 

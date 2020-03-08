@@ -11,8 +11,6 @@
 
 #include "nao_view.h"
 
-#include "dynamic_library.h"
-
 #include <string>
 
 left_window::left_window(ui_element* parent, nao_view* view) : ui_element(parent), view(view) {
@@ -61,7 +59,7 @@ bool left_window::wm_create(CREATESTRUCTW* create) {
     _m_path->set_read_only(true);
 
     // Button icons
-    dynamic_library shell32("shell32.dll");
+    win32::dynamic_library shell32("shell32.dll");
 
     _m_up = std::make_unique<push_button>(this, shell32.load_icon_scaled(16817, 16, 16));
 

@@ -18,8 +18,8 @@ std::wstring ui_element::load_wstring(int resource) {
     return str;
 }
 
-icon ui_element::load_icon(int resource) {
-    return icon(LoadIconW(instance(), MAKEINTRESOURCEW(resource)), true);
+win32::icon ui_element::load_icon(int resource) {
+    return win32::icon(LoadIconW(instance(), MAKEINTRESOURCEW(resource)), true);
 }
 
 HGDIOBJ ui_element::stock_object(int obj) {
@@ -271,18 +271,6 @@ ui_element::wnd_init::wnd_init(ui_element* element, const wnd_proc_func& proc, v
 LRESULT ui_element::wnd_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
     // Retrieve instance
     ui_element* _this = reinterpret_cast<ui_element*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
-
-    // Custom functions
-    switch (msg) {
-        case WM_EXECUTE_FUNC: {
-            auto func = reinterpret_cast<std::function<void()>*>(wparam);
-            (*func)();
-            delete func;
-            break;
-        }
-
-        default: break;
-    }
 
     if (_this) {
         // Predefined handlers

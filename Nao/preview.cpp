@@ -17,7 +17,6 @@
 #include "direct2d_image_display.h"
 
 #include "dimensions.h"
-#include "dynamic_library.h"
 
 #include <algorithm>
 
@@ -196,7 +195,7 @@ audio_player_preview::audio_player_preview(nao_view& view, std::unique_ptr<audio
 }
 
 bool audio_player_preview::wm_create(CREATESTRUCTW*) {
-    dynamic_library mmcndmgr("mmcndmgr.dll");
+    win32::dynamic_library mmcndmgr("mmcndmgr.dll");
 
     _play_icon = mmcndmgr.load_icon_scaled(30529, dims::play_button_size, dims::play_button_size);
     _pause_icon = mmcndmgr.load_icon_scaled(30531, dims::play_button_size, dims::play_button_size);
@@ -210,8 +209,6 @@ bool audio_player_preview::wm_create(CREATESTRUCTW*) {
     _duration_display = std::make_unique<label>(this, "", LABEL_RIGHT);
 
     _progress_bar = std::make_unique<seekable_progress_bar>(this, 0, 1000);
-
-    //_player = std::make_unique<audio_player>(handler->make_provider());
 
     int64_t volume = static_cast<int64_t>(round(_player->volume_log() * 100.));
     _volume_slider->set_position(volume);
@@ -283,12 +280,12 @@ bool audio_player_preview::wm_create(CREATESTRUCTW*) {
 
 void audio_player_preview::wm_size(int, int width, int height) {
     // Use 70% of width for full-width controls
-    long partial_width = static_cast<long>(width * 0.7);
-    long partial_offset = static_cast<long>(width * 0.15);
+    int64_t partial_width = static_cast<int64_t>(width * 0.7);
+    int64_t partial_offset = static_cast<int64_t>(width * 0.15);
 
-    long controls_height = 3 * dims::control_height + dims::play_button_size + dims::volume_slider_height + 6 * dims::gutter_size;
-    long info_offset = controls_height + 2 + (dims::control_height / 2) + dims::gutter_size;
-    long info_element_height = dims::control_height + dims::gutter_size;
+    int64_t controls_height = 3 * dims::control_height + dims::play_button_size + dims::volume_slider_height + 6 * dims::gutter_size;
+    int64_t info_offset = controls_height + 2 + (dims::control_height / 2) + dims::gutter_size;
+    int64_t info_element_height = dims::control_height + dims::gutter_size;
 
     defer_window_pos()
         .move(_progress_bar, {

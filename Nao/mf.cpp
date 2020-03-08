@@ -583,7 +583,6 @@ namespace mf {
         }
         
         event.object()->AddRef();
-        //(void) post_message(_hwnd, WM_APP_PLAYER_EVENT, event.object(), 0);
         PostMessageW(_hwnd, WM_APP_PLAYER_EVENT, WPARAM(event.object()), 0);
 
         return true;
@@ -597,11 +596,10 @@ namespace mf {
                 if (event.attributes().get_uint32(MF_EVENT_TOPOLOGY_STATUS) == MF_TOPOSTATUS_READY) {
                     _display = _session.display();
                     ASSERT(_session.start());
-                    //_state = started;
                 }
                 break;
             }
-            //case MEEndOfPresentation: _state = stopped; break;
+
             case MENewPresentation:   ASSERT(false);    break;
             default: break;
         }

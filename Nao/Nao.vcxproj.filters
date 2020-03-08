@@ -124,9 +124,6 @@
     <ClInclude Include="item_data.h">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
-    <ClInclude Include="auto_wrapper.h">
-      <Filter>Header Files\Utils</Filter>
-    </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
@@ -144,12 +141,6 @@
     </ClInclude>
     <ClInclude Include="ui_element.h">
       <Filter>Header Files\UI\Generic</Filter>
-    </ClInclude>
-    <ClInclude Include="dynamic_library.h">
-      <Filter>Header Files\Win32</Filter>
-    </ClInclude>
-    <ClInclude Include="icon.h">
-      <Filter>Header Files\Win32</Filter>
     </ClInclude>
     <ClInclude Include="filesystem_utils.h">
       <Filter>Header Files\Utils</Filter>
@@ -318,9 +309,6 @@
     <ClCompile Include="steam_utils.cpp">
       <Filter>Source Files\Utils</Filter>
     </ClCompile>
-    <ClCompile Include="auto_wrapper.cpp">
-      <Filter>Source Files\Utils</Filter>
-    </ClCompile>
     <ClCompile Include="push_button.cpp">
       <Filter>Source Files\UI\Generic</Filter>
     </ClCompile>
@@ -332,12 +320,6 @@
     </ClCompile>
     <ClCompile Include="ui_element.cpp">
       <Filter>Source Files\UI\Generic</Filter>
-    </ClCompile>
-    <ClCompile Include="dynamic_library.cpp">
-      <Filter>Source Files\Win32</Filter>
-    </ClCompile>
-    <ClCompile Include="icon.cpp">
-      <Filter>Source Files\Win32</Filter>
     </ClCompile>
     <ClCompile Include="filesystem_utils.cpp">
       <Filter>Source Files\Utils</Filter>
@@ -460,6 +442,9 @@
       <Filter>Source Files\Win32</Filter>
     </ClCompile>
     <ClCompile Include="win32.cpp">
+      <Filter>Source Files\Win32</Filter>
+    </ClCompile>
+    <ClCompile Include="com.cpp">
       <Filter>Source Files\Win32</Filter>
     </ClCompile>
   </ItemGroup>

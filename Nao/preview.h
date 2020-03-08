@@ -61,8 +61,8 @@ class seekable_progress_bar;
 
 // A preview which plays audio
 class audio_player_preview : public preview {
-    icon _play_icon;
-    icon _pause_icon;
+    win32::icon _play_icon;
+    win32::icon _pause_icon;
 
     std::unique_ptr<seekable_progress_bar> _progress_bar;
     std::unique_ptr<push_button> _toggle_button;

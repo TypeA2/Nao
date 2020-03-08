@@ -2,6 +2,8 @@
 
 #include <comip.h>
 
+#include <CommCtrl.h>
+
 template <typename Interface>
 using com_ptr = _com_ptr_t<_com_IIID<Interface, &__uuidof(Interface)>>;
 
@@ -21,4 +23,12 @@ namespace com {
 
         operator bool() const { return com_object; }
     };
+
+    inline namespace raii {
+        class com_wrapper {
+            public:
+            com_wrapper(DWORD flags = COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+            ~com_wrapper();
+        };
+    }
 }
