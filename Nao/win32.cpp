@@ -130,7 +130,6 @@ namespace win32 {
 
             return register_once({
                 .cbSize = sizeof(WNDCLASSEXW),
-                .style = CS_HREDRAW | CS_VREDRAW,
                 .lpfnWndProc = &ui_element::wnd_proc_fwd,
                 .hInstance = instance(),
                 .hCursor = LoadCursorW(nullptr, IDC_ARROW),

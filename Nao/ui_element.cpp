@@ -3,6 +3,14 @@
 #include "utils.h"
 #include <unordered_set>
 
+ui_element::ui_element(ui_element* parent, const std::wstring& classname, DWORD style, DWORD ex_style) {
+    _handle = win32::create_window_ex(classname, L"",
+        style, { }, parent, ex_style);
+
+    ASSERT(_handle);
+}
+
+
 ui_element::ui_element(ui_element* parent) : _parent { parent } {
 
 }
@@ -33,7 +41,7 @@ HDC ui_element::device_context() const {
 dimensions ui_element::text_extent_point(const std::string& str) const {
     std::wstring wide = utils::utf16(str);
     SIZE size;
-    ASSERT(GetTextExtentPoint32W(device_context(), wide.c_str(), utils::narrow<int>(wide.size()), &size));
+    ASSERT(GetTextExtentPoint32W(device_context(), wide.c_str(), utils::narrow<uint32_t>(wide.size()), &size));
 
     return { .width = size.cx, .height = size.cy };
 }

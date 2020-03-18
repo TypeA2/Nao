@@ -5,7 +5,7 @@
 #include <string>
 
 class push_button : public ui_element {
-    protected:
+    // Internally construct by this
     explicit push_button(ui_element* parent);
 
     public:

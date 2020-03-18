@@ -8,7 +8,7 @@
 #include <memory>
 #include <functional>
 
-class ui_element : public std::enable_shared_from_this<ui_element> {
+class ui_element {
     using wnd_proc_func = std::function<LRESULT(HWND, UINT, WPARAM, LPARAM)>;
 
     wnd_proc_func _wnd_proc;
@@ -18,6 +18,11 @@ class ui_element : public std::enable_shared_from_this<ui_element> {
     bool _m_created = false;
 
     public:
+    ui_element(ui_element* parent,
+        const std::wstring& classname,
+        DWORD style, DWORD ex_style = 0);
+
+
     ui_element() = default;
     explicit ui_element(ui_element* parent);
     virtual ~ui_element();

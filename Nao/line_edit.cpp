@@ -1,16 +1,12 @@
 #include "line_edit.h"
 
 #include "utils.h"
+#include "win32.h"
 
-line_edit::line_edit(ui_element* parent) : ui_element(parent) {
-    HWND handle = win32::create_window_ex(WC_EDITW, L"", WS_CHILD | WS_VISIBLE,
-        { }, parent, WS_EX_CLIENTEDGE);
+line_edit::line_edit(ui_element* parent)
+    : ui_element(parent, WC_EDITW, WS_CHILD | WS_VISIBLE, WS_EX_CLIENTEDGE) {
 
-    ASSERT(handle);
-
-    set_handle(handle);
-
-    ui_element::set_font(HFONT(GetStockObject(DEFAULT_GUI_FONT)));
+    set_font(win32::stock_object<HFONT>(DEFAULT_GUI_FONT));
 }
 
 line_edit::line_edit(ui_element* parent, const std::string& text) : line_edit(parent) {

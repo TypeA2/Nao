@@ -11,6 +11,8 @@ enum label_type {
 };
     
 class label : public ui_element {
+    std::string _text;
+
     public:
     explicit label(ui_element* parent, const std::string& text = "", label_type type = LABEL_SIMPLE);
 
@@ -18,9 +20,6 @@ class label : public ui_element {
     dimensions text_extent_point() const;
 
     void set_text(const std::string& text);
-    const std::string& get_text() const;
-
-    private:
-    std::string _m_text;
+    const std::string& text() const;
 };
 

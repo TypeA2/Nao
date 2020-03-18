@@ -3,6 +3,7 @@
 #include <istream>
 #include <mutex>
 #include <filesystem>
+#include <bit>
 
 #include "concepts.h"
 #include "utils.h"

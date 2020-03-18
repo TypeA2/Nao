@@ -2,17 +2,12 @@
 
 #include "utils.h"
 
-slider::slider(ui_element* parent, int64_t min, int64_t max, bool vertical) : ui_element(parent) {
-    HWND handle = win32::create_window(TRACKBAR_CLASSW, L"",
-        WS_CHILD | WS_VISIBLE | WS_TABSTOP | (vertical ? TBS_VERT : 0), { }, parent);
-
-    ASSERT(handle);
-
-    set_handle(handle);
+slider::slider(ui_element* parent, int64_t min, int64_t max, bool vertical)
+    : ui_element(parent, TRACKBAR_CLASSW, WS_CHILD | WS_VISIBLE | (vertical ? TBS_VERT : 0)) {
 
     static bool has_edited_class = false;
     if (!has_edited_class) {
-        SetClassLongPtrW(handle, GCLP_HBRBACKGROUND, COLOR_WINDOW + 1);
+        SetClassLongPtrW(handle(), GCLP_HBRBACKGROUND, COLOR_WINDOW + 1);
 
         has_edited_class = true;
     }
