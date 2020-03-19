@@ -5,7 +5,7 @@
 #include "direct2d.h"
 
 direct2d_image_display::direct2d_image_display(ui_element* parent, char* data, const dimensions& dims)
-    : ui_element(parent), _dims { dims } {
+    : ui_element(parent), _dims { dims }, _data { data } {
     std::wstring class_name = win32::load_wstring(IDS_D2DWINDOW);
     WNDCLASSEXW wcex {
         .cbSize = sizeof(WNDCLASSEXW),
@@ -22,15 +22,12 @@ direct2d_image_display::direct2d_image_display(ui_element* parent, char* data, c
     auto [width, height] = this->parent()->dims();
 
     HWND handle = win32::create_window(classname, L"", WS_CHILD | WS_VISIBLE | WS_OVERLAPPED,
-        { 0, 0, width, height }, this->parent(),
-        new wnd_init(this, &direct2d_image_display::_wnd_proc, data));
+        { 0, 0, width, height }, this->parent(), this);
 
     ASSERT(handle);
 }
 
-bool direct2d_image_display::wm_create(CREATESTRUCTW* create) {
-    char* data = static_cast<char*>(create->lpCreateParams);
-
+bool direct2d_image_display::wm_create(CREATESTRUCTW*) {
     _create_resources();
 
     auto props = D2D1::BitmapProperties(
@@ -38,7 +35,7 @@ bool direct2d_image_display::wm_create(CREATESTRUCTW* create) {
 
     HASSERT(_target->CreateBitmap(
         D2D1::SizeU(utils::narrow<UINT32>(_dims.width), utils::narrow<UINT32>(_dims.height)),
-        data, utils::narrow<UINT32>(_dims.width * 4i64), props, &_bitmap));
+        _data, utils::narrow<UINT32>(_dims.width * 4i64), props, &_bitmap));
     
     HASSERT(_device_context->CreateEffect(CLSID_D2D1Scale, &_effect));
     _effect->SetInput(0, _bitmap);
@@ -82,10 +79,6 @@ void direct2d_image_display::wm_size(int, int width, int height) {
     }
 
     _update_scaling();
-}
-
-LRESULT direct2d_image_display::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
-    return DefWindowProcW(hwnd, msg, wparam, lparam);
 }
 
 void direct2d_image_display::_create_resources() {

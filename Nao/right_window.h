@@ -5,6 +5,8 @@
 #include "preview.h"
 
 class right_window : public ui_element {
+    preview_ptr _m_preview;
+
     public:
     explicit right_window(ui_element* parent, nao_view* view);
     ~right_window() override = default;
@@ -15,9 +17,4 @@ class right_window : public ui_element {
 
     protected:
     void wm_size(int type, int width, int height) override;
-
-    private:
-    LRESULT _wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
-
-    preview_ptr _m_preview;
 };

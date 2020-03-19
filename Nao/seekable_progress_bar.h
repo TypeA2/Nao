@@ -21,9 +21,9 @@ class seekable_progress_bar : public ui_element {
     protected:
     void wm_paint() override;
 
-    private:
-    LRESULT _wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
+    LRESULT wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) override;
 
+    private:
     void _draw_fill(HDC hdc, bool clear_nondrawn = false) const;
 
     HPEN _m_background_pen;

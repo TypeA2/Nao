@@ -27,8 +27,7 @@ right_window::right_window(ui_element* parent, nao_view* view) : ui_element(pare
     int64_t window_width = (width - dims::gutter_size) / 2;
 
     HWND handle = win32::create_window(class_name, L"", WS_CHILD | WS_VISIBLE | SS_SUNKEN,
-        { window_width + dims::gutter_size, 0, window_width, height }, parent,
-        new wnd_init(this, &right_window::_wnd_proc, view));
+        { window_width + dims::gutter_size, 0, window_width, height }, parent, this);
 
     ASSERT(handle);
 }
@@ -52,10 +51,4 @@ void right_window::wm_size(int type, int width, int height) {
         defer_window_pos()
             .move(_m_preview, { 0, 0, width, height });
     }
-}
-
-LRESULT right_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
-    (void) this;
-
-    return DefWindowProcW(hwnd, msg, wparam, lparam);
 }

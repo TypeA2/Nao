@@ -15,17 +15,17 @@ class direct2d_image_display : public ui_element {
 
     float _ratio {};
 
+    char* _data;
+
     public:
     explicit direct2d_image_display(ui_element* parent, char* data, const dimensions& dims);
 
     protected:
-    bool wm_create(CREATESTRUCTW* create) override;
+    bool wm_create(CREATESTRUCTW*) override;
     void wm_paint() override;
     void wm_size(int type, int width, int height) override;
 
     private:
-    LRESULT _wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
-
     void _create_resources();
     void _free_resources() const;
 

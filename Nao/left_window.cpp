@@ -34,7 +34,7 @@ left_window::left_window(ui_element* parent, nao_view* view) : ui_element(parent
 
     HWND handle = win32::create_window(class_name, L"", WS_CHILD | WS_VISIBLE | SS_SUNKEN,
         { .x = 0, .y = 0, .width = window_width, .height = height },
-        parent, new wnd_init(this, &left_window::_wnd_proc));
+        parent, this);
 
     ASSERT(handle);
 }
@@ -89,7 +89,7 @@ void left_window::wm_size(int type, int width, int height) {
             dims::browse_button_width, dims::control_height + 2 });
 }
 
-LRESULT left_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
+LRESULT left_window::wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
     switch (msg) {
         case WM_NOTIFY: {
             NMHDR* nm = reinterpret_cast<NMHDR*>(lparam);

@@ -5,11 +5,10 @@
 
 ui_element::ui_element(ui_element* parent, const std::wstring& classname, DWORD style, DWORD ex_style) {
     _handle = win32::create_window_ex(classname, L"",
-        style, { }, parent, ex_style);
+        style, { }, parent, ex_style, this);
 
     ASSERT(_handle);
 }
-
 
 ui_element::ui_element(ui_element* parent) : _parent { parent } {
 
@@ -22,7 +21,6 @@ ui_element::~ui_element() {
 bool ui_element::destroy() {
     HWND handle = _handle;
     _handle = nullptr;
-    _m_created = false;
     return DestroyWindow(handle);
 }
 
@@ -161,11 +159,7 @@ void ui_element::set_handle(HWND handle) {
 }
 
 bool ui_element::wm_create(CREATESTRUCTW* create) {
-    if (_wnd_proc) {
-        return _wnd_proc(handle(), WM_CREATE, 0, LPARAM(create)) == 0;
-    }
-
-    return DefWindowProcW(handle(), WM_CREATE, 0, LPARAM(create)) == 0;
+    return wnd_proc(_handle, WM_CREATE, 0, LPARAM(create)) == 0;
 }
 
 void ui_element::wm_destroy() {
@@ -173,33 +167,25 @@ void ui_element::wm_destroy() {
 }
 
 void ui_element::wm_size(int type, int width, int height) {
-    if (_wnd_proc) {
-        _wnd_proc(handle(), WM_SIZE, type, MAKELPARAM(width, height));
-    } else {
-        DefWindowProcW(handle(), WM_SIZE, type, MAKELPARAM(width, height));
-    }
+    wnd_proc(_handle, WM_SIZE, type, MAKELPARAM(width, height));
 }
 
 void ui_element::wm_paint() {
     // API dislikes no painting being done
     PAINTSTRUCT ps;
-    HDC hdc = BeginPaint(handle(), &ps);
+    HDC hdc = BeginPaint(_handle, &ps);
     (void) hdc;
-    EndPaint(handle(), &ps);
+    EndPaint(_handle, &ps);
 }
 
 void ui_element::wm_command(WPARAM wparam, LPARAM lparam) {
-    if (_wnd_proc) {
-        _wnd_proc(handle(), WM_COMMAND, wparam, lparam);
-    } else {
-        DefWindowProcW(handle(), WM_COMMAND, wparam, lparam);
-    }
+    wnd_proc(_handle, WM_COMMAND, wparam, lparam);
 }
 
-ui_element::wnd_init::wnd_init(ui_element* element, const wnd_proc_func& proc, void* replacement)
-    : element(element), proc(proc), replacement(replacement){
-
+LRESULT ui_element::wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
+    return DefWindowProcW(hwnd, msg, wparam, lparam);
 }
+
 LRESULT ui_element::wnd_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
     // Retrieve instance
     ui_element* _this = reinterpret_cast<ui_element*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
@@ -212,7 +198,7 @@ LRESULT ui_element::wnd_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
                 return 0;
             
             case WM_SIZE:
-                _this->wm_size(int(wparam), LOWORD(lparam), HIWORD(lparam));
+                _this->wm_size(utils::narrow<unsigned int>(wparam), LOWORD(lparam), HIWORD(lparam));
                 return 0;
 
             case WM_PAINT:
@@ -227,44 +213,21 @@ LRESULT ui_element::wnd_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
         }
         
         // Custom callback is set
-        if (_this->_wnd_proc) {
-            return _this->_wnd_proc(hwnd, msg, wparam, lparam);
-        }
+        return _this->wnd_proc(hwnd, msg, wparam, lparam);
     }
 
-    // Some default handling if the instance is not yet set or not yet completed
-    if (!_this || !_this->_m_created) {
-        if (msg == WM_CREATE) {
-            CREATESTRUCTW* create = reinterpret_cast<CREATESTRUCTW*>(lparam);
-            wnd_init* init = static_cast<wnd_init*>(create->lpCreateParams);
+    if (msg == WM_CREATE) {
+        CREATESTRUCTW* create = reinterpret_cast<CREATESTRUCTW*>(lparam);
+        ui_element* element = static_cast<ui_element*>(create->lpCreateParams);
 
-            // Initialisation given
-            if (init) {
-                ui_element* element = init->element;
-                if (element) {
-                    // Set handle and `this` pointer
-                    element->set_handle(hwnd);
-                    SetWindowLongPtrW(hwnd, GWLP_USERDATA, LONG_PTR(element));
+        // Initialisation given
+        if (element) {
+            // Set handle and `this` pointer
+            element->set_handle(hwnd);
+            SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(element));
 
-                    // Set custom callback
-                    if (init->proc) {
-                        element->_wnd_proc = init->proc;
-                    }
-
-                    element->_m_created = true;
-                }
-
-                create->lpCreateParams = init->replacement;
-
-                delete init;
-
-                if (element) {
-                    // Should automatically forward
-                    return element->wm_create(create) ? 0 : -1;
-                }
-
-                // Call default
-            }
+            // Should automatically forward
+            return element->wm_create(create) ? 0 : -1;
         }
     }
     

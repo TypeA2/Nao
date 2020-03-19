@@ -9,13 +9,8 @@
 #include <functional>
 
 class ui_element {
-    using wnd_proc_func = std::function<LRESULT(HWND, UINT, WPARAM, LPARAM)>;
-
-    wnd_proc_func _wnd_proc;
-
     ui_element* _parent = nullptr;
     HWND _handle = nullptr;
-    bool _m_created = false;
 
     public:
     ui_element(ui_element* parent,
@@ -121,32 +116,11 @@ class ui_element {
     virtual void wm_paint();
     virtual void wm_command(WPARAM wparam, LPARAM lparam);
 
-    /*
-     * Overridable WndProc
-     */
-    
-    // Struct passed as lparam to CreateWindow to automate setup
-    struct wnd_init {
-        ui_element* element;
-        std::function<LRESULT(HWND, UINT, WPARAM, LPARAM)> proc;
-        void* replacement;
+    // Called after the previous wm_* functions
+    virtual LRESULT wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
-        wnd_init(ui_element* element, const wnd_proc_func& proc, void* replacement = nullptr);
-
-        // Shorthand to construct for a member function taking only the
-        // default arguments
-        template <std::derived_from<ui_element> T>
-        wnd_init(T* element, LRESULT(T::* proc)(HWND, UINT, WPARAM, LPARAM), void* replacement = nullptr) {
-
-            using namespace std::placeholders;
-            this->element = element;
-            this->proc = std::bind(proc, element, _1, _2, _3, _4);
-            this->replacement = replacement;
-        }
-    };
-
-    static LRESULT CALLBACK wnd_proc_fwd(HWND hwnd, UINT msg,
-        WPARAM wparam, LPARAM lparam);
+    static LRESULT CALLBACK
+        wnd_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
     friend std::wstring win32::register_once(int);
 };

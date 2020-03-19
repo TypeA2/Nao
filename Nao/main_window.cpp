@@ -13,7 +13,7 @@
 #include <clocale>
 #include <filesystem>
 
-main_window::main_window(nao_view* view) : ui_element(nullptr) {
+main_window::main_window(nao_view* view) : ui_element(nullptr), _view { view } {
     // CRT locale
     std::setlocale(LC_ALL, "en_US.utf8");
 
@@ -47,8 +47,7 @@ main_window::main_window(nao_view* view) : ui_element(nullptr) {
     HANDLE hwnd = win32::create_window(
         window_class, win32::load_wstring(IDS_APP_TITLE), WS_OVERLAPPEDWINDOW | WS_VISIBLE,
         { nx_pos, ny_pos, dims::base_window_width, dims::base_window_height },
-        nullptr, new wnd_init(this, &main_window::_wnd_proc, view)
-    );
+        nullptr, this);
 
     ASSERT(hwnd);
 }
@@ -62,8 +61,8 @@ right_window* main_window::right() const {
 }
 
 bool main_window::wm_create(CREATESTRUCTW* create) {
-    _m_left = std::make_unique<left_window>(this, static_cast<nao_view*>(create->lpCreateParams));
-    _m_right = std::make_unique<right_window>(this, static_cast<nao_view*>(create->lpCreateParams));
+    _m_left = std::make_unique<left_window>(this, _view);
+    _m_right = std::make_unique<right_window>(this, _view);
 
     return true;
 }
@@ -150,10 +149,4 @@ void main_window::wm_command(WPARAM wparam, LPARAM lparam) {
             utils::coutln("WM_COMMAND", LOWORD(wparam));
             DefWindowProcW(handle(), WM_COMMAND, wparam, lparam);
     }
-}
-
-LRESULT main_window::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
-    (void) this;
-
-    return DefWindowProcW(hwnd, msg, wparam, lparam);
 }

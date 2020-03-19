@@ -23,7 +23,7 @@ seekable_progress_bar::seekable_progress_bar(ui_element* parent, uintmax_t from,
         });
 
     HWND handle = win32::create_window(class_name, L"", WS_CHILD | WS_VISIBLE, { },
-        parent, new wnd_init(this, &seekable_progress_bar::_wnd_proc));
+        parent, this);
 
     ASSERT(handle);
 
@@ -70,7 +70,7 @@ void seekable_progress_bar::wm_paint() {
 }
 
 
-LRESULT seekable_progress_bar::_wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
+LRESULT seekable_progress_bar::wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
     switch (msg) {
         case WM_MOUSEMOVE: {
             coordinates at {
