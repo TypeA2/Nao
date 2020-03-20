@@ -10,6 +10,8 @@
 #include "com.h"
 
 class list_view : public virtual ui_element {
+    com_ptr<IImageList> _image_list;
+
     public:
     enum sort_arrow {
         NoArrow,
@@ -18,9 +20,9 @@ class list_view : public virtual ui_element {
     };
 
     enum column_alignment {
-        Left = LVCFMT_LEFT,
+        Left   = LVCFMT_LEFT,
         Center = LVCFMT_CENTER,
-        Right = LVCFMT_RIGHT
+        Right  = LVCFMT_RIGHT
     };
 
     explicit list_view(ui_element* parent);
@@ -69,8 +71,5 @@ class list_view : public virtual ui_element {
 
     void select(int64_t index) const;
     void select(void* data) const;
-
-    private:
-    com_ptr<IImageList> _m_image_list;
 };
 

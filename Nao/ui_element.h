@@ -13,13 +13,30 @@ class ui_element {
     HWND _handle = nullptr;
 
     public:
+    explicit ui_element(ui_element* parent);
+
+    // Create from a registered class
+    ui_element(ui_element* parent,
+        const std::wstring& classname,
+        const rectangle& rect, DWORD style, DWORD ex_style = 0);
+
     ui_element(ui_element* parent,
         const std::wstring& classname,
         DWORD style, DWORD ex_style = 0);
 
+    
+    // Register and create
+    ui_element(ui_element* parent,
+        const win32::wnd_class& wc,
+        DWORD style, DWORD ex_style = 0);
+
+    ui_element(ui_element* parent,
+        const win32::wnd_class& wc,
+        const rectangle& rect, DWORD style, DWORD ex_style = 0);
+
 
     ui_element() = default;
-    explicit ui_element(ui_element* parent);
+    
     virtual ~ui_element();
 
     // Call DestroyWindow on the window handle
@@ -27,7 +44,7 @@ class ui_element {
 
     ui_element* parent() const;
     HWND handle() const;
-    HDC device_context() const;
+    win32::device_context dc() const;
 
     dimensions text_extent_point(const std::string& str) const;
 
@@ -39,26 +56,29 @@ class ui_element {
     rectangle rect() const;
 
     // Move using SetWindowPos
-    void move(const rectangle& rect);
+    void move(const rectangle& rect) const;
 
     // Move using DeferWindowPos, for multiple windows
-    HDWP& move_dwp(HDWP& dwp, const rectangle& rect);
+    HDWP& move_dwp(HDWP& dwp, const rectangle& rect) const;
 
     // Set the window style
-    void set_style(DWORD style, bool enable = true);
+    void set_style(DWORD style, bool enable = true) const;
 
     // Set an extended style
-    void set_ex_style(DWORD style, bool enable = true);
+    void set_ex_style(DWORD style, bool enable = true) const;
 
     // Set window font
     void set_font(HFONT font) const;
 
     // Specifically enable or disable
-    void set_enabled(bool enabled = true);
+    void set_enabled(bool enabled = true) const;
 
     // Set focus on a window
     void set_focus() const;
-    void activate();
+    void activate() const;
+
+    // Redraw entire window
+    bool redraw(UINT flags) const;
 
     // Manually send or post messages
     [[maybe_unused]] LRESULT send_message(UINT msg, WPARAM wparam = 0, LPARAM lparam = 0) const;
@@ -123,6 +143,7 @@ class ui_element {
         wnd_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
     friend std::wstring win32::register_once(int);
+    friend win32::wnd_class::operator WNDCLASSEXW() const;
 };
 
 class defer_window_pos {

@@ -14,6 +14,41 @@ struct rectangle;
 namespace win32 {
     // RAII-ing Win32 stuff
     inline namespace raii {
+        // Generic object that can be DeleteObject'ed
+        template <typename T>
+        class object {
+            bool _release;
+
+            protected:
+            T obj = nullptr;
+
+            public:
+            object() = default;
+            explicit object(T handle, bool release = true) : _release { release }, obj { handle } { }
+            virtual ~object() {
+                if (obj && _release) {
+                    DeleteObject(obj);
+                }
+            }
+
+            T handle() const noexcept {
+                return obj;
+            }
+
+            operator T() const noexcept {
+                return obj;
+            }
+
+            template <concepts::pointer_or_integral P>
+            operator P() const noexcept {
+                if constexpr (concepts::pointer<P>) {
+                    return static_cast<P>(obj);
+                } else {
+                    return reinterpret_cast<P>(obj);
+                }
+            }
+        };
+
         class prop_variant {
             PROPVARIANT _prop;
 
@@ -24,8 +59,7 @@ namespace win32 {
             operator PROPVARIANT* () noexcept;
         };
 
-        class icon {
-            HICON _handle = nullptr;
+        class icon : public object<HICON> {
             bool _destroy = false;
 
             public:
@@ -37,20 +71,6 @@ namespace win32 {
 
             icon(icon&& other) noexcept;
             icon& operator=(icon&& other) noexcept;
-
-            ~icon();
-
-            operator HICON() const noexcept;
-            HICON handle() const noexcept;
-
-            template <concepts::pointer_or_integral T>
-            operator T() const noexcept {
-                if constexpr (concepts::pointer<T>) {
-                    return static_cast<T>(_handle);
-                } else {
-                    return reinterpret_cast<T>(_handle);
-                }
-            }
         };
 
         class dynamic_library {
@@ -62,6 +82,54 @@ namespace win32 {
 
             icon load_icon_scaled(int resource, int width, int height) const;
         };
+
+        class device_context : public object<HDC> {
+            HWND _hwnd;
+            bool _release;
+
+            public:
+            // RAII release, re-select at end of life
+            class temporary_release {
+                const device_context* _ctx;
+                HGDIOBJ _obj;
+
+                public:
+                temporary_release(const device_context* ctx, HGDIOBJ obj);
+                ~temporary_release();
+            };
+
+            explicit device_context(HWND hwnd, HDC hdc, bool release = true);
+            ~device_context();
+
+            template <typename T>
+            [[maybe_unused]] HGDIOBJ select(const object<T>& obj) const {
+                return SelectObject(this->obj, obj);
+            }
+
+            [[maybe_unused]] HGDIOBJ select(HGDIOBJ obj) const;
+
+            template <typename T>
+            [[nodiscard]] temporary_release temporary_select(const object<T>& obj) const {
+                return temporary_release { this, select(obj.handle()) };
+            }
+
+            [[nodiscard]] temporary_release temporary_select(HGDIOBJ obj) const;
+
+            void rectangle(const rectangle& rect) const;
+        };
+
+        class paint_struct : public device_context {
+            ui_element* _element;
+
+            PAINTSTRUCT _ps { };
+
+            public:
+            explicit paint_struct(ui_element* element);
+            ~paint_struct();
+        };
+
+        using pen = object<HPEN>;
+        using brush = object<HBRUSH>;
     }
 
     inline namespace resource {
@@ -84,6 +152,22 @@ namespace win32 {
     }
 
     inline namespace ui {
+
+        // Window creation parameters
+        struct wnd_class {
+            // Default params, from a resource ID
+            static wnd_class create(int resource_id);
+
+            std::wstring class_name;
+
+            DWORD style = 0;
+            HCURSOR cursor = LoadCursorW(nullptr, IDC_ARROW);
+            HBRUSH background = nullptr;
+
+            operator WNDCLASSEXW() const;
+            
+        };
+
         HWND create_window(const std::wstring& class_name, const std::wstring& window_name,
             DWORD style, const rectangle& at, ui_element* parent, void* param = nullptr);
 

@@ -3,15 +3,31 @@
 #include "utils.h"
 #include <unordered_set>
 
-ui_element::ui_element(ui_element* parent, const std::wstring& classname, DWORD style, DWORD ex_style) {
-    _handle = win32::create_window_ex(classname, L"",
-        style, { }, parent, ex_style, this);
+ui_element::ui_element(ui_element* parent) : _parent { parent } {
+
+}
+
+ui_element::ui_element(ui_element* parent, const std::wstring& classname, const rectangle& rect,
+    DWORD style, DWORD ex_style) : ui_element(parent) {
+
+    _handle = win32::create_window_ex(classname, L"", style, rect, parent, ex_style, this);
 
     ASSERT(_handle);
 }
 
-ui_element::ui_element(ui_element* parent) : _parent { parent } {
+ui_element::ui_element(ui_element* parent, const std::wstring& classname, DWORD style, DWORD ex_style)
+    : ui_element(parent, classname, { }, style, ex_style) {
+    
+}
 
+ui_element::ui_element(ui_element* parent, const win32::wnd_class& wc, const rectangle& rect, DWORD style, DWORD ex_style)
+    : ui_element(parent, register_once(wc), rect, style, ex_style) {
+
+}
+
+ui_element::ui_element(ui_element* parent, const win32::wnd_class& wc, DWORD style, DWORD ex_style)
+    : ui_element(parent, wc, { }, style, ex_style) {
+    
 }
 
 ui_element::~ui_element() {
@@ -32,14 +48,14 @@ HWND ui_element::handle() const {
     return _handle;
 }
 
-HDC ui_element::device_context() const {
-    return GetDC(_handle);
+win32::device_context ui_element::dc() const {
+    return win32::device_context { _handle, GetDC(_handle), true };
 }
 
 dimensions ui_element::text_extent_point(const std::string& str) const {
     std::wstring wide = utils::utf16(str);
     SIZE size;
-    ASSERT(GetTextExtentPoint32W(device_context(), wide.c_str(), utils::narrow<uint32_t>(wide.size()), &size));
+    ASSERT(GetTextExtentPoint32W(dc(), wide.c_str(), utils::narrow<uint32_t>(wide.size()), &size));
 
     return { .width = size.cx, .height = size.cy };
 }
@@ -49,7 +65,7 @@ int64_t ui_element::width() const {
     bool res = GetWindowRect(handle(), &rect);
     ASSERT(res);
 
-    return rect.right - rect.left;
+    return static_cast<int64_t>(rect.right) - rect.left;
 }
 
 int64_t ui_element::height() const {
@@ -57,7 +73,7 @@ int64_t ui_element::height() const {
     bool res = GetWindowRect(handle(), &rect);
     ASSERT(res);
 
-    return rect.bottom - rect.top;
+    return static_cast<int64_t>(rect.bottom) - rect.top;
 }
 
 coordinates ui_element::coords() const {
@@ -92,13 +108,13 @@ rectangle ui_element::rect() const {
     };
 }
 
-void ui_element::move(const rectangle& rect) {
+void ui_element::move(const rectangle& rect) const {
     SetWindowPos(handle(), nullptr,
         utils::narrow<int>(rect.x), utils::narrow<int>(rect.y),
         utils::narrow<int>(rect.width), utils::narrow<int>(rect.height), 0);
 }
 
-HDWP& ui_element::move_dwp(HDWP& dwp, const rectangle& rect) {
+HDWP& ui_element::move_dwp(HDWP& dwp, const rectangle& rect) const {
     dwp = DeferWindowPos(dwp, handle(), nullptr,
         utils::narrow<int>(rect.x), utils::narrow<int>(rect.y),
         utils::narrow<int>(rect.width), utils::narrow<int>(rect.height), 0);
@@ -106,7 +122,7 @@ HDWP& ui_element::move_dwp(HDWP& dwp, const rectangle& rect) {
     return dwp;
 }
 
-void ui_element::set_style(DWORD style, bool enable) {
+void ui_element::set_style(DWORD style, bool enable) const {
     DWORD old_style = static_cast<DWORD>(GetWindowLongPtrW(handle(), GWL_STYLE));
 
     // Don't re-apply style
@@ -117,7 +133,7 @@ void ui_element::set_style(DWORD style, bool enable) {
     }
 }
 
-void ui_element::set_ex_style(DWORD style, bool enable) {
+void ui_element::set_ex_style(DWORD style, bool enable) const {
     DWORD old_ex_style = utils::narrow<DWORD>(GetWindowLongPtrW(handle(), GWL_EXSTYLE));
 
     if (enable && !(old_ex_style & style)) {
@@ -132,7 +148,7 @@ void ui_element::set_font(HFONT font) const {
     send_message(WM_SETFONT, WPARAM(font), true);
 }
 
-void ui_element::set_enabled(bool enabled) {
+void ui_element::set_enabled(bool enabled) const {
     EnableWindow(handle(), enabled);
 }
 
@@ -140,9 +156,14 @@ void ui_element::set_focus() const {
     SetFocus(handle());
 }
 
-void ui_element::activate() {
+void ui_element::activate() const {
     SetActiveWindow(handle());
 }
+
+bool ui_element::redraw(UINT flags) const {
+    return RedrawWindow(_handle, nullptr, nullptr, flags) != 0;
+}
+
 
 LRESULT ui_element::send_message(UINT msg, WPARAM wparam, LPARAM lparam) const {
     return SendMessageW(handle(), msg, wparam, lparam);
@@ -172,10 +193,7 @@ void ui_element::wm_size(int type, int width, int height) {
 
 void ui_element::wm_paint() {
     // API dislikes no painting being done
-    PAINTSTRUCT ps;
-    HDC hdc = BeginPaint(_handle, &ps);
-    (void) hdc;
-    EndPaint(_handle, &ps);
+    win32::paint_struct { this };
 }
 
 void ui_element::wm_command(WPARAM wparam, LPARAM lparam) {

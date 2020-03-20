@@ -5,29 +5,9 @@
 #include "direct2d.h"
 
 direct2d_image_display::direct2d_image_display(ui_element* parent, char* data, const dimensions& dims)
-    : ui_element(parent), _dims { dims }, _data { data } {
-    std::wstring class_name = win32::load_wstring(IDS_D2DWINDOW);
-    WNDCLASSEXW wcex {
-        .cbSize = sizeof(WNDCLASSEXW),
-        .style = CS_HREDRAW | CS_VREDRAW,
-        .lpfnWndProc = wnd_proc_fwd,
-        .hInstance = win32::instance(),
-        .hCursor = LoadCursorW(nullptr, IDC_ARROW),
-        .hbrBackground = nullptr,
-        .lpszClassName = class_name.c_str()
-    };
+    : ui_element(parent, win32::wnd_class::create(IDS_D2DWINDOW), parent->dims().rect(), WS_CHILD | WS_VISIBLE | WS_OVERLAPPED)
+    , _dims { dims } {
 
-    std::wstring classname = win32::register_once(wcex);
-
-    auto [width, height] = this->parent()->dims();
-
-    HWND handle = win32::create_window(classname, L"", WS_CHILD | WS_VISIBLE | WS_OVERLAPPED,
-        { 0, 0, width, height }, this->parent(), this);
-
-    ASSERT(handle);
-}
-
-bool direct2d_image_display::wm_create(CREATESTRUCTW*) {
     _create_resources();
 
     auto props = D2D1::BitmapProperties(
@@ -35,26 +15,22 @@ bool direct2d_image_display::wm_create(CREATESTRUCTW*) {
 
     HASSERT(_target->CreateBitmap(
         D2D1::SizeU(utils::narrow<UINT32>(_dims.width), utils::narrow<UINT32>(_dims.height)),
-        _data, utils::narrow<UINT32>(_dims.width * 4i64), props, &_bitmap));
-    
+        data, utils::narrow<UINT32>(_dims.width * 4i64), props, &_bitmap));
+
     HASSERT(_device_context->CreateEffect(CLSID_D2D1Scale, &_effect));
     _effect->SetInput(0, _bitmap);
     _effect->SetValue(D2D1_SCALE_PROP_INTERPOLATION_MODE, D2D1_SCALE_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC);
 
     _update_scaling();
-
-    return true;
 }
 
 void direct2d_image_display::wm_paint() {
-    PAINTSTRUCT ps;
-    BeginPaint(handle(), &ps);
+    win32::paint_struct ps { this };
     _create_resources();
 
     _target->BeginDraw();
     _target->Clear(D2D1::ColorF(D2D1::ColorF::White));
     
-
     if (_bitmap) {
         int64_t width = this->width();
 
@@ -69,8 +45,6 @@ void direct2d_image_display::wm_paint() {
     if (hr == D2DERR_RECREATE_TARGET) {
         _free_resources();
     }
-
-    EndPaint(handle(), &ps);
 }
 
 void direct2d_image_display::wm_size(int, int width, int height) {

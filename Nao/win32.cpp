@@ -22,32 +22,18 @@ namespace win32 {
 
 
 
-        icon::icon(HICON handle, bool destroy) : _handle(handle), _destroy(destroy) { }
+        icon::icon(HICON handle, bool destroy) : object { handle }, _destroy(destroy) { }
 
-        icon::icon(icon&& other) noexcept : _handle(other._handle), _destroy(other._destroy) { }
+        icon::icon(icon&& other) noexcept : object { other.obj }, _destroy(other._destroy) { }
 
         icon& icon::operator=(icon&& other) noexcept {
-            _handle = other._handle;
+            obj = other.obj;
             _destroy = other._destroy;
 
-            other._handle = nullptr;
+            other.obj = nullptr;
             other._destroy = false;
 
             return *this;
-        }
-
-        icon::~icon() {
-            if (_destroy) {
-                DeleteObject(_handle);
-            }
-        }
-
-        icon::operator HICON() const noexcept {
-            return _handle;
-        }
-
-        HICON icon::handle() const noexcept {
-            return _handle;
         }
 
 
@@ -68,6 +54,51 @@ namespace win32 {
             HASSERT(LoadIconWithScaleDown(_handle, MAKEINTRESOURCEW(resource), width, height, &_icon));
             return icon(_icon, true);
         }
+
+
+
+        device_context::temporary_release::temporary_release(const device_context* ctx, HGDIOBJ obj) : _ctx { ctx }, _obj { obj } { }
+
+        device_context::temporary_release::~temporary_release() {
+            _ctx->select(_obj);
+        }
+
+
+        device_context::device_context(HWND hwnd, HDC hdc, bool release)
+            : object { hdc, false }, _hwnd { hwnd }, _release { release } { }
+
+        device_context::~device_context() {
+            if (_release) {
+                ReleaseDC(_hwnd, obj);
+            }
+        }
+
+        HGDIOBJ device_context::select(HGDIOBJ obj) const {
+            return SelectObject(this->obj, obj);
+        }
+
+        device_context::temporary_release device_context::temporary_select(HGDIOBJ obj) const {
+            return temporary_release { this, select(obj) };
+        }
+
+        void device_context::rectangle(const ::rectangle& rect) const {
+            Rectangle(obj,
+                utils::narrow<int>(rect.x),
+                utils::narrow<int>(rect.y),
+                utils::narrow<int>(rect.width),
+                utils::narrow<int>(rect.height));
+        }
+
+
+
+        paint_struct::paint_struct(ui_element* element)
+            : device_context { element->handle(), BeginPaint(element->handle(), &_ps), false }, _element { element } { }
+
+        paint_struct::~paint_struct() {
+            EndPaint(_element->handle(), &_ps);
+        }
+
+
     }
 
     inline namespace resource {
@@ -105,6 +136,24 @@ namespace win32 {
     }
 
     inline namespace ui {
+        wnd_class wnd_class::create(int resource_id) {
+            return {
+                .class_name = load_wstring(resource_id)
+            };
+        }
+
+        wnd_class::operator WNDCLASSEXW() const {
+            return {
+                .cbSize = sizeof(WNDCLASSEXW),
+                .style = style,
+                .lpfnWndProc = &ui_element::wnd_proc_fwd,
+                .hInstance = instance(),
+                .hCursor = cursor,
+                .hbrBackground = background,
+                .lpszClassName = class_name.c_str()
+            };
+        }
+
         HWND create_window(const std::wstring& class_name, const std::wstring& window_name, DWORD style, const ::rectangle& at, ui_element* parent, void* param) {
             return create_window_ex(class_name, window_name, style, at, parent, 0, param);
         }

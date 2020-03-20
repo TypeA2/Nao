@@ -160,3 +160,13 @@ namespace utils {
         }
     }
 }
+
+rectangle dimensions::rect() const {
+    return {
+        .x = 0,
+        .y = 0,
+        .width = width,
+        .height = height
+    };
+}
+

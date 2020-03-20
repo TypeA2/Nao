@@ -7,23 +7,13 @@
 #include <algorithm>
 #include <ranges>
 
-list_view::list_view(ui_element* parent) : ui_element(parent), _m_image_list(nullptr) {
-    auto [width, height] = parent->dims();
+static constexpr DWORD listview_style = WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS;
 
-    HWND handle = CreateWindowExW(0,
-        WC_LISTVIEWW, L"",
-        WS_CHILD | WS_VISIBLE |
-        LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS,
-        0, 0, utils::narrow<int>(width), utils::narrow<int>(height),
-        parent->handle(), nullptr, win32::instance(),
-        nullptr);
+list_view::list_view(ui_element* parent)
+    : ui_element(parent, WC_LISTVIEWW, parent->dims().rect(), listview_style) {
 
-    ASSERT(handle);
-
-    SetWindowTheme(handle, L"Explorer", nullptr);
-    ListView_SetExtendedListViewStyle(handle, LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
-
-    set_handle(handle);
+    SetWindowTheme(handle(), L"Explorer", nullptr);
+    ListView_SetExtendedListViewStyle(handle(), LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
 }
 
 list_view::list_view(ui_element* parent, const std::vector<std::string>& hdr, const com_ptr<IImageList>& list) : list_view(parent) {
@@ -36,7 +26,6 @@ list_view::list_view(ui_element* parent, const std::vector<std::string>& hdr, co
 }
 
 void list_view::set_columns(const std::vector<std::string>& hdr) const {
-    ASSERT(handle());
     ASSERT(!hdr.empty() && hdr.size() <= std::numeric_limits<int>::max());
 
     int columns = static_cast<int>(hdr.size());
@@ -66,9 +55,9 @@ void list_view::set_columns(const std::vector<std::string>& hdr) const {
 }
 
 void list_view::set_image_list(const com_ptr<IImageList>& list) {
-    ASSERT(list && handle());
+    ASSERT(list);
 
-    _m_image_list = list;
+    _image_list = list;
     
     ListView_SetImageList(handle(), list.GetInterfacePtr(), LVSIL_SMALL);
 }
@@ -99,7 +88,7 @@ void* list_view::get_item_data(int index) const {
 
 
 int list_view::add_item(const std::vector<std::string>& text, int image, void* extra) const {
-    ASSERT(_m_image_list);
+    ASSERT(_image_list);
     ASSERT(!text.empty());
     size_t header_size = Header_GetItemCount(ListView_GetHeader(handle()));
     ASSERT(text.size() == header_size);
@@ -176,9 +165,11 @@ void list_view::set_column_width(int64_t col, int64_t width, int64_t min) const 
 }
 
 void list_view::set_column_alignment(int64_t col, column_alignment align) const {
-    LVCOLUMNW c { };
-    c.mask = LVCF_FMT;
-    c.fmt = align;
+    LVCOLUMNW c {
+        .mask = LVCF_FMT,
+        .fmt = align
+    };
+
     ListView_SetColumn(handle(), col, &c);
 
     if (align != Left) {

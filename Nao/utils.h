@@ -109,14 +109,16 @@ struct coordinates {
     int64_t y;
 };
 
-struct dimensions {
-    int64_t width;
-    int64_t height;
-};
-
 struct rectangle {
     int64_t x;
     int64_t y;
     int64_t width;
     int64_t height;
+};
+
+struct dimensions {
+    int64_t width;
+    int64_t height;
+
+    rectangle rect() const;
 };

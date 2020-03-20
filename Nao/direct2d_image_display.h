@@ -13,15 +13,12 @@ class direct2d_image_display : public ui_element {
     com_ptr<ID2D1Bitmap> _bitmap;
     com_ptr<ID2D1Effect> _effect;
 
-    float _ratio {};
-
-    char* _data;
+    float _ratio = 0.f;
 
     public:
     explicit direct2d_image_display(ui_element* parent, char* data, const dimensions& dims);
 
     protected:
-    bool wm_create(CREATESTRUCTW*) override;
     void wm_paint() override;
     void wm_size(int type, int width, int height) override;
 
