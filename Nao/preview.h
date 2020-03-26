@@ -5,6 +5,15 @@
 
 #include "audio_player.h"
 
+#include "list_view.h"
+#include "seekable_progress_bar.h"
+#include "push_button.h"
+#include "slider.h"
+#include "label.h"
+#include "separator.h"
+#include "line_edit.h"
+#include "direct2d_image_display.h"
+
 #include <chrono>
 
 #include "mf.h"
@@ -14,24 +23,24 @@ class nao_controller;
 // Wrapper class for preview elements
 
 class preview : public ui_element {
-    public:
-    explicit preview(nao_view& view);
-    virtual ~preview() = default;
-
     protected:
     nao_view& view;
     nao_controller& controller;
+
+    public:
+    explicit preview(nao_view& view);
+    preview(nao_view& view, int string);
+
+    virtual ~preview() = default;
 };
 
 using preview_ptr = std::unique_ptr<preview>;
-
-class list_view;
 
 // Multi-use list-view preview
 class list_view_preview : public preview {
     item_file_handler* _handler;
 
-    std::unique_ptr<list_view> _list;
+    list_view _list;
 
     // Current column ordering of the view
     std::map<data_key, sort_order> _sort_order = nao_view::list_view_default_sort();
@@ -42,52 +51,43 @@ class list_view_preview : public preview {
 
     ~list_view_preview() override = default;
 
-    list_view* list() const;
+    list_view& list();
 
     protected:
-    bool wm_create(CREATESTRUCTW* create) override;
-    void wm_size(int type, int width, int height) override;
-
-    LRESULT wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) override;
+    void wm_size(int, const dimensions& dims) override;
+    void wm_notify(WPARAM, NMHDR* hdr) override;
 };
-
-class push_button;
-class slider;
-class label;
-class line_edit;
-class separator;
-class seekable_progress_bar;
 
 // A preview which plays audio
 class audio_player_preview : public preview {
+    std::unique_ptr<audio_player> _player;
+
+    seekable_progress_bar _progress_bar;
+    push_button _toggle_button;
+    slider _volume_slider;
+    label _volume_display;
+    label _progress_display;
+    label _duration_display;
+
+    separator _separator;
+
+    label _codec_label;
+    line_edit _codec_edit;
+
+    label _rate_label;
+    line_edit _rate_edit;
+
+    label _channels_label;
+    line_edit _channels_edit;
+
+    label _order_label;
+    line_edit _order_edit;
+
+    label _type_label;
+    line_edit _type_edit;
+
     win32::icon _play_icon;
     win32::icon _pause_icon;
-
-    std::unique_ptr<seekable_progress_bar> _progress_bar;
-    std::unique_ptr<push_button> _toggle_button;
-    std::unique_ptr<slider> _volume_slider;
-    std::unique_ptr<label> _volume_display;
-    std::unique_ptr<label> _progress_display;
-    std::unique_ptr<label> _duration_display;
-
-    std::unique_ptr<separator> _separator;
-
-    std::unique_ptr<label> _codec_label;
-    std::unique_ptr<line_edit> _codec_edit;
-
-    std::unique_ptr<label> _rate_label;
-    std::unique_ptr<line_edit> _rate_edit;
-
-    std::unique_ptr<label> _channels_label;
-    std::unique_ptr<line_edit> _channels_edit;
-
-    std::unique_ptr<label> _order_label;
-    std::unique_ptr<line_edit> _order_edit;
-
-    std::unique_ptr<label> _type_label;
-    std::unique_ptr<line_edit> _type_edit;
-
-    std::unique_ptr<audio_player> _player;
 
     std::chrono::nanoseconds _duration {};
 
@@ -102,8 +102,8 @@ class audio_player_preview : public preview {
     explicit audio_player_preview(nao_view& view, std::unique_ptr<audio_player> player);
 
     protected:
-    bool wm_create(CREATESTRUCTW* create) override;
-    void wm_size(int, int width, int height) override;
+    void wm_size(int, const dimensions& dims) override;
+    void wm_command(WORD id, WORD code, HWND target) override;
 
     LRESULT wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) override;
 
@@ -111,36 +111,30 @@ class audio_player_preview : public preview {
     void _set_progress(std::chrono::nanoseconds progress);
 };
 
-class direct2d_image_display;
-
 // Display a single image
 class image_viewer_preview : public preview {
-    std::unique_ptr<direct2d_image_display> _window;
-
-    std::unique_ptr<image_provider> _image;
+    direct2d_image_display _window;
 
     public:
-    explicit image_viewer_preview(nao_view& view, std::unique_ptr<image_provider> image);
+    explicit image_viewer_preview(nao_view& view, const image_data& data);
 
     protected:
-    bool wm_create(CREATESTRUCTW* create) override;
-    void wm_size(int, int width, int height) override;
+    void wm_size(int, const dimensions& dims) override;
 };
 
 
 
 // Plays video (and optionally audio)
-class video_player_preview : public preview{
-    std::unique_ptr<mf::player> _player;
+class video_player_preview : public preview {
+    mf::player _player;
 
     public:
     video_player_preview(nao_view& view, av_file_handler* handler);
     ~video_player_preview() = default;
 
     protected:
-    bool wm_create(CREATESTRUCTW*) override;
     void wm_paint() override;
-    void wm_size(int, int width, int height) override;
+    void wm_size(int, const dimensions& dims) override;
 
     LRESULT wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) override;
 };

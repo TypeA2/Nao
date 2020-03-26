@@ -3,7 +3,7 @@
 #include "utils.h"
 
 slider::slider(ui_element* parent, int64_t min, int64_t max, bool vertical)
-    : ui_element(parent, TRACKBAR_CLASSW, WS_CHILD | WS_VISIBLE | (vertical ? TBS_VERT : 0)) {
+    : ui_element(parent, TRACKBAR_CLASSW, win32::style | (vertical ? TBS_VERT : 0)) {
 
     static bool has_edited_class = false;
     if (!has_edited_class) {

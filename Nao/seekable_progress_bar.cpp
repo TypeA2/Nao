@@ -7,9 +7,7 @@
 #include <algorithm>
 
 seekable_progress_bar::seekable_progress_bar(ui_element* parent, uintmax_t from, uintmax_t to)
-    : ui_element(parent, win32::wnd_class {
-            .class_name = win32::load_wstring(IDS_PROGRESS_BAR),
-            .background = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1) }, WS_CHILD | WS_VISIBLE)
+    : ui_element(parent, IDS_PROGRESS_BAR, win32::style)
     , _min { from }, _max { to } {
 
     ASSERT(from < to);
@@ -27,81 +25,59 @@ void seekable_progress_bar::set_progress(uintmax_t value) {
 void seekable_progress_bar::wm_paint() {
     win32::paint_struct ps { this };
 
-    ps.select(_bg_pen);
-    ps.select(_bg_brush);
+    (void) ps.select(_bg_pen);
+    (void) ps.select(_bg_brush);
     ps.rectangle(dims().rect());
 
     _draw_fill(ps);
 }
 
+void seekable_progress_bar::wm_mousemove(WPARAM, const coordinates& at) {
+    double frac = _current / static_cast<double>(_max);
+    int64_t handle_pos = static_cast<int64_t>((width() - 1.) * frac);
 
-LRESULT seekable_progress_bar::wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
-    switch (msg) {
-        case WM_MOUSEMOVE: {
-            coordinates at {
-                .x = GET_X_LPARAM(lparam),
-                .y = GET_Y_LPARAM(lparam)
-            };
-            
-            double frac = _current / static_cast<double>(_max);
-            int64_t handle_pos = static_cast<int64_t>((width() - 1.) * frac);
-
-            if (handle_pos >= (at.x - handle_size) && handle_pos <= (at.x + handle_size)) {
-                SetCursor(_hand);
-            } else {
-                SetCursor(_norm);
-            }
-
-            if (_is_dragging) {
-                double pixel_frac = (at.x - 1.) / (width() - 1.);
-                double target = round(_max * pixel_frac);
-                if (target < _min) {
-                    target = static_cast<double>(_min);
-                } else if (target > _max) {
-                    target = static_cast<double>(_max);
-                }
-
-                _current = static_cast<uintmax_t>(target);
-
-                _draw_fill(dc(), true);
-
-                (void) parent()->send_message(PB_SEEK, _current);
-            }
-            break;
-        }
-
-        case WM_LBUTTONDOWN: {
-            coordinates at {
-                .x = GET_X_LPARAM(lparam),
-                .y = GET_Y_LPARAM(lparam)
-            };
-
-            double percent = _current / static_cast<double>(_max);
-            int64_t handle_pos = static_cast<int64_t>((width() - 1i64) * percent);
-
-            if (handle_pos >= (at.x - handle_size) && handle_pos <= (at.x + handle_size)) {
-                _is_dragging = true;
-                SetCapture(handle());
-
-                (void) parent()->send_message(PB_CAPTURE, _current);
-            }
-
-            break;
-        }
-
-        case WM_LBUTTONUP: {
-            if (_is_dragging) {
-                _is_dragging = false;
-                ReleaseCapture();
-
-                (void) parent()->send_message(PB_RELEASE, _current);
-            }
-        }
-
-        default: return DefWindowProcW(hwnd, msg, wparam, lparam);
+    if (handle_pos >= (at.x - handle_size) && handle_pos <= (at.x + handle_size)) {
+        SetCursor(_hand);
+    } else {
+        SetCursor(_norm);
     }
 
-    return 0;
+    if (_is_dragging) {
+        double pixel_frac = (at.x - 1.) / (width() - 1.);
+        double target = round(_max * pixel_frac);
+        if (target < _min) {
+            target = static_cast<double>(_min);
+        } else if (target > _max) {
+            target = static_cast<double>(_max);
+        }
+
+        _current = static_cast<uintmax_t>(target);
+
+        _draw_fill(this->dc(), true);
+
+        (void) parent()->send_message(PB_SEEK, _current);
+    }
+}
+
+void seekable_progress_bar::wm_lbuttondown(WPARAM, const coordinates& at) {
+    double percent = _current / static_cast<double>(_max);
+    int64_t handle_pos = static_cast<int64_t>(utils::narrow<double>(width() - 1i64) * percent);
+
+    if (handle_pos >= (at.x - handle_size) && handle_pos <= (at.x + handle_size)) {
+        _is_dragging = true;
+        SetCapture(handle());
+
+        (void) parent()->send_message(PB_CAPTURE, _current);
+    }
+}
+
+void seekable_progress_bar::wm_lbuttonup(WPARAM, const coordinates&) {
+    if (_is_dragging) {
+        _is_dragging = false;
+        ReleaseCapture();
+
+        (void) parent()->send_message(PB_RELEASE, _current);
+    }
 }
 
 void seekable_progress_bar::_draw_fill(const win32::device_context& dc, bool clear_nondrawn) const {
@@ -117,7 +93,7 @@ void seekable_progress_bar::_draw_fill(const win32::device_context& dc, bool cle
 
     if (clear_nondrawn) {
         dc.select(win32::stock_object(NULL_PEN));
-        dc.select(_bg_brush);
+        (void) dc.select(_bg_brush);
         dc.rectangle({ std::max(drawn_width, 1), 1, width, height });
     }
 }

@@ -3,7 +3,7 @@
 #include "utils.h"
 
 label::label(ui_element* parent, const std::string& text, label_type type)
-    : ui_element(parent, WC_STATICW, WS_CHILD | WS_VISIBLE | type) {
+    : ui_element(parent, WC_STATICW, win32::style | type) {
     set_font(win32::stock_object<HFONT>(DEFAULT_GUI_FONT));
 
     set_text(text);

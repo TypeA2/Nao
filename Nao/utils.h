@@ -93,8 +93,14 @@ namespace utils {
         }
 
         template <std::integral Out, concepts::arithmetic In >
-        static constexpr Out narrow(In val) requires (std::numeric_limits<Out>::digits < std::numeric_limits<In>::digits) {
-            return static_cast<Out>(std::clamp<In>(val, std::numeric_limits<Out>::min(), std::numeric_limits<Out>::max()));
+        static constexpr Out narrow(In val)
+        requires (std::numeric_limits<Out>::digits < std::numeric_limits<In>::digits) {
+            if constexpr (std::signed_integral<Out> && std::unsigned_integral<In>) {
+                // Clamp with 0
+                return static_cast<Out>(std::clamp<In>(val, 0, std::numeric_limits<Out>::max()));
+            } else {
+                return static_cast<Out>(std::clamp<In>(val, std::numeric_limits<Out>::min(), std::numeric_limits<Out>::max()));
+            }
         }
 
         template <concepts::floating_point Out, concepts::arithmetic In>
@@ -107,6 +113,8 @@ namespace utils {
 struct coordinates {
     int64_t x;
     int64_t y;
+
+    static coordinates from_lparam(LPARAM lparam);
 };
 
 struct rectangle {
@@ -121,4 +129,6 @@ struct dimensions {
     int64_t height;
 
     rectangle rect() const;
+
+    static dimensions from_lparam(LPARAM lparam);
 };

@@ -5,6 +5,7 @@
 #include "filesystem_utils.h"
 
 #include <filesystem>
+#include <clocale>
 
 list_view_row nao_controller::transform_data_to_row(const item_data& data) {
     return {
@@ -33,6 +34,9 @@ nao_controller::nao_controller()
                  CoUninitialize)
 
     , _m_main_threadid(GetCurrentThreadId()) {
+
+    // CRT locale
+    std::setlocale(LC_ALL, "en_US.utf8");
 
     view.setup();
 
@@ -352,7 +356,7 @@ void nao_controller::_refresh_preview(item_data* data, void* lparam) {
                 std::unique_ptr<audio_player>(reinterpret_cast<audio_player*>(lparam)));
         } else if (tag & TAG_IMAGE) {
             preview = std::make_unique<image_viewer_preview>(view,
-                std::unique_ptr<image_provider>(reinterpret_cast<image_provider*>(lparam)));
+                std::unique_ptr<image_provider>(reinterpret_cast<image_provider*>(lparam))->data());
         } else if (tag & TAG_AV) {
             preview = std::make_unique<video_player_preview>(view,
                 reinterpret_cast<av_file_handler*>(lparam));

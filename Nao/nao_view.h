@@ -53,8 +53,6 @@ class preview;
 class nao_view {
     std::unique_ptr<main_window> _main_window;
 
-    friend class preview;
-
     // Current column ordering of the view
     std::map<data_key, sort_order> _sort_order = list_view_default_sort();
     data_key _selected_column = KEY_NAME;
@@ -104,6 +102,9 @@ class nao_view {
     // Current selected column key
     data_key selected_column() const;
     sort_order selected_column_order() const;
+
+    // Paired controller
+    nao_controller& get_controller() const;
 
     protected:
     nao_controller& controller;

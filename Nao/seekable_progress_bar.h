@@ -34,8 +34,9 @@ class seekable_progress_bar : public ui_element {
 
     protected:
     void wm_paint() override;
-
-    LRESULT wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) override;
+    void wm_mousemove(WPARAM, const coordinates& at) override;
+    void wm_lbuttondown(WPARAM, const coordinates& at) override;
+    void wm_lbuttonup(WPARAM, const coordinates&) override;
 
     private:
     void _draw_fill(const win32::device_context& dc, bool clear_nondrawn = false) const;

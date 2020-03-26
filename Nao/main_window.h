@@ -1,28 +1,27 @@
 #pragma once
 
-#include "ui_element.h"
+#include "left_window.h"
+#include "right_window.h"
 
 #include <memory>
 
-class left_window;
-class right_window;
+
 class nao_view;
 
 class main_window : public ui_element {
-    std::unique_ptr<left_window> _m_left;
-    std::unique_ptr<right_window> _m_right;
-    nao_view* _view;
-
+    nao_view& _view;
+    left_window _left;
+    right_window _right;
+    
     public:
-    explicit main_window(nao_view* view);
+    explicit main_window(nao_view& view);
     ~main_window() override = default;
 
-    left_window* left() const;
-    right_window* right() const;
+    left_window& left();
+    right_window& right();
 
     protected:
-    bool wm_create(CREATESTRUCTW* create) override;
     void wm_destroy() override;
-    void wm_size(int type, int width, int height) override;
-    void wm_command(WPARAM wparam, LPARAM lparam) override;
+    void wm_size(int, const dimensions& dims) override;
+    void wm_command(WORD id, WORD code, HWND target) override;
 };

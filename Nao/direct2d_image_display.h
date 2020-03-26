@@ -16,11 +16,11 @@ class direct2d_image_display : public ui_element {
     float _ratio = 0.f;
 
     public:
-    explicit direct2d_image_display(ui_element* parent, char* data, const dimensions& dims);
+    explicit direct2d_image_display(ui_element* parent, const char* data, const dimensions& dims);
 
     protected:
     void wm_paint() override;
-    void wm_size(int type, int width, int height) override;
+    void wm_size(int, const dimensions& dims) override;
 
     private:
     void _create_resources();

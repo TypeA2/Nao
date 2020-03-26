@@ -7,6 +7,7 @@
 #include <string>
 
 #include "concepts.h"
+#include "utils.h"
 
 class ui_element;
 struct rectangle;
@@ -25,6 +26,8 @@ namespace win32 {
             public:
             object() = default;
             explicit object(T handle, bool release = true) : _release { release }, obj { handle } { }
+            explicit object(int id, bool release = true) : object(
+                reinterpret_cast<T>(static_cast<uintptr_t>(id)), release) { }
             virtual ~object() {
                 if (obj && _release) {
                     DeleteObject(obj);
@@ -80,7 +83,7 @@ namespace win32 {
             explicit dynamic_library(const std::string& name);
             ~dynamic_library();
 
-            icon load_icon_scaled(int resource, int width, int height) const;
+            icon load_icon_scaled(int resource, const dimensions& dims) const;
         };
 
         class device_context : public object<HDC> {
@@ -130,6 +133,8 @@ namespace win32 {
 
         using pen = object<HPEN>;
         using brush = object<HBRUSH>;
+        using cursor = object<HCURSOR>;
+        using menu = object<HMENU>;
     }
 
     inline namespace resource {
@@ -153,6 +158,8 @@ namespace win32 {
 
     inline namespace ui {
 
+        static constexpr DWORD style = WS_CHILD | WS_VISIBLE;
+
         // Window creation parameters
         struct wnd_class {
             // Default params, from a resource ID
@@ -161,8 +168,12 @@ namespace win32 {
             std::wstring class_name;
 
             DWORD style = 0;
-            HCURSOR cursor = LoadCursorW(nullptr, IDC_ARROW);
-            HBRUSH background = nullptr;
+            icon icon { nullptr };
+            cursor cursor { LoadCursorW(nullptr, IDC_ARROW) };
+            brush background { COLOR_WINDOW + 1 };
+            
+            std::wstring menu_name;
+            int menu_resource;
 
             operator WNDCLASSEXW() const;
             
@@ -173,6 +184,8 @@ namespace win32 {
 
         HWND create_window_ex(const std::wstring& class_name, const std::wstring& window_name,
             DWORD style, const rectangle& at, ui_element* parent, DWORD ex_style, void* param = nullptr);
+
+        bool registered(const std::wstring& classname);
 
         std::wstring register_once(int class_id);
         std::wstring register_once(const WNDCLASSEXW& wcx);

@@ -24,6 +24,12 @@ class ui_element {
         const std::wstring& classname,
         DWORD style, DWORD ex_style = 0);
 
+    // Win32 resource
+    ui_element(ui_element* parent, int string,
+        const rectangle& rect, DWORD style, DWORD ex_style = 0);
+
+    ui_element(ui_element* parent, int string,
+        DWORD style, DWORD ex_style = 0);
     
     // Register and create
     ui_element(ui_element* parent,
@@ -34,9 +40,11 @@ class ui_element {
         const win32::wnd_class& wc,
         const rectangle& rect, DWORD style, DWORD ex_style = 0);
 
-
     ui_element() = default;
-    
+
+    ui_element(const ui_element&) = delete;
+    ui_element& operator=(const ui_element&) noexcept = delete;
+
     virtual ~ui_element();
 
     // Call DestroyWindow on the window handle
@@ -72,6 +80,13 @@ class ui_element {
 
     // Specifically enable or disable
     void set_enabled(bool enabled = true) const;
+
+    // SetWindowText forward
+    void set_window_text(const std::wstring& text) const;
+
+    // Sets a control's text
+    void set_text(const std::string& text) const;
+    void set_text(const std::wstring& text) const;
 
     // Set focus on a window
     void set_focus() const;
@@ -130,11 +145,14 @@ class ui_element {
     void set_handle(HWND handle);
 
     // Overridable message handlers
-    virtual bool wm_create(CREATESTRUCTW* create);
     virtual void wm_destroy();
-    virtual void wm_size(int type, int width, int height);
+    virtual void wm_size(int type, const dimensions& dims);
     virtual void wm_paint();
-    virtual void wm_command(WPARAM wparam, LPARAM lparam);
+    virtual void wm_command(WORD id, WORD code, HWND target);
+    virtual void wm_notify(WPARAM id, NMHDR* hdr);
+    virtual void wm_mousemove(WPARAM which, const coordinates& at);
+    virtual void wm_lbuttondown(WPARAM which, const coordinates& at);
+    virtual void wm_lbuttonup(WPARAM which, const coordinates& at);
 
     // Called after the previous wm_* functions
     virtual LRESULT wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
@@ -152,22 +170,31 @@ class defer_window_pos {
         ui_element* ptr;
     };
 
-    std::vector<move_entry> _m_entries;
+    std::vector<move_entry> _entries;
 
     public:
     defer_window_pos() = default;
     ~defer_window_pos() {
-        HDWP dwp = BeginDeferWindowPos(static_cast<int>(_m_entries.size()));
+        HDWP dwp = BeginDeferWindowPos(utils::narrow<unsigned int>(_entries.size()));
 
-        for (const move_entry& entry : _m_entries) {
-            entry.ptr->move_dwp(dwp, entry.to);
+        for (const move_entry& entry : _entries) {
+            if (entry.ptr->handle() != nullptr) {
+                entry.ptr->move_dwp(dwp, entry.to);
+            }
         }
 
         EndDeferWindowPos(dwp);
     }
 
     defer_window_pos& move(ui_element* element, const rectangle& at) {
-        _m_entries.push_back({ .to = at, .ptr = element });
+        if (element) {
+            _entries.push_back({ .to = at, .ptr = element });
+        }
+        return *this;
+    }
+
+    defer_window_pos& move(ui_element& element, const rectangle& at) {
+        _entries.push_back({ .to = at, .ptr = &element });
         return *this;
     }
 

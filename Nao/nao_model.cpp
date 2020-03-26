@@ -132,7 +132,7 @@ void nao_model::fetch_preview(item_data* item) {
         } else if (tag & TAG_IMAGE) {
             lparam = _m_preview_provider->query<TAG_IMAGE>()->make_provider().release();
         } else if (tag & TAG_AV) {
-            lparam = dynamic_cast<av_file_handler*>(_m_preview_provider.get());
+            lparam = _m_preview_provider->query<TAG_AV>();
         }
     } else {
         utils::coutln("no preview found");

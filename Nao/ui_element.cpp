@@ -10,6 +10,11 @@ ui_element::ui_element(ui_element* parent) : _parent { parent } {
 ui_element::ui_element(ui_element* parent, const std::wstring& classname, const rectangle& rect,
     DWORD style, DWORD ex_style) : ui_element(parent) {
 
+    // Default if not registered
+    if (!win32::registered(classname)) {
+        win32::register_once(win32::wnd_class { .class_name = classname });
+    }
+
     _handle = win32::create_window_ex(classname, L"", style, rect, parent, ex_style, this);
 
     ASSERT(_handle);
@@ -20,13 +25,23 @@ ui_element::ui_element(ui_element* parent, const std::wstring& classname, DWORD 
     
 }
 
+ui_element::ui_element(ui_element* parent, int string, const rectangle& rect, DWORD style, DWORD ex_style)
+    : ui_element(parent, win32::load_wstring(string), rect, style, ex_style) {
+    
+}
+
+ui_element::ui_element(ui_element* parent, int string, DWORD style, DWORD ex_style)
+    : ui_element(parent, string, { }, style, ex_style) {
+    
+}
+
 ui_element::ui_element(ui_element* parent, const win32::wnd_class& wc, const rectangle& rect, DWORD style, DWORD ex_style)
     : ui_element(parent, register_once(wc), rect, style, ex_style) {
 
 }
 
 ui_element::ui_element(ui_element* parent, const win32::wnd_class& wc, DWORD style, DWORD ex_style)
-    : ui_element(parent, wc, { }, style, ex_style) {
+    : ui_element(parent, wc, rectangle { }, style, ex_style) {
     
 }
 
@@ -62,7 +77,7 @@ dimensions ui_element::text_extent_point(const std::string& str) const {
 
 int64_t ui_element::width() const {
     RECT rect;
-    bool res = GetWindowRect(handle(), &rect);
+    bool res = GetClientRect(handle(), &rect);
     ASSERT(res);
 
     return static_cast<int64_t>(rect.right) - rect.left;
@@ -70,7 +85,7 @@ int64_t ui_element::width() const {
 
 int64_t ui_element::height() const {
     RECT rect;
-    bool res = GetWindowRect(handle(), &rect);
+    bool res = GetClientRect(handle(), &rect);
     ASSERT(res);
 
     return static_cast<int64_t>(rect.bottom) - rect.top;
@@ -143,13 +158,24 @@ void ui_element::set_ex_style(DWORD style, bool enable) const {
     }
 }
 
-
 void ui_element::set_font(HFONT font) const {
     send_message(WM_SETFONT, WPARAM(font), true);
 }
 
 void ui_element::set_enabled(bool enabled) const {
     EnableWindow(handle(), enabled);
+}
+
+void ui_element::set_window_text(const std::wstring& text) const {
+    SetWindowTextW(_handle, text.c_str());
+}
+
+void ui_element::set_text(const std::string& text) const {
+    set_text(utils::utf16(text));
+}
+
+void ui_element::set_text(const std::wstring& text) const {
+    (void) send_message(WM_SETTEXT, 0, text.c_str());
 }
 
 void ui_element::set_focus() const {
@@ -163,7 +189,6 @@ void ui_element::activate() const {
 bool ui_element::redraw(UINT flags) const {
     return RedrawWindow(_handle, nullptr, nullptr, flags) != 0;
 }
-
 
 LRESULT ui_element::send_message(UINT msg, WPARAM wparam, LPARAM lparam) const {
     return SendMessageW(handle(), msg, wparam, lparam);
@@ -179,16 +204,13 @@ void ui_element::set_handle(HWND handle) {
     _handle = handle;
 }
 
-bool ui_element::wm_create(CREATESTRUCTW* create) {
-    return wnd_proc(_handle, WM_CREATE, 0, LPARAM(create)) == 0;
-}
-
 void ui_element::wm_destroy() {
-    DefWindowProcW(handle(), WM_DESTROY, 0, 0);
+    wnd_proc(_handle, WM_DESTROY, 0, 0);
 }
 
-void ui_element::wm_size(int type, int width, int height) {
-    wnd_proc(_handle, WM_SIZE, type, MAKELPARAM(width, height));
+void ui_element::wm_size(int type, const dimensions& dims) {
+    wnd_proc(_handle, WM_SIZE, type,
+        MAKELPARAM(utils::narrow<int>(dims.width), utils::narrow<int>(dims.height)));
 }
 
 void ui_element::wm_paint() {
@@ -196,8 +218,27 @@ void ui_element::wm_paint() {
     win32::paint_struct { this };
 }
 
-void ui_element::wm_command(WPARAM wparam, LPARAM lparam) {
-    wnd_proc(_handle, WM_COMMAND, wparam, lparam);
+void ui_element::wm_command(WORD id, WORD code, HWND target) {
+    wnd_proc(_handle, WM_COMMAND, MAKEWPARAM(id, code), reinterpret_cast<LPARAM>(target));
+}
+
+void ui_element::wm_notify(WPARAM id, NMHDR* hdr) {
+    wnd_proc(_handle, WM_NOTIFY, id, reinterpret_cast<LPARAM>(hdr));
+}
+
+void ui_element::wm_mousemove(WPARAM which, const coordinates& at) {
+    wnd_proc(_handle, WM_MOUSEMOVE, which,
+        MAKELPARAM(utils::narrow<int>(at.x), utils::narrow<int>(at.y)));
+}
+
+void ui_element::wm_lbuttondown(WPARAM which, const coordinates& at) {
+    wnd_proc(_handle, WM_LBUTTONDOWN, which,
+        MAKELPARAM(utils::narrow<int>(at.x), utils::narrow<int>(at.y)));
+}
+
+void ui_element::wm_lbuttonup(WPARAM which, const coordinates& at) {
+    wnd_proc(_handle, WM_LBUTTONUP, which,
+        MAKELPARAM(utils::narrow<int>(at.x), utils::narrow<int>(at.y)));
 }
 
 LRESULT ui_element::wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
@@ -216,7 +257,7 @@ LRESULT ui_element::wnd_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
                 return 0;
             
             case WM_SIZE:
-                _this->wm_size(utils::narrow<unsigned int>(wparam), LOWORD(lparam), HIWORD(lparam));
+                _this->wm_size(utils::narrow<int>(wparam), dimensions::from_lparam(lparam));
                 return 0;
 
             case WM_PAINT:
@@ -224,19 +265,35 @@ LRESULT ui_element::wnd_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
                 return 0;
 
             case WM_COMMAND:
-                _this->wm_command(wparam, lparam);
+                _this->wm_command(LOWORD(wparam), HIWORD(wparam), reinterpret_cast<HWND>(lparam));
+                return 0;
+
+            case WM_NOTIFY:
+                _this->wm_notify(wparam, reinterpret_cast<NMHDR*>(lparam));
+                return 0;
+
+            case WM_MOUSEMOVE:
+                _this->wm_mousemove(wparam, coordinates::from_lparam(lparam));
+                return 0;
+
+            case WM_LBUTTONDOWN:
+                _this->wm_lbuttondown(wparam, coordinates::from_lparam(lparam));
+                return 0;
+
+            case WM_LBUTTONUP:
+                _this->wm_lbuttonup(wparam, coordinates::from_lparam(lparam));
                 return 0;
 
             default: break;
         }
         
-        // Custom callback is set
+        // Custom callback
         return _this->wnd_proc(hwnd, msg, wparam, lparam);
     }
 
     if (msg == WM_CREATE) {
-        CREATESTRUCTW* create = reinterpret_cast<CREATESTRUCTW*>(lparam);
-        ui_element* element = static_cast<ui_element*>(create->lpCreateParams);
+        CREATESTRUCTW* cs = reinterpret_cast<CREATESTRUCTW*>(lparam);
+        auto element = static_cast<ui_element*>(cs->lpCreateParams);
 
         // Initialisation given
         if (element) {
@@ -244,8 +301,7 @@ LRESULT ui_element::wnd_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
             element->set_handle(hwnd);
             SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(element));
 
-            // Should automatically forward
-            return element->wm_create(create) ? 0 : -1;
+            return 0;
         }
     }
     

@@ -1,31 +1,31 @@
 #pragma once
 
-#include "ui_element.h"
+#include "list_view.h"
+#include "push_button.h"
+#include "line_edit.h"
 
-class list_view;
-class line_edit;
-class push_button;
 class nao_view;
 
 class left_window : public ui_element {
-    std::unique_ptr<list_view> _m_list;
-    std::unique_ptr<push_button> _m_up;
-    std::unique_ptr<push_button> _m_refresh;
-    std::unique_ptr<push_button> _m_browse;
-    std::unique_ptr<line_edit> _m_path;
+    nao_view& _view;
+
+    list_view _list;
+    push_button _up;
+    push_button _refresh;
+    push_button _browse;
+    line_edit _path;
 
     public:
-    explicit left_window(ui_element* parent, nao_view* view);
+    explicit left_window(ui_element* parent, nao_view& view);
     ~left_window() override = default;
 
-    line_edit* path() const;
-    push_button* view_up() const;
-    list_view* list() const;
+    line_edit& path();
+    push_button& view_up();
+    list_view& list();
 
     protected:
-    bool wm_create(CREATESTRUCTW* create) override;
-    void wm_size(int type, int width, int height) override;
-    LRESULT wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) override;
+    void wm_size(int, const dimensions& dims) override;
+    void wm_command(WORD, WORD, HWND target) override;
+    void wm_notify(WPARAM, NMHDR* nm) override;
 
-    nao_view* view;
 };

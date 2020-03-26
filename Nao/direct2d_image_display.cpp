@@ -4,8 +4,8 @@
 
 #include "direct2d.h"
 
-direct2d_image_display::direct2d_image_display(ui_element* parent, char* data, const dimensions& dims)
-    : ui_element(parent, win32::wnd_class::create(IDS_D2DWINDOW), parent->dims().rect(), WS_CHILD | WS_VISIBLE | WS_OVERLAPPED)
+direct2d_image_display::direct2d_image_display(ui_element* parent, const char* data, const dimensions& dims)
+    : ui_element(parent, IDS_D2DWINDOW, parent->dims().rect(), win32::style | WS_OVERLAPPED)
     , _dims { dims } {
 
     _create_resources();
@@ -47,9 +47,9 @@ void direct2d_image_display::wm_paint() {
     }
 }
 
-void direct2d_image_display::wm_size(int, int width, int height) {
+void direct2d_image_display::wm_size(int, const dimensions& dims) {
     if (_target) {
-        _target->Resize(D2D1::SizeU(width, height));
+        _target->Resize(D2D1::SizeU(utils::narrow<UINT32>(dims.width), utils::narrow<UINT32>(dims.height)));
     }
 
     _update_scaling();

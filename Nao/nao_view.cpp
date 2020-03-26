@@ -57,21 +57,21 @@ nao_view::~nao_view() {
 }
 
 void nao_view::setup() {
-    _main_window = std::make_unique<main_window>(this);
+    _main_window = std::make_unique<main_window>(*this);
 }
 
 void nao_view::set_path(const std::string& path) const {
-    auto left = _main_window->left();
+    auto& left = _main_window->left();
 
     // Display the current path in the line edit above
-    left->path()->set_text(path);
+    left.path().set_text(path);
 
     // Only enable the up button whenever we are not at the root path
-    left->view_up()->set_enabled(path != "\\");
+    left.view_up().set_enabled(path != "\\");
 }
 
 void nao_view::clear_view(const std::function<void(void*)>& deleter) const {
-    _main_window->left()->list()->clear(deleter);
+    _main_window->left().list().clear(deleter);
 }
 
 void nao_view::fill_view(std::vector<list_view_row> items) const {
@@ -79,7 +79,7 @@ void nao_view::fill_view(std::vector<list_view_row> items) const {
         return;
     }
 
-    list_view* list = _main_window->left()->list();
+    list_view& list = _main_window->left().list();
 
     std::sort(items.begin(), items.end(), [this](const list_view_row& first, const list_view_row& second) {
         return controller.order_items(
@@ -90,27 +90,27 @@ void nao_view::fill_view(std::vector<list_view_row> items) const {
 
     for (const auto& [key, order] : _sort_order) {
         if (key == _selected_column) {
-            list->set_sort_arrow(key, (order == ORDER_NORMAL) ? list_view::UpArrow : list_view::DownArrow);
+            list.set_sort_arrow(key, (order == ORDER_NORMAL) ? list_view::UpArrow : list_view::DownArrow);
         } else {
-            list->set_sort_arrow(key, list_view::NoArrow);
+            list.set_sort_arrow(key, list_view::NoArrow);
         }
     }
 
     for (const auto& [name, type, size, compressed,
             icon ,data] : items) {
 
-        list->add_item({ name, type, size, compressed }, icon, data);
+        list.add_item({ name, type, size, compressed }, icon, data);
     }
 
     // Fit columns
-    for (int i = 0; i < list->column_count() - 1; ++i) {
+    for (int i = 0; i < list.column_count() - 1; ++i) {
         int64_t min = 0;
 
         if (i == 0) {
-            min = list->width() / list->column_count();
+            min = list.width() / list.column_count();
         }
 
-        list->set_column_width(i, LVSCW_AUTOSIZE, min);
+        list.set_column_width(i, LVSCW_AUTOSIZE, min);
     }
 }
 
@@ -162,7 +162,7 @@ void nao_view::list_clicked(NMHDR* nm) {
 
             if (item->iItem >= 0) {
                 controller.clicked(CLICK_DOUBLE_ITEM,
-                    _main_window->left()->list()->get_item_data(item->iItem));
+                    _main_window->left().list().get_item_data(item->iItem));
             }
             break;
         }
@@ -172,7 +172,7 @@ void nao_view::list_clicked(NMHDR* nm) {
             NMITEMACTIVATE* item = reinterpret_cast<NMITEMACTIVATE*>(nm);
             if (item->iItem >= 0) {
                 controller.clicked(CLICK_SINGLE_ITEM,
-                    _main_window->left()->list()->get_item_data(item->iItem));
+                    _main_window->left().list().get_item_data(item->iItem));
             }
             break;
         }
@@ -180,7 +180,7 @@ void nao_view::list_clicked(NMHDR* nm) {
         case LVN_COLUMNCLICK: {
             // Clicked on a column, sort based on this column
             NMLISTVIEW* view = reinterpret_cast<NMLISTVIEW*>(nm);
-            list_view* list = _main_window->left()->list();
+            list_view& list = _main_window->left().list();
 
             if (view->iItem != -1) {
                 break;
@@ -199,9 +199,9 @@ void nao_view::list_clicked(NMHDR* nm) {
 
             for (const auto & [key, order] : _sort_order) {
                 if (key == _selected_column) {
-                    list->set_sort_arrow(key, (order == ORDER_NORMAL) ? list_view::UpArrow : list_view::DownArrow);
+                    list.set_sort_arrow(key, (order == ORDER_NORMAL) ? list_view::UpArrow : list_view::DownArrow);
                 } else {
-                    list->set_sort_arrow(key, list_view::NoArrow);
+                    list.set_sort_arrow(key, list_view::NoArrow);
                 }
             }
 
@@ -213,17 +213,17 @@ void nao_view::list_clicked(NMHDR* nm) {
                     view->selected_column(), view->selected_column_order());
             };
 
-            list->sort(sort_func, this);
+            list.sort(sort_func, this);
             break;
         }
 
         case NM_RCLICK: {
             NMITEMACTIVATE* item = reinterpret_cast<NMITEMACTIVATE*>(nm);
 
-            list_view* list = _main_window->left()->list();
-            ClientToScreen(list->handle(), &item->ptAction);
+            list_view& list = _main_window->left().list();
+            ClientToScreen(list.handle(), &item->ptAction);
             if (item->iItem >= 0) {
-                item_data* data = list->get_item_data<item_data*>(item->iItem);
+                item_data* data = list.get_item_data<item_data*>(item->iItem);
                 if (data) {
                     controller.create_context_menu(data, item->ptAction);
                 }
@@ -239,11 +239,11 @@ void nao_view::list_clicked(NMHDR* nm) {
 }
 
 void nao_view::set_preview(preview_ptr preview) const {
-    _main_window->right()->set_preview(std::move(preview));
+    _main_window->right().set_preview(std::move(preview));
 }
 
 void nao_view::clear_preview() const {
-    _main_window->right()->remove_preview();
+    _main_window->right().remove_preview();
 }
 
 void nao_view::execute_context_menu(const context_menu& menu, POINT pt) const {
@@ -285,7 +285,7 @@ void nao_view::execute_context_menu(const context_menu& menu, POINT pt) const {
 
     UINT selected = TrackPopupMenuEx(popup,
         TPM_TOPALIGN | TPM_LEFTALIGN | TPM_VERPOSANIMATION | TPM_RETURNCMD | TPM_NONOTIFY,
-        pt.x, pt.y, _main_window->left()->handle(), nullptr);
+        pt.x, pt.y, _main_window->left().handle(), nullptr);
 
     if (selected > 0 && menu_functions.at(selected).get()) {
         auto func = new std::function<void()>(menu_functions.at(selected).get());
@@ -296,13 +296,13 @@ void nao_view::execute_context_menu(const context_menu& menu, POINT pt) const {
 }
 
 void nao_view::select(void* data) const {
-    list_view* list = _main_window->left()->list();
-    if (int i = list->index_of(data); i >= 0) {
-        list->select(i);
-    } else if (list_view_preview* p = dynamic_cast<list_view_preview*>(_main_window->right()->get_preview()); p) {
-        controller.clicked(CLICK_DOUBLE_ITEM, list->selected_data());
+    list_view& list = _main_window->left().list();
+    if (int i = list.index_of(data); i >= 0) {
+        list.select(i);
+    } else if (list_view_preview* p = dynamic_cast<list_view_preview*>(_main_window->right().get_preview()); p) {
+        controller.clicked(CLICK_DOUBLE_ITEM, list.selected_data());
         controller.clicked(CLICK_SINGLE_ITEM, data);
-        controller.post_work(std::bind(&nao_view::select, this, p->list()->selected_data()));
+        controller.post_work(std::bind(&nao_view::select, this, p->list().selected_data()));
         return;
     }
     
@@ -319,4 +319,8 @@ data_key nao_view::selected_column() const {
 
 sort_order nao_view::selected_column_order() const {
     return _sort_order.at(_selected_column);
+}
+
+nao_controller& nao_view::get_controller() const {
+    return controller;
 }

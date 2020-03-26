@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <ranges>
 
-static constexpr DWORD listview_style = WS_CHILD | WS_VISIBLE | LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS;
+static constexpr DWORD listview_style = win32::style | LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS;
 
 list_view::list_view(ui_element* parent)
     : ui_element(parent, WC_LISTVIEWW, parent->dims().rect(), listview_style) {
@@ -17,7 +17,6 @@ list_view::list_view(ui_element* parent)
 }
 
 list_view::list_view(ui_element* parent, const std::vector<std::string>& hdr, const com_ptr<IImageList>& list) : list_view(parent) {
-
     set_columns(hdr);
 
     if (list) {
@@ -28,8 +27,8 @@ list_view::list_view(ui_element* parent, const std::vector<std::string>& hdr, co
 void list_view::set_columns(const std::vector<std::string>& hdr) const {
     ASSERT(!hdr.empty() && hdr.size() <= std::numeric_limits<int>::max());
 
-    int columns = static_cast<int>(hdr.size());
-    int width = static_cast<int>(this->width());
+    int columns = utils::narrow<int>(hdr.size());
+    int width = utils::narrow<int>(this->width());
 
     LVCOLUMNW col;
     col.mask = LVCF_TEXT | LVCF_FMT | LVCF_WIDTH | LVCF_MINWIDTH;
@@ -37,7 +36,7 @@ void list_view::set_columns(const std::vector<std::string>& hdr) const {
     col.cxMin = col.cx;
     col.fmt = LVCFMT_LEFT;
     int i = 0;
-
+    
     for (const std::string& header : hdr) {
         col.iOrder = i++;
         
@@ -50,7 +49,7 @@ void list_view::set_columns(const std::vector<std::string>& hdr) const {
             col.cxMin = col.cx;
         }
 
-        ListView_InsertColumn(handle(), col.iOrder, &col);
+        ASSERT(ListView_InsertColumn(handle(), col.iOrder, &col) >= 0);
     }
 }
 
@@ -84,14 +83,10 @@ void* list_view::get_item_data(int index) const {
     return reinterpret_cast<void*>(item.lParam);
 }
 
-
-
-
 int list_view::add_item(const std::vector<std::string>& text, int image, void* extra) const {
     ASSERT(_image_list);
     ASSERT(!text.empty());
-    size_t header_size = Header_GetItemCount(ListView_GetHeader(handle()));
-    ASSERT(text.size() == header_size);
+    ASSERT(utils::narrow<int>(text.size()) == column_count());
 
     std::vector<std::wstring> utf16;
     std::transform(text.begin(), text.end(), std::back_inserter(utf16), utils::utf16);
@@ -105,7 +100,7 @@ int list_view::add_item(const std::vector<std::string>& text, int image, void* e
 
     ListView_InsertItem(handle(), &item);
     for (size_t i = 1; i < utf16.size(); ++i) {
-        ListView_SetItemText(handle(), item.iItem, static_cast<int>(i), utf16[i].data());
+        ListView_SetItemText(handle(), item.iItem, utils::narrow<int>(i), utf16[i].data());
     }
 
     return item.iItem;

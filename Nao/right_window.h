@@ -5,10 +5,10 @@
 #include "preview.h"
 
 class right_window : public ui_element {
-    preview_ptr _m_preview;
+    preview_ptr _preview;
 
     public:
-    explicit right_window(ui_element* parent, nao_view* view);
+    explicit right_window(ui_element* parent);
     ~right_window() override = default;
 
     void set_preview(preview_ptr instance);
@@ -16,5 +16,5 @@ class right_window : public ui_element {
     preview* get_preview() const;
 
     protected:
-    void wm_size(int type, int width, int height) override;
+    void wm_size(int, const dimensions& dims) override;
 };

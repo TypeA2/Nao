@@ -15,6 +15,5 @@ class push_button : public ui_element {
     
     ~push_button() override = default;
 
-    void set_text(const std::string& text) const;
     void set_icon(const win32::icon& icon) const;
 };

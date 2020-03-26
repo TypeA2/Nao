@@ -49,9 +49,10 @@ namespace win32 {
             }
         }
 
-        icon dynamic_library::load_icon_scaled(int resource, int width, int height) const {
+        icon dynamic_library::load_icon_scaled(int resource, const dimensions& dims) const {
             HICON _icon;
-            HASSERT(LoadIconWithScaleDown(_handle, MAKEINTRESOURCEW(resource), width, height, &_icon));
+            HASSERT(LoadIconWithScaleDown(_handle, MAKEINTRESOURCEW(resource),
+                utils::narrow<int>(dims.width), utils::narrow<int>(dims.height), &_icon));
             return icon(_icon, true);
         }
 
@@ -148,17 +149,20 @@ namespace win32 {
                 .style = style,
                 .lpfnWndProc = &ui_element::wnd_proc_fwd,
                 .hInstance = instance(),
-                .hCursor = cursor,
-                .hbrBackground = background,
-                .lpszClassName = class_name.c_str()
+                .hIcon = icon.handle(),
+                .hCursor = cursor.handle(),
+                .hbrBackground = background.handle(),
+                .lpszMenuName = menu_name.empty() ? MAKEINTRESOURCEW(menu_resource) : menu_name.c_str(),
+                .lpszClassName = class_name.c_str(),
+                .hIconSm = icon.handle()
             };
         }
 
-        HWND create_window(const std::wstring& class_name, const std::wstring& window_name, DWORD style, const ::rectangle& at, ui_element* parent, void* param) {
+        HWND create_window(const std::wstring& class_name, const std::wstring& window_name, DWORD style, const rectangle& at, ui_element* parent, void* param) {
             return create_window_ex(class_name, window_name, style, at, parent, 0, param);
         }
 
-        HWND create_window_ex(const std::wstring& class_name, const std::wstring& window_name, DWORD style, const ::rectangle& at, ui_element* parent, DWORD ex_style, void* param) {
+        HWND create_window_ex(const std::wstring& class_name, const std::wstring& window_name, DWORD style, const rectangle& at, ui_element* parent, DWORD ex_style, void* param) {
             return CreateWindowExW(
                 ex_style,
                 class_name.c_str(),
@@ -174,7 +178,23 @@ namespace win32 {
                 param);
         }
 
+        static std::unordered_set<std::wstring>& class_registry() {
+            static std::unordered_set<std::wstring> reg;
+            return reg;
+        }
+
+        bool registered(const std::wstring& classname) {
+            if (class_registry().contains(classname)) {
+                return true;
+            }
+
+            // Maybe registered with Win32
+            WNDCLASSW wc;
+            return GetClassInfoW(instance(), classname.c_str(), &wc) != 0;
+        }
+
         std::wstring register_once(int class_id) {
+            return register_once(wnd_class::create(class_id));
             std::wstring class_name = load_wstring(class_id);
 
             return register_once({
@@ -188,12 +208,10 @@ namespace win32 {
         }
 
         std::wstring register_once(const WNDCLASSEXW& wcx) {
-            static std::unordered_set<std::wstring> registered_classes;
-
-            if (!registered_classes.contains(wcx.lpszClassName)) {
+            if (!class_registry().contains(wcx.lpszClassName)) {
                 ASSERT(RegisterClassExW(&wcx) != 0);
 
-                registered_classes.insert(wcx.lpszClassName);
+                class_registry().insert(wcx.lpszClassName);
             }
 
             return wcx.lpszClassName;
@@ -203,8 +221,8 @@ namespace win32 {
     namespace comm_ctrl {
         bool init(DWORD flags) {
             INITCOMMONCONTROLSEX picce {
-                    .dwSize = sizeof(INITCOMMONCONTROLSEX),
-                    .dwICC = flags
+                .dwSize = sizeof(INITCOMMONCONTROLSEX),
+                .dwICC = flags
             };
 
             return InitCommonControlsEx(&picce);
