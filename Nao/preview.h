@@ -71,20 +71,23 @@ class audio_player_preview : public preview {
 
     separator _separator;
 
-    label _codec_label;
-    line_edit _codec_edit;
+    struct info_pair {
+        info_pair(ui_element* parent,
+            const std::string& label, const std::string& edit);
 
-    label _rate_label;
-    line_edit _rate_edit;
+        void move(defer_window_pos& dwp,
+            int64_t partial_offset, int64_t partial_width,
+            int64_t info_offset, int64_t index);
 
-    label _channels_label;
-    line_edit _channels_edit;
+        label label;
+        line_edit edit;
+    };
 
-    label _order_label;
-    line_edit _order_edit;
-
-    label _type_label;
-    line_edit _type_edit;
+    info_pair _codec;
+    info_pair _rate;
+    info_pair _channels;
+    info_pair _order;
+    info_pair _type;
 
     win32::icon _play_icon;
     win32::icon _pause_icon;

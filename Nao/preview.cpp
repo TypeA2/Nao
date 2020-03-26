@@ -160,6 +160,28 @@ void list_view_preview::wm_notify(WPARAM, NMHDR* hdr) {
 
 
 
+audio_player_preview::info_pair::info_pair(ui_element* parent, const std::string& label, const std::string& edit)
+    : label { parent, label, LABEL_LEFT }, edit { parent, edit } {
+    this->edit.set_read_only(true);
+    this->edit.set_ex_style(WS_EX_CLIENTEDGE, false);
+}
+
+void audio_player_preview::info_pair::move(defer_window_pos& dwp,
+    int64_t partial_offset, int64_t partial_width, int64_t info_offset, int64_t index) {
+
+    dwp.move(label, {
+            .x = partial_offset,
+            .y = info_offset + index * (dims::control_height + dims::gutter_size),
+            .width = partial_width / 5,
+            .height = dims::control_height })
+        .move(edit, {
+            .x = partial_offset + (partial_width / 5),
+            .y = info_offset + index * (dims::control_height + dims::gutter_size) - 1,
+            .width = 4 * (partial_width / 5),
+            .height = dims::control_height });
+}
+
+
 audio_player_preview::audio_player_preview(nao_view& view, std::unique_ptr<audio_player> player)
     : preview(view, IDS_AUDIO_PLAYER_PREVIEW)
     , _player { std::move(player) }
@@ -172,20 +194,11 @@ audio_player_preview::audio_player_preview(nao_view& view, std::unique_ptr<audio
 
     , _separator { this, SEPARATOR_HORIZONTAL }
 
-    , _codec_label { this, "Codec:", LABEL_LEFT }
-    , _codec_edit { this, _player->provider()->name() }
-
-    , _rate_label { this, "Sample rate:", LABEL_LEFT }
-    , _rate_edit { this, std::to_string(_player->provider()->rate()) + " Hz" }
-
-    , _channels_label { this, "Channels:", LABEL_LEFT }
-    , _channels_edit { this, std::to_string(_player->provider()->channels()) }
-
-    , _order_label { this, "Channel order:", LABEL_LEFT }
-    , _order_edit { this }
-
-    , _type_label { this, "Sample type:", LABEL_LEFT }
-    , _type_edit { this } {
+    , _codec { this, "Codec:", _player->provider()->name() }
+    , _rate { this, "Sample rate:", std::to_string(_player->provider()->rate()) + " Hz" }
+    , _channels { this, "Channels:", std::to_string(_player->provider()->channels()) }
+    , _order { this, "Channel order:", "" }
+    , _type { this, "Sample type:", "" } {
 
     win32::dynamic_library mmcndmgr("mmcndmgr.dll");
 
@@ -219,16 +232,6 @@ audio_player_preview::audio_player_preview(nao_view& view, std::unique_ptr<audio
 
     auto provider = _player->provider();
 
-    auto make_edit = [](const line_edit& edit) {
-        edit.set_read_only(true);
-        edit.set_ex_style(WS_EX_CLIENTEDGE, false);
-    };
-
-    make_edit(_codec_edit);
-    make_edit(_rate_edit);
-    make_edit(_channels_edit);
-    make_edit(_order_edit);
-    make_edit(_type_edit);
 
     std::string order_name;
     switch (provider->order()) {
@@ -237,7 +240,7 @@ audio_player_preview::audio_player_preview(nao_view& view, std::unique_ptr<audio
         case CHANNELS_WAV:    order_name = "WAVE";        break;
         case CHANNELS_SMPTE:  order_name = "SMPTE";       break;
     }
-    _order_edit.set_text(order_name);
+    _order.edit.set_text(order_name);
 
     std::string sample_name;
     switch (_player->pcm_format()) {
@@ -245,7 +248,7 @@ audio_player_preview::audio_player_preview(nao_view& view, std::unique_ptr<audio
         case SAMPLE_INT16:   sample_name = "int16";   break;
         case SAMPLE_FLOAT32: sample_name = "float32"; break;
     }
-    _type_edit.set_text(sample_name);
+    _type.edit.set_text(sample_name);
 
     audio_player_preview::wm_size(0, dims());
 }
@@ -259,9 +262,10 @@ void audio_player_preview::wm_size(int, const dimensions& dims) {
 
     int64_t controls_height = 3 * dims::control_height + dims::play_button_size + dims::volume_slider_height + 6 * dims::gutter_size;
     int64_t info_offset = controls_height + 2 + (dims::control_height / 2) + dims::gutter_size;
-    int64_t info_element_height = dims::control_height + dims::gutter_size;
 
-    defer_window_pos()
+    defer_window_pos dwp;
+
+    dwp
         .move(_progress_bar, {
                 .x = partial_offset,
                 .y = dims::gutter_size,
@@ -297,58 +301,14 @@ void audio_player_preview::wm_size(int, const dimensions& dims) {
                 .x = partial_offset,
                 .y = controls_height,
                 .width = partial_width,
-                .height = 2 })
+                .height = 2 });
 
-        .move(_codec_label, {
-                .x = partial_offset,
-                .y = info_offset,
-                .width = partial_width / 5,
-                .height = dims::control_height })
-        .move(_codec_edit, {
-                .x = partial_offset + (partial_width / 5),
-                .y = info_offset - 1,
-                .width = 4 * (partial_width / 5),
-                .height = dims::control_height })
-        .move(_rate_label, {
-                .x = partial_offset,
-                .y = info_offset + info_element_height,
-                .width = partial_width / 5,
-                .height = dims::control_height })
-        .move(_rate_edit, {
-                .x = partial_offset + (partial_width / 5),
-                .y = info_offset + info_element_height - 1,
-                .width = 4 * (partial_width / 5),
-                .height = dims::control_height })
-        .move(_channels_label, {
-                .x = partial_offset,
-                .y = info_offset + 2 * info_element_height,
-                .width = partial_width / 5,
-                .height = dims::control_height })
-        .move(_channels_edit, {
-                .x = partial_offset + (partial_width / 5),
-                .y = info_offset + 2 * info_element_height - 1,
-                .width = 4 * (partial_width / 5),
-                .height = dims::control_height })
-        .move(_order_label, {
-                .x = partial_offset,
-                .y = info_offset + 3 * info_element_height,
-                .width = partial_width / 5,
-                .height = dims::control_height })
-        .move(_order_edit, {
-                .x = partial_offset + (partial_width / 5),
-                .y = info_offset + 3 * info_element_height - 1,
-                .width = 4 * (partial_width / 5),
-                .height = dims::control_height })
-        .move(_type_label, {
-                .x = partial_offset,
-                .y = info_offset + 4 * info_element_height,
-                .width = partial_width / 5,
-                .height = dims::control_height })
-        .move(_type_edit, {
-                .x = partial_offset + (partial_width / 5),
-                .y = info_offset + 4 * info_element_height - 1,
-                .width = 4 * (partial_width / 5),
-                .height = dims::control_height });
+
+    _codec.move(dwp, partial_offset, partial_width, info_offset, 0);
+    _rate.move(dwp, partial_offset, partial_width, info_offset, 1);
+    _channels.move(dwp, partial_offset, partial_width, info_offset, 2);
+    _order.move(dwp, partial_offset, partial_width, info_offset, 3);
+    _type.move(dwp, partial_offset, partial_width, info_offset, 4);
 }
 
 void audio_player_preview::wm_command(WORD id, WORD code, HWND target) {
