@@ -10,43 +10,45 @@
 #include <Mferror.h>
 #include <evr.h>
 
+class ui_element;
 namespace mf {
-    class binary_stream_imfbytestream : public IMFByteStream, IMFAsyncCallback {
-        istream_ptr _stream;
-        volatile uint32_t _refcount = 1;
-        public:
-        binary_stream_imfbytestream(const istream_ptr& stream) : _stream { stream } { }
-        virtual ~binary_stream_imfbytestream() = default;
+    inline namespace io {
+        class binary_stream_imfbytestream : public IMFByteStream, IMFAsyncCallback {
+            istream_ptr _stream;
+            volatile uint32_t _refcount = 1;
+            public:
+            binary_stream_imfbytestream(const istream_ptr& stream) : _stream { stream } { }
+            virtual ~binary_stream_imfbytestream() = default;
 
-        // IUnknown
-        STDMETHODIMP QueryInterface(const IID& riid, void** ppvObject) override;
-        STDMETHODIMP_(ULONG) AddRef() override;
-        STDMETHODIMP_(ULONG) Release() override;
+            // IUnknown
+            STDMETHODIMP QueryInterface(const IID& riid, void** ppvObject) override;
+            STDMETHODIMP_(ULONG) AddRef() override;
+            STDMETHODIMP_(ULONG) Release() override;
 
-        // IMFByteStream
-        STDMETHODIMP BeginRead(BYTE* pb, ULONG cb, IMFAsyncCallback* pCallback, IUnknown* punkState) override;
-        STDMETHODIMP EndRead(IMFAsyncResult* pResult, ULONG* pcbRead) override;
-        STDMETHODIMP Read(BYTE* pb, ULONG cb, ULONG* pcbRead) override;
-        STDMETHODIMP GetCapabilities(DWORD* pdwCapabilities) override;
-        STDMETHODIMP GetCurrentPosition(QWORD* pqwPosition) override;
-        STDMETHODIMP GetLength(QWORD* pqwLength) override;
-        STDMETHODIMP IsEndOfStream(BOOL* pfEndOfStream) override;
-        STDMETHODIMP Seek(MFBYTESTREAM_SEEK_ORIGIN SeekOrigin, LONGLONG llSeekOffset, DWORD, QWORD* pqwCurrentPosition) override;
-        STDMETHODIMP SetCurrentPosition(QWORD qwPosition) override;
+            // IMFByteStream
+            STDMETHODIMP BeginRead(BYTE* pb, ULONG cb, IMFAsyncCallback* pCallback, IUnknown* punkState) override;
+            STDMETHODIMP EndRead(IMFAsyncResult* pResult, ULONG* pcbRead) override;
+            STDMETHODIMP Read(BYTE* pb, ULONG cb, ULONG* pcbRead) override;
+            STDMETHODIMP GetCapabilities(DWORD* pdwCapabilities) override;
+            STDMETHODIMP GetCurrentPosition(QWORD* pqwPosition) override;
+            STDMETHODIMP GetLength(QWORD* pqwLength) override;
+            STDMETHODIMP IsEndOfStream(BOOL* pfEndOfStream) override;
+            STDMETHODIMP Seek(MFBYTESTREAM_SEEK_ORIGIN SeekOrigin, LONGLONG llSeekOffset, DWORD, QWORD* pqwCurrentPosition) override;
+            STDMETHODIMP SetCurrentPosition(QWORD qwPosition) override;
 
-        // Not implemented (IMFByteStream)
-        STDMETHODIMP BeginWrite(const BYTE*, ULONG, IMFAsyncCallback*, IUnknown*) override;
-        STDMETHODIMP EndWrite(IMFAsyncResult*, ULONG*) override;
-        STDMETHODIMP Write(const BYTE*, ULONG, ULONG*) override;
-        STDMETHODIMP Close() override;
-        STDMETHODIMP Flush() override;
-        STDMETHODIMP SetLength(QWORD) override;
+            // Not implemented (IMFByteStream)
+            STDMETHODIMP BeginWrite(const BYTE*, ULONG, IMFAsyncCallback*, IUnknown*) override;
+            STDMETHODIMP EndWrite(IMFAsyncResult*, ULONG*) override;
+            STDMETHODIMP Write(const BYTE*, ULONG, ULONG*) override;
+            STDMETHODIMP Close() override;
+            STDMETHODIMP Flush() override;
+            STDMETHODIMP SetLength(QWORD) override;
 
-        // IMFAsyncCallback
-        STDMETHODIMP GetParameters(DWORD*, DWORD*) override;
-        STDMETHODIMP Invoke(IMFAsyncResult* pAsyncResult) override;
-    };
-
+            // IMFAsyncCallback
+            STDMETHODIMP GetParameters(DWORD*, DWORD*) override;
+            STDMETHODIMP Invoke(IMFAsyncResult* pAsyncResult) override;
+        };
+    }
     // MFStartup / MFShutdown RAII guard
     class mf_interface {
         public:
@@ -95,8 +97,8 @@ namespace mf {
         bool begin_get_event(async_callback* callback) const;
         media_event end_get_event(IMFAsyncResult* result) const;
 
-        bool set_topology(const media_source& src, HWND hwnd = nullptr, DWORD flags = 0) const;
-        bool set_topology(const presentation_descriptor& pd, const media_source& src, HWND hwnd = nullptr, DWORD flags = 0) const;
+        bool set_topology(const media_source& src, ui_element* window = nullptr, DWORD flags = 0) const;
+        bool set_topology(const presentation_descriptor& pd, const media_source& src, ui_element* window = nullptr, DWORD flags = 0) const;
         bool set_topology(const topology& topology, DWORD flags = 0) const;
 
         bool pause() const;
@@ -145,12 +147,12 @@ namespace mf {
     class topology : mf_interface, public com::com_interface<IMFTopology> {
         public:
         topology();
-        explicit topology(const presentation_descriptor& pd, const media_source& src, HWND hwnd = nullptr);
+        explicit topology(const presentation_descriptor& pd, const media_source& src, ui_element* window = nullptr);
 
         private:
-        void _add_branch(const presentation_descriptor& pd, const media_source& src, HWND hwnd, DWORD index);
+        void _add_branch(const presentation_descriptor& pd, const media_source& src, ui_element* window, DWORD index);
 
-        void _create_sink_activate(IMFStreamDescriptor* sd, HWND hwnd, IMFActivate** activate);
+        void _create_sink_activate(IMFStreamDescriptor* sd, ui_element* window, IMFActivate** activate);
         void _add_source_node(const presentation_descriptor& pd, const media_source& src, IMFStreamDescriptor* sd, IMFTopologyNode** node);
         void _add_output_node(IMFActivate* activate, DWORD id, IMFTopologyNode** node);
     };
@@ -172,8 +174,6 @@ namespace mf {
         friend class media_session;
     };
 
-
-
     class player : async_callback {
         media_source _source;
         media_session _session;
@@ -183,10 +183,10 @@ namespace mf {
         std::condition_variable _close_event;
         bool _can_continue = false;
 
-        HWND _hwnd;
+        ui_element* _msg;
 
         public:
-        player(const istream_ptr& stream, const std::string& path, HWND hwnd = nullptr);
+        player(const istream_ptr& stream, const std::string& path, ui_element* msg, ui_element* display);
         ~player();
 
         static constexpr UINT WM_APP_PLAYER_EVENT = WM_APP + 1;

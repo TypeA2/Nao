@@ -271,6 +271,9 @@
     <ClInclude Include="resource.h">
       <Filter>Header Files\Win32</Filter>
     </ClInclude>
+    <ClInclude Include="ffmpeg.h">
+      <Filter>Header Files\AV</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="nao.cpp">
@@ -434,6 +437,9 @@
     </ClCompile>
     <ClCompile Include="com.cpp">
       <Filter>Source Files\Win32</Filter>
+    </ClCompile>
+    <ClCompile Include="ffmpeg.cpp">
+      <Filter>Source Files\AV</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

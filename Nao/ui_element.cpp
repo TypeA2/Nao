@@ -101,9 +101,29 @@ coordinates ui_element::coords() const {
     };
 }
 
+coordinates ui_element::screen_coords() const {
+    RECT rect;
+    GetWindowRect(handle(), &rect);
+
+    return {
+        .x = rect.left,
+        .y = rect.top
+    };
+}
+
 dimensions ui_element::dims() const {
     RECT rect;
     GetClientRect(handle(), &rect);
+
+    return {
+        .width = rect.right,
+        .height = rect.bottom
+    };
+}
+
+dimensions ui_element::screen_dims() const {
+    RECT rect;
+    GetWindowRect(handle(), &rect);
 
     return {
         .width = rect.right,
@@ -123,6 +143,18 @@ rectangle ui_element::rect() const {
     };
 }
 
+rectangle ui_element::screen_rect() const {
+    RECT rect;
+    GetWindowRect(handle(), &rect);
+
+    return {
+        .x = rect.left,
+        .y = rect.top,
+        .width = rect.right,
+        .height = rect.bottom
+    };
+}
+
 void ui_element::move(const rectangle& rect) const {
     SetWindowPos(handle(), nullptr,
         utils::narrow<int>(rect.x), utils::narrow<int>(rect.y),
@@ -130,7 +162,7 @@ void ui_element::move(const rectangle& rect) const {
 }
 
 HDWP& ui_element::move_dwp(HDWP& dwp, const rectangle& rect) const {
-    dwp = DeferWindowPos(dwp, handle(), nullptr,
+    dwp = DeferWindowPos(dwp, _handle, nullptr,
         utils::narrow<int>(rect.x), utils::narrow<int>(rect.y),
         utils::narrow<int>(rect.width), utils::narrow<int>(rect.height), 0);
 

@@ -237,12 +237,12 @@ void audio_player::_playback_loop_resample(const PaDeviceInfo* info) {
 
         *samples = prev_pcm.data<SAMPLE_FLOAT32>();
 
-        return static_cast<long>(prev_pcm.frames());
+        return utils::narrow<long>(prev_pcm.frames());
     };
 
     int conversion_err;
     SRC_STATE* state = src_callback_new(src_callback, SRC_SINC_MEDIUM_QUALITY,
-        static_cast<int>(channels), &conversion_err, &args);
+        utils::narrow<int>(channels), &conversion_err, &args);
 
     while (true) {
         _wait_pause();

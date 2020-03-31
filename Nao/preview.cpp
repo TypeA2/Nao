@@ -415,10 +415,38 @@ void image_viewer_preview::wm_size(int, const dimensions& dims) {
     defer_window_pos().move(_window, { 0, 0, dims.width, dims.height - 150 });
 }
 
+
+rectangle video_player_preview::player_canvas::start_rect(ui_element* parent) {
+    rectangle p = parent->rect();
+    return {
+        .x = p.x,
+        .y = p.x,
+        .width = p.width,
+        .height = p.height - std::min(display_margin, parent->height() / 3)
+    };
+}
+
+video_player_preview::player_canvas::player_canvas(ui_element* parent)
+    : ui_element(parent, IDS_VIDEO_PLAYER_PREVIEW_CANVAS, start_rect(parent), WS_CHILD | WS_VISIBLE) {
+    
+}
+
+
 video_player_preview::video_player_preview(nao_view& view, av_file_handler* handler)
     : preview(view, IDS_VIDEO_PLAYER_PREVIEW)
-    , _player { handler->get_stream(), handler->get_path(), handle() } {
+    , _player_display { this }
+    , _player { handler->get_stream(), handler->get_path(), this, &_player_display }
+    , _toggle_button { this, win32::icon{} } {
 
+    win32::dynamic_library mmcndmgr("mmcndmgr.dll");
+
+    _play_icon = mmcndmgr.load_icon_scaled(30529, { dims::play_button_size, dims::play_button_size });
+    _pause_icon = mmcndmgr.load_icon_scaled(30531, { dims::play_button_size, dims::play_button_size });
+
+    _toggle_button.set_icon(_play_icon);
+
+    video_player_preview::wm_size(0, dims());
+    ui_element::wm_paint();
 }
 
 void video_player_preview::wm_paint() {
@@ -426,7 +454,22 @@ void video_player_preview::wm_paint() {
 }
 
 void video_player_preview::wm_size(int, const dimensions& dims) {
-    _player.set_position(dims.rect());
+    int64_t actual_margin = std::min(display_margin, dims.height / 3);
+
+    defer_window_pos()
+        .move(_player_display, {
+            .x = 0,
+            .y = 0,
+            .width = dims.width,
+            .height = dims.height - actual_margin })
+
+        .move(_toggle_button, {
+            .x = dims::gutter_size,
+            .y = (dims.height - actual_margin) + dims::gutter_size,
+            .width = dims::play_button_size,
+            .height = dims::play_button_size });
+
+    _player.set_position({ 0, 0, dims.width, dims.height - actual_margin });
 }
 
 LRESULT video_player_preview::wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
@@ -435,5 +478,5 @@ LRESULT video_player_preview::wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARA
         return 0;
     }
 
-    return DefWindowProcW(hwnd, msg, wparam, lparam);
+    return preview::wnd_proc(hwnd, msg, wparam, lparam);
 }

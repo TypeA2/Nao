@@ -3,6 +3,8 @@
 #include "com.h"
 #include "win32.h"
 
+#include "ui_element.h"
+
 namespace detail {
     class DECLSPEC_UUID("1E89C9C0-318E-4E1B-9EE1-81A586111507") async_result : public IUnknown {
         volatile uint32_t _refcount = 1;
@@ -43,218 +45,219 @@ namespace detail {
 }
 
 namespace mf {
-    HRESULT binary_stream_imfbytestream::QueryInterface(const IID& riid, void** ppvObject) {
-        static const QITAB qit[] {
-            QITABENT(binary_stream_imfbytestream, IMFByteStream),
-            QITABENT(binary_stream_imfbytestream, IMFAsyncCallback), { }
-        };
-        
-        return QISearch(this, qit, riid, ppvObject);
-    }
-    ULONG binary_stream_imfbytestream::AddRef() {
-        return InterlockedIncrement(&_refcount);
-    }
+    inline namespace io {
+        HRESULT binary_stream_imfbytestream::QueryInterface(const IID& riid, void** ppvObject) {
+            static const QITAB qit[] {
+                QITABENT(binary_stream_imfbytestream, IMFByteStream),
+                QITABENT(binary_stream_imfbytestream, IMFAsyncCallback), { }
+            };
 
-    ULONG binary_stream_imfbytestream::Release() {
-        uint32_t count = InterlockedDecrement(&_refcount);
-
-        if (count == 0) {
-            delete this;
+            return QISearch(this, qit, riid, ppvObject);
+        }
+        ULONG binary_stream_imfbytestream::AddRef() {
+            return InterlockedIncrement(&_refcount);
         }
 
-        return count;
-    }
+        ULONG binary_stream_imfbytestream::Release() {
+            uint32_t count = InterlockedDecrement(&_refcount);
 
+            if (count == 0) {
+                delete this;
+            }
 
-
-    HRESULT binary_stream_imfbytestream::BeginRead(BYTE* pb, ULONG cb, IMFAsyncCallback* pCallback, IUnknown* punkState) {
-        if (!_stream->good()) {
-            return E_ABORT;
+            return count;
         }
 
-        if (!pb || !pCallback) {
-            return E_POINTER;
+
+
+        HRESULT binary_stream_imfbytestream::BeginRead(BYTE* pb, ULONG cb, IMFAsyncCallback* pCallback, IUnknown* punkState) {
+            if (!_stream->good()) {
+                return E_ABORT;
+            }
+
+            if (!pb || !pCallback) {
+                return E_POINTER;
+            }
+
+            if (cb == 0) {
+                return E_INVALIDARG;
+            }
+
+            com_ptr<IMFAsyncResult> result;
+            HASSERT(MFCreateAsyncResult(new detail::async_result(pb, cb), pCallback, punkState, &result));
+            HASSERT(MFPutWorkItem(MFASYNC_CALLBACK_QUEUE_MULTITHREADED, this, result));
+            return S_OK;
         }
 
-        if (cb == 0) {
-            return E_INVALIDARG;
+        HRESULT binary_stream_imfbytestream::EndRead(IMFAsyncResult* pResult, ULONG* pcbRead) {
+            if (!pResult || !pcbRead) {
+                return E_POINTER;
+            }
+            if (HRESULT hr = pResult->GetStatus(); FAILED(hr)) {
+                return hr;
+            }
+
+            com_ptr<IUnknown> unk;
+            HASSERT(pResult->GetObjectW(&unk));
+
+            com_ptr<detail::async_result> res;
+            HASSERT(unk->QueryInterface(&res));
+
+            *pcbRead = res->read;
+
+            return S_OK;
         }
 
-        com_ptr<IMFAsyncResult> result;
-        HASSERT(MFCreateAsyncResult(new detail::async_result(pb, cb), pCallback, punkState, &result));
-        HASSERT(MFPutWorkItem(MFASYNC_CALLBACK_QUEUE_MULTITHREADED, this, result));
-        return S_OK;
-    }
+        HRESULT binary_stream_imfbytestream::Read(BYTE* pb, ULONG cb, ULONG* pcbRead) {
+            if (!pb) {
+                return E_POINTER;
+            }
 
-    HRESULT binary_stream_imfbytestream::EndRead(IMFAsyncResult* pResult, ULONG* pcbRead) {
-        if (!pResult || !pcbRead) {
-            return E_POINTER;
-        }
-        if (HRESULT hr = pResult->GetStatus(); FAILED(hr)) {
-            return hr;
-        }
+            _stream->read(pb, cb);
 
-        com_ptr<IUnknown> unk;
-        HASSERT(pResult->GetObjectW(&unk));
+            if (pcbRead) {
+                *pcbRead = utils::narrow<LONG>(_stream->gcount());
+            }
 
-        com_ptr<detail::async_result> res;
-        HASSERT(unk->QueryInterface(&res));
-
-        *pcbRead = res->read;
-
-        return S_OK;
-    }
-
-    HRESULT binary_stream_imfbytestream::Read(BYTE* pb, ULONG cb, ULONG* pcbRead) {
-        if (!pb) {
-            return E_POINTER;
+            return S_OK;
         }
 
-        _stream->read(pb, cb);
+        HRESULT binary_stream_imfbytestream::GetCapabilities(DWORD* pdwCapabilities) {
+            if (!pdwCapabilities) {
+                return E_POINTER;
+            }
 
-        if (pcbRead) {
-            *pcbRead = utils::narrow<LONG>(_stream->gcount());
+            *pdwCapabilities =
+                MFBYTESTREAM_IS_READABLE |
+                MFBYTESTREAM_IS_SEEKABLE |
+                MFBYTESTREAM_DOES_NOT_USE_NETWORK;
+
+            return S_OK;
         }
 
-        return S_OK;
-    }
+        HRESULT binary_stream_imfbytestream::GetCurrentPosition(QWORD* pqwPosition) {
+            if (!pqwPosition) {
+                return E_POINTER;
+            }
 
-    HRESULT binary_stream_imfbytestream::GetCapabilities(DWORD* pdwCapabilities) {
-        if (!pdwCapabilities) {
-            return E_POINTER;
+            *pqwPosition = _stream->tellg();
+
+            return S_OK;
         }
 
-        *pdwCapabilities =
-            MFBYTESTREAM_IS_READABLE |
-            MFBYTESTREAM_IS_SEEKABLE |
-            MFBYTESTREAM_DOES_NOT_USE_NETWORK;
+        HRESULT binary_stream_imfbytestream::GetLength(QWORD* pqwLength) {
+            if (!pqwLength) {
+                return E_POINTER;
+            }
 
-        return S_OK;
-    }
+            auto cur = _stream->tellg();
 
-    HRESULT binary_stream_imfbytestream::GetCurrentPosition(QWORD* pqwPosition) {
-        if (!pqwPosition) {
-            return E_POINTER;
+            _stream->seekg(0, std::ios::end);
+
+            *pqwLength = _stream->tellg();
+
+            _stream->seekg(cur);
+
+            return S_OK;
         }
 
-        *pqwPosition = _stream->tellg();
+        HRESULT binary_stream_imfbytestream::IsEndOfStream(BOOL* pfEndOfStream) {
+            if (!pfEndOfStream) {
+                return E_POINTER;
+            }
 
-        return S_OK;
-    }
+            *pfEndOfStream = _stream->eof() ? TRUE : FALSE;
 
-    HRESULT binary_stream_imfbytestream::GetLength(QWORD* pqwLength) {
-        if (!pqwLength) {
-            return E_POINTER;
+            return S_OK;
         }
 
-        auto cur = _stream->tellg();
+        HRESULT binary_stream_imfbytestream::Seek(MFBYTESTREAM_SEEK_ORIGIN SeekOrigin, LONGLONG llSeekOffset, DWORD, QWORD* pqwCurrentPosition) {
+            switch (SeekOrigin) {
+                case msoBegin:   _stream->seekg(llSeekOffset, std::ios::beg); break;
+                case msoCurrent: _stream->seekg(llSeekOffset, std::ios::cur); break;
+            }
 
-        _stream->seekg(0, std::ios::end);
+            if (pqwCurrentPosition) {
+                *pqwCurrentPosition = _stream->tellg();
+            }
 
-        *pqwLength = _stream->tellg();
-
-        _stream->seekg(cur);
-
-        return S_OK;
-    }
-
-    HRESULT binary_stream_imfbytestream::IsEndOfStream(BOOL* pfEndOfStream) {
-        if (!pfEndOfStream) {
-            return E_POINTER;
+            return S_OK;
         }
 
-        *pfEndOfStream = _stream->eof() ? TRUE : FALSE;
-
-        return S_OK;
-    }
-
-    HRESULT binary_stream_imfbytestream::Seek(MFBYTESTREAM_SEEK_ORIGIN SeekOrigin, LONGLONG llSeekOffset, DWORD, QWORD* pqwCurrentPosition) {
-        switch (SeekOrigin) {
-            case msoBegin:   _stream->seekg(llSeekOffset, std::ios::beg); break;
-            case msoCurrent: _stream->seekg(llSeekOffset, std::ios::cur); break;
+        HRESULT binary_stream_imfbytestream::SetCurrentPosition(QWORD qwPosition) {
+            _stream->seekg(qwPosition);
+            return S_OK;
         }
 
-        if (pqwCurrentPosition) {
-            *pqwCurrentPosition = _stream->tellg();
+
+
+        HRESULT binary_stream_imfbytestream::BeginWrite(const BYTE*, ULONG, IMFAsyncCallback*, IUnknown*) {
+            return E_NOTIMPL;
         }
 
-        return S_OK;
-    }
-
-    HRESULT binary_stream_imfbytestream::SetCurrentPosition(QWORD qwPosition) {
-        _stream->seekg(qwPosition);
-        return S_OK;
-    }
-
-
-
-    HRESULT binary_stream_imfbytestream::BeginWrite(const BYTE*, ULONG, IMFAsyncCallback*, IUnknown* ) {
-        return E_NOTIMPL;
-    }
-
-    HRESULT binary_stream_imfbytestream::EndWrite(IMFAsyncResult*, ULONG*) {
-        return E_NOTIMPL;
-    }
-
-    HRESULT binary_stream_imfbytestream::Write(const BYTE*, ULONG, ULONG*) {
-        return E_NOTIMPL;
-    }
-
-    HRESULT binary_stream_imfbytestream::Close() {
-        return S_OK;
-    }
-
-    HRESULT binary_stream_imfbytestream::Flush() {
-        return E_NOTIMPL;
-    }
-
-    HRESULT binary_stream_imfbytestream::SetLength(QWORD) {
-        return E_NOTIMPL;
-    }
-
-    HRESULT binary_stream_imfbytestream::GetParameters(DWORD*, DWORD*) {
-        return E_NOTIMPL;
-    }
-
-    HRESULT binary_stream_imfbytestream::Invoke(IMFAsyncResult* pAsyncResult) {
-        if (!_stream->good()) {
-            return E_ABORT;
+        HRESULT binary_stream_imfbytestream::EndWrite(IMFAsyncResult*, ULONG*) {
+            return E_NOTIMPL;
         }
 
-        if (!pAsyncResult) {
-            return E_POINTER;
+        HRESULT binary_stream_imfbytestream::Write(const BYTE*, ULONG, ULONG*) {
+            return E_NOTIMPL;
         }
 
-        com_ptr<IUnknown> unk_state;
-        HASSERT(pAsyncResult->GetState(&unk_state));
-
-        com_ptr<IMFAsyncResult> operation_result;
-        HASSERT(unk_state->QueryInterface(&operation_result));
-
-        com_ptr<IUnknown> unk_result;
-        HASSERT(operation_result->GetObjectW(&unk_result));
-
-        com_ptr<detail::async_result> result;
-        HASSERT(unk_result->QueryInterface(&result));
-
-        _stream->read(result->buf, result->count);
-
-        if (_stream->eof()) {
-            _stream->clear();
+        HRESULT binary_stream_imfbytestream::Close() {
+            return S_OK;
         }
 
-        result->read = utils::narrow<ULONG>(_stream->gcount());
-
-
-        if (operation_result) {
-            operation_result->SetStatus((_stream->eof() || _stream->good()) ? S_OK : E_FAIL);
-
-            MFInvokeCallback(operation_result);
+        HRESULT binary_stream_imfbytestream::Flush() {
+            return E_NOTIMPL;
         }
 
-        return S_OK;
+        HRESULT binary_stream_imfbytestream::SetLength(QWORD) {
+            return E_NOTIMPL;
+        }
+
+        HRESULT binary_stream_imfbytestream::GetParameters(DWORD*, DWORD*) {
+            return E_NOTIMPL;
+        }
+
+        HRESULT binary_stream_imfbytestream::Invoke(IMFAsyncResult* pAsyncResult) {
+            if (!_stream->good()) {
+                return E_ABORT;
+            }
+
+            if (!pAsyncResult) {
+                return E_POINTER;
+            }
+
+            com_ptr<IUnknown> unk_state;
+            HASSERT(pAsyncResult->GetState(&unk_state));
+
+            com_ptr<IMFAsyncResult> operation_result;
+            HASSERT(unk_state->QueryInterface(&operation_result));
+
+            com_ptr<IUnknown> unk_result;
+            HASSERT(operation_result->GetObjectW(&unk_result));
+
+            com_ptr<detail::async_result> result;
+            HASSERT(unk_result->QueryInterface(&result));
+
+            _stream->read(result->buf, result->count);
+
+            if (_stream->eof()) {
+                _stream->clear();
+            }
+
+            result->read = utils::narrow<ULONG>(_stream->gcount());
+
+
+            if (operation_result) {
+                operation_result->SetStatus((_stream->eof() || _stream->good()) ? S_OK : E_FAIL);
+
+                MFInvokeCallback(operation_result);
+            }
+
+            return S_OK;
+        }
     }
-
 
     mf_interface::mf_interface() {
         HASSERT(MFStartup(MF_VERSION));
@@ -333,12 +336,12 @@ namespace mf {
         return media_event { SUCCEEDED(hr) ? event : nullptr };
     }
 
-    bool media_session::set_topology(const media_source& src, HWND hwnd, DWORD flags) const {
-        return set_topology(topology { src.create_presentation_descriptor(), src, hwnd }, flags);
+    bool media_session::set_topology(const media_source& src, ui_element* window, DWORD flags) const {
+        return set_topology(topology { src.create_presentation_descriptor(), src, window }, flags);
     }
 
-    bool media_session::set_topology(const presentation_descriptor& pd, const media_source& src, HWND hwnd, DWORD flags) const {
-        return set_topology(topology { pd, src, hwnd }, flags);
+    bool media_session::set_topology(const presentation_descriptor& pd, const media_source& src, ui_element* window, DWORD flags) const {
+        return set_topology(topology { pd, src, window }, flags);
     }
 
     bool media_session::set_topology(const topology& topology, DWORD flags) const {
@@ -437,22 +440,22 @@ namespace mf {
         HASSERT(MFCreateTopology(&com_object));
     }
 
-    topology::topology(const presentation_descriptor& pd, const media_source& src, HWND hwnd) : topology() {
+    topology::topology(const presentation_descriptor& pd, const media_source& src, ui_element* window) : topology() {
         int64_t count = pd.descriptor_count();
         ASSERT(count > 0);
 
         for (int64_t i = 0; i < count; ++i) {
-            _add_branch(pd, src, hwnd, utils::narrow<DWORD>(i));
+            _add_branch(pd, src, window, utils::narrow<DWORD>(i));
         }
     }
 
-    void topology::_add_branch(const presentation_descriptor& pd, const media_source& src, HWND hwnd, DWORD index) {
+    void topology::_add_branch(const presentation_descriptor& pd, const media_source& src, ui_element* window, DWORD index) {
         com_ptr<IMFStreamDescriptor> sd;
         bool selected;
         ASSERT(pd.descriptor(index, selected, &sd));
         if (selected) {
             com_ptr<IMFActivate> activate;
-            _create_sink_activate(sd, hwnd, &activate);
+            _create_sink_activate(sd, window, &activate);
 
             com_ptr<IMFTopologyNode> source;
             _add_source_node(pd, src, sd, &source);
@@ -463,7 +466,7 @@ namespace mf {
         }
     }
 
-    void topology::_create_sink_activate(IMFStreamDescriptor* sd, HWND hwnd, IMFActivate** activate) {
+    void topology::_create_sink_activate(IMFStreamDescriptor* sd, ui_element* window, IMFActivate** activate) {
         (void) this;
         com_ptr<IMFMediaTypeHandler> handler;
         HASSERT(sd->GetMediaTypeHandler(&handler));
@@ -475,7 +478,7 @@ namespace mf {
         if (major == MFMediaType_Audio) {
             HASSERT(MFCreateAudioRendererActivate(&act));
         } else if (major == MFMediaType_Video) {
-            HASSERT(MFCreateVideoRendererActivate(hwnd, &act));
+            HASSERT(MFCreateVideoRendererActivate(window ? window->handle() : nullptr, &act));
         } else {
             ASSERT(false);
         }
@@ -542,10 +545,10 @@ namespace mf {
     }
 
 
-    player::player(const istream_ptr& stream, const std::string& path, HWND hwnd)
-        : _source { stream, path }, _hwnd { hwnd } {
+    player::player(const istream_ptr& stream, const std::string& path, ui_element* msg, ui_element* display)
+        : _source { stream, path }, _msg { msg } {
         ASSERT(_session.begin_get_event(this));
-        ASSERT(_session.set_topology(_source, hwnd));
+        ASSERT(_session.set_topology(_source, display));
     }
 
     player::~player() {
@@ -583,12 +586,12 @@ namespace mf {
         }
         
         event.object()->AddRef();
-        PostMessageW(_hwnd, WM_APP_PLAYER_EVENT, WPARAM(event.object()), 0);
+        _msg->post_message(WM_APP_PLAYER_EVENT, event.object(), 0);
 
         return true;
     }
 
-    void player::handle_event(const mf::media_event& event) {
+    void player::handle_event(const media_event& event) {
         ASSERT(event.good());
 
         switch (event.type()) {
@@ -600,7 +603,7 @@ namespace mf {
                 break;
             }
 
-            case MENewPresentation:   ASSERT(false);    break;
+            case MENewPresentation: ASSERT(false);  break;
             default: break;
         }
     }

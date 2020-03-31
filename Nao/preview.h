@@ -129,7 +129,20 @@ class image_viewer_preview : public preview {
 
 // Plays video (and optionally audio)
 class video_player_preview : public preview {
+    static constexpr int64_t display_margin = 200;
+
+    class player_canvas : public ui_element {
+        static rectangle start_rect(ui_element* parent);
+
+        public:
+        explicit player_canvas(ui_element* parent);
+    }  _player_display;
     mf::player _player;
+
+    win32::icon _play_icon;
+    win32::icon _pause_icon;
+
+    push_button _toggle_button;
 
     public:
     video_player_preview(nao_view& view, av_file_handler* handler);

@@ -60,8 +60,13 @@ class ui_element {
     int64_t height() const;
 
     dimensions dims() const;
+    dimensions screen_dims() const;
+
     coordinates coords() const;
+    coordinates screen_coords() const;
+
     rectangle rect() const;
+    rectangle screen_rect() const;
 
     // Move using SetWindowPos
     void move(const rectangle& rect) const;

@@ -4,6 +4,8 @@
 #include "binary_stream.h"
 #include "wav_pcm_provider.h"
 
+#include "riff.h"
+
 file_handler_tag wav_handler::tag() const {
     return TAG_PCM;
 }

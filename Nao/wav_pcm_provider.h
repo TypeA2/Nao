@@ -2,17 +2,22 @@
 
 #include "pcm_provider.h"
 
-#include "riff.h"
+#include "ffmpeg.h"
+
+extern "C" {
+#include <libavformat/avformat.h>
+}
 
 class wav_pcm_provider : public pcm_provider {
-    static constexpr size_t frames_per_block = 1024;
+    int64_t _samples_played = 0;
 
-    fmt_chunk _fmt {};
-    fmt_chunk_extensible _fmt_ex {};
-    riff_header _data {};
+    ffmpeg::avformat::context _ctx;
+    ffmpeg::avformat::stream _stream;
+    ffmpeg::avcodec::codec _codec;
+    ffmpeg::avcodec::context _codec_ctx;
 
-    std::streampos _data_start;
-    std::chrono::nanoseconds _ns_per_frame {};
+    ffmpeg::frame _frame;
+    ffmpeg::packet _packet;
 
     public:
     explicit wav_pcm_provider(const istream_ptr& stream);
