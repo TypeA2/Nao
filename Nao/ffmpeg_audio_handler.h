@@ -2,7 +2,7 @@
 
 #include "file_handler.h"
 
-class wav_handler : public pcm_file_handler {
+class ffmpeg_audio_handler : public pcm_file_handler {
     public:
     using pcm_file_handler::pcm_file_handler;
 

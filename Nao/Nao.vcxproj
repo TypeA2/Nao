@@ -199,6 +199,8 @@
     <ClInclude Include="com.h" />
     <ClInclude Include="direct2d.h" />
     <ClInclude Include="ffmpeg.h" />
+    <ClInclude Include="ffmpeg_audio_handler.h" />
+    <ClInclude Include="ffmpeg_pcm_provider.h" />
     <ClInclude Include="media_foundation_handler.h" />
     <ClInclude Include="mf.h" />
     <ClInclude Include="wic.h" />
@@ -248,8 +250,6 @@
     <ClInclude Include="vdf_parser.h" />
     <ClInclude Include="vorbis_decoder.h" />
     <ClInclude Include="vorbis_encoder.h" />
-    <ClInclude Include="wav_handler.h" />
-    <ClInclude Include="wav_pcm_provider.h" />
     <ClInclude Include="wem_handler.h" />
     <ClInclude Include="wem_pcm_provider.h" />
     <ClInclude Include="win32.h" />
@@ -262,6 +262,8 @@
     <ClCompile Include="com.cpp" />
     <ClCompile Include="direct2d.cpp" />
     <ClCompile Include="ffmpeg.cpp" />
+    <ClCompile Include="ffmpeg_audio_handler.cpp" />
+    <ClCompile Include="ffmpeg_pcm_provider.cpp" />
     <ClCompile Include="media_foundation_handler.cpp" />
     <ClCompile Include="mf.cpp" />
     <ClCompile Include="win32.cpp" />
@@ -306,8 +308,6 @@
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="vorbis_decoder.cpp" />
     <ClCompile Include="vorbis_encoder.cpp" />
-    <ClCompile Include="wav_handler.cpp" />
-    <ClCompile Include="wav_pcm_provider.cpp" />
     <ClCompile Include="wem_handler.cpp" />
     <ClCompile Include="wem_pcm_provider.cpp" />
     <ClCompile Include="wsp_handler.cpp" />

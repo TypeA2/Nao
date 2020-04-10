@@ -4,11 +4,7 @@
 
 #include "ffmpeg.h"
 
-extern "C" {
-#include <libavformat/avformat.h>
-}
-
-class wav_pcm_provider : public pcm_provider {
+class ffmpeg_pcm_provider : public pcm_provider {
     int64_t _samples_played = 0;
 
     ffmpeg::avformat::context _ctx;
@@ -19,9 +15,12 @@ class wav_pcm_provider : public pcm_provider {
     ffmpeg::frame _frame;
     ffmpeg::packet _packet;
 
+    bool _is_float = false;
+    bool _is_planar = false;
+
     public:
-    explicit wav_pcm_provider(const istream_ptr& stream);
-    ~wav_pcm_provider() override = default;
+    explicit ffmpeg_pcm_provider(const istream_ptr& stream, const std::string& path = "");
+    ~ffmpeg_pcm_provider() override = default;
 
     pcm_samples get_samples(sample_format type) override;
     int64_t rate() override;

@@ -40,50 +40,51 @@ namespace detail {
 }
 
 namespace ffmpeg {
-    frame::frame() : _frame { av_frame_alloc() } {
-        ASSERT(_frame);
-    }
+    inline namespace generic {
+        frame::frame() : _frame { av_frame_alloc() } {
+            ASSERT(_frame);
+        }
 
-    frame::~frame() {
-        av_frame_free(&_frame);
-    }
+        frame::~frame() {
+            av_frame_free(&_frame);
+        }
 
-    int64_t frame::samples() const {
-        return _frame->nb_samples;
-    }
+        int64_t frame::samples() const {
+            return _frame->nb_samples;
+        }
 
-    int64_t frame::channels() const {
-        return _frame->channels;
-    }
+        int64_t frame::channels() const {
+            return _frame->channels;
+        }
 
-    const char* frame::data(size_t index) const {
-        return reinterpret_cast<char*>(_frame->buf[index]->data);
-    }
+        const char* frame::data(size_t index) const {
+            return reinterpret_cast<char*>(_frame->buf[index]->data);
+        }
 
-    size_t frame::size(size_t index) const {
-        return _frame->buf[index]->size;
-    }
+        size_t frame::size(size_t index) const {
+            return _frame->buf[index]->size;
+        }
 
-    frame::operator AVFrame*() const noexcept {
-        return _frame;
-    }
+        frame::operator AVFrame* () const noexcept {
+            return _frame;
+        }
 
-    packet::packet() : _packet { av_packet_alloc() } {
-        ASSERT(_packet);
-    }
+        packet::packet() : _packet { av_packet_alloc() } {
+            ASSERT(_packet);
+        }
 
-    packet::~packet() {
-        av_packet_free(&_packet);
-    }
+        packet::~packet() {
+            av_packet_free(&_packet);
+        }
 
-    int packet::stream_index() const {
-        return _packet->stream_index;
-    }
+        int packet::stream_index() const {
+            return _packet->stream_index;
+        }
 
-    packet::operator AVPacket* () const noexcept {
-        return _packet;
+        packet::operator AVPacket* () const noexcept {
+            return _packet;
+        }
     }
-
 
     namespace avio {
         io_context::io_context(const istream_ptr& stream)
@@ -138,6 +139,10 @@ namespace ffmpeg {
 
         AVCodecParameters* stream::params() const {
             return _stream->codecpar;
+        }
+
+        stream::operator bool() const {
+            return _stream;
         }
 
         context::context(const istream_ptr& stream, const std::string& path)
@@ -245,12 +250,13 @@ namespace ffmpeg {
             return _ctx->sample_fmt;
         }
 
-        bool context::decode(const packet& pkt, frame& frame) const {
-            if (avcodec_send_packet(_ctx, pkt) != 0) {
-                return false;
+        int context::decode(const packet& pkt, frame& frame) const {
+            int res = avcodec_send_packet(_ctx, pkt);
+            if (res != 0) {
+                return res;
             }
-            
-            return avcodec_receive_frame(_ctx, frame) == 0;
+
+            return avcodec_receive_frame(_ctx, frame);
         }
 
         AVCodecContext* context::ctx() const {

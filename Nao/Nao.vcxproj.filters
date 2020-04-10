@@ -184,14 +184,8 @@
     <ClInclude Include="ogg_handler.h">
       <Filter>Header Files\Handlers</Filter>
     </ClInclude>
-    <ClInclude Include="wav_handler.h">
-      <Filter>Header Files\Handlers</Filter>
-    </ClInclude>
     <ClInclude Include="wsp_handler.h">
       <Filter>Header Files\Handlers</Filter>
-    </ClInclude>
-    <ClInclude Include="wav_pcm_provider.h">
-      <Filter>Header Files\AV\PCM</Filter>
     </ClInclude>
     <ClInclude Include="flac_handler.h">
       <Filter>Header Files\Handlers</Filter>
@@ -273,6 +267,12 @@
     </ClInclude>
     <ClInclude Include="ffmpeg.h">
       <Filter>Header Files\AV</Filter>
+    </ClInclude>
+    <ClInclude Include="ffmpeg_audio_handler.h">
+      <Filter>Header Files\Handlers</Filter>
+    </ClInclude>
+    <ClInclude Include="ffmpeg_pcm_provider.h">
+      <Filter>Header Files\AV\PCM</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -360,14 +360,8 @@
     <ClCompile Include="ogg_handler.cpp">
       <Filter>Source Files\Handlers</Filter>
     </ClCompile>
-    <ClCompile Include="wav_handler.cpp">
-      <Filter>Source Files\Handlers</Filter>
-    </ClCompile>
     <ClCompile Include="wsp_handler.cpp">
       <Filter>Source Files\Handlers</Filter>
-    </ClCompile>
-    <ClCompile Include="wav_pcm_provider.cpp">
-      <Filter>Source Files\AV\PCM</Filter>
     </ClCompile>
     <ClCompile Include="flac_handler.cpp">
       <Filter>Source Files\Handlers</Filter>
@@ -440,6 +434,12 @@
     </ClCompile>
     <ClCompile Include="ffmpeg.cpp">
       <Filter>Source Files\AV</Filter>
+    </ClCompile>
+    <ClCompile Include="ffmpeg_audio_handler.cpp">
+      <Filter>Source Files\Handlers</Filter>
+    </ClCompile>
+    <ClCompile Include="ffmpeg_pcm_provider.cpp">
+      <Filter>Source Files\AV\PCM</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

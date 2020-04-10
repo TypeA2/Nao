@@ -12,33 +12,36 @@ struct AVIOContext;
 struct AVStream;
 
 namespace ffmpeg {
-    class frame {
-        AVFrame* _frame;
+    inline namespace generic {
+        class frame {
+            AVFrame* _frame;
 
-        public:
-        frame();
-        ~frame();
+            public:
+            frame();
+            ~frame();
 
-        int64_t samples() const;
-        int64_t channels() const;
+            int64_t samples() const;
+            int64_t channels() const;
 
-        const char* data(size_t index = 0) const;
-        size_t size(size_t index = 0) const;
+            const char* data(size_t index = 0) const;
+            size_t size(size_t index = 0) const;
 
-        operator AVFrame* () const noexcept;
-    };
+            operator AVFrame* () const noexcept;
+        };
 
-    class packet {
-        AVPacket* _packet;
+        class packet {
+            AVPacket* _packet;
 
-        public:
-        packet();
-        ~packet();
+            public:
+            packet();
+            ~packet();
 
-        int stream_index() const;
+            int stream_index() const;
 
-        operator AVPacket* () const noexcept;
-    };
+            operator AVPacket* () const noexcept;
+        };
+    }
+
     namespace avio {
         class io_context {
             static constexpr size_t buffer_size = 4096;
@@ -73,6 +76,8 @@ namespace ffmpeg {
             double time_base() const;
 
             AVCodecParameters* params() const;
+
+            operator bool() const;
         };
 
         class context {
@@ -133,7 +138,7 @@ namespace ffmpeg {
             AVSampleFormat sample_format() const;
 
             // Send and receive
-            bool decode(const packet& pkt, frame& frame) const;
+            int decode(const packet& pkt, frame& frame) const;
 
             AVCodecContext* ctx() const;
         };
