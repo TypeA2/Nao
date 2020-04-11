@@ -3,17 +3,31 @@
 #include "pcm_provider.h"
 #include "thread_pool.h"
 
+#include "sdl2.h"
+
 enum event_type {
     EVENT_START,
     EVENT_STOP
 };
 
-class audio_player_pa_lock;
-
 class audio_player {
     public:
     using event_handler = std::function<void()>;
 
+    private:
+    pcm_provider_ptr _provider;
+    sdl::audio::device _device;
+
+    pcm_samples _current_samples = pcm_samples::error(-1);
+    int64_t _already_consumed = 0;
+
+    float _volume = 1.f;
+    bool _eof = false;
+    bool _paused = true;
+
+    std::unordered_map<event_type, std::vector<event_handler>> _events;
+
+    public:
     explicit audio_player(pcm_provider_ptr provider);
     ~audio_player();
 
@@ -25,7 +39,7 @@ class audio_player {
     bool eof() const;
     void pause();
     void play();
-    void reset();
+    void reset() {};
 
     void set_volume_scaled(float val);
     void set_volume_log(float orig, float curve = 2.f);
@@ -39,34 +53,5 @@ class audio_player {
     sample_format pcm_format() const;
 
     private:
-    void _playback_loop_passthrough(sample_format output_format);
-    void _playback_loop_resample(const PaDeviceInfo* info);
-    void _wait_pause();
-    void _playback_end();
-    void _write_samples(pcm_samples samples) const;
-
-    std::unique_ptr<audio_player_pa_lock> _d;
-
-    pcm_provider_ptr _m_provider;
-    thread_pool _m_player;
-
-    bool _m_convert_rate;
-    bool _m_convert_format;
-
-    bool _m_quit;
-    bool _m_pause;
-    bool _m_eof;
-    std::mutex _m_pause_mutex;
-    std::condition_variable _m_pause_condition;
-
-    std::mutex _m_startup_mutex;
-    std::condition_variable _m_startup_condition;
-    std::atomic<bool> _m_startup_done;
-
-    float _m_volume;
-
-    PaStream* _m_stream;
-    int _m_channel_out;
-
-    std::unordered_map<event_type, std::vector<event_handler>> _m_events;
+    void _audio_callback(uint8_t* buf, int len);
 };

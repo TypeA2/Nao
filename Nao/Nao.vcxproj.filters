@@ -79,6 +79,12 @@
     <Filter Include="Source Files\AV\Image">
       <UniqueIdentifier>{4577d43f-005e-42e6-9a16-ad6be1558d1f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\AV\SDL">
+      <UniqueIdentifier>{7c4e988b-df36-4ef3-a20a-77ccf9551a35}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\AV\SDL">
+      <UniqueIdentifier>{9c11cff5-4a0a-4132-bd01-d1e34b633853}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Nao.rc">
@@ -274,6 +280,9 @@
     <ClInclude Include="ffmpeg_pcm_provider.h">
       <Filter>Header Files\AV\PCM</Filter>
     </ClInclude>
+    <ClInclude Include="sdl2.h">
+      <Filter>Header Files\AV\SDL</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="nao.cpp">
@@ -440,6 +449,9 @@
     </ClCompile>
     <ClCompile Include="ffmpeg_pcm_provider.cpp">
       <Filter>Source Files\AV\PCM</Filter>
+    </ClCompile>
+    <ClCompile Include="sdl2.cpp">
+      <Filter>Source Files\AV\SDL</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -118,7 +118,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)lib\libogg\include;$(SolutionDir)lib\libvorbis\include;$(SolutionDir)lib\portaudio\include;$(SolutionDir)lib\libsamplerate\include;$(SolutionDir)lib\libopus\include;$(SolutionDir)lib\libopusfile\include;$(SolutionDir)lib\libFLAC\include;$(SolutionDir)lib\FFmpeg\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)lib\libogg\include;$(SolutionDir)lib\libvorbis\include;$(SolutionDir)lib\libopus\include;$(SolutionDir)lib\libopusfile\include;$(SolutionDir)lib\libFLAC\include;$(SolutionDir)lib\FFmpeg\include;$(SolutionDir)lib\SDL2\include</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>6388;6387;26712;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -126,7 +126,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LargeAddressAware>true</LargeAddressAware>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>comctl32.lib;uxtheme.lib;comsupp.lib;libogg.lib;libvorbis.lib;libvorbisfile.lib;portaudio_x64.lib;libsamplerate-0.lib;libopus.lib;libopusfile.lib;libFLAC.lib;libFLAC++.lib;Shlwapi.lib;d2d1.lib;dxguid.lib;dxva2.lib;evr.lib;mf.lib;mfplat.lib;mfplay.lib;mfreadwrite.lib;mfuuid.lib;strmiids.lib;avcodec.lib;avformat.lib;avutil.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;uxtheme.lib;comsupp.lib;libogg.lib;libvorbis.lib;libvorbisfile.lib;libopus.lib;libopusfile.lib;libFLAC.lib;libFLAC++.lib;Shlwapi.lib;d2d1.lib;dxguid.lib;dxva2.lib;evr.lib;mf.lib;mfplat.lib;mfplay.lib;mfreadwrite.lib;mfuuid.lib;strmiids.lib;avcodec.lib;avformat.lib;avutil.lib;SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)lib\bin\$(Configuration)</AdditionalLibraryDirectories>
     </Link>
     <ResourceCompile>
@@ -166,7 +166,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)lib\libogg\include;$(SolutionDir)lib\libvorbis\include;$(SolutionDir)lib\portaudio\include;$(SolutionDir)lib\libsamplerate\include;$(SolutionDir)lib\libopus\include;$(SolutionDir)lib\libopusfile\include;$(SolutionDir)lib\libFLAC\include;$(SolutionDir)lib\FFmpeg\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)lib\libogg\include;$(SolutionDir)lib\libvorbis\include;$(SolutionDir)lib\libopus\include;$(SolutionDir)lib\libopusfile\include;$(SolutionDir)lib\libFLAC\include;$(SolutionDir)lib\FFmpeg\include;$(SolutionDir)lib\SDL2\include</AdditionalIncludeDirectories>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <DisableSpecificWarnings>6388;6387;26712;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -179,7 +179,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <LargeAddressAware>true</LargeAddressAware>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>comctl32.lib;uxtheme.lib;comsupp.lib;libogg.lib;libvorbis.lib;libvorbisfile.lib;portaudio_x64.lib;libsamplerate-0.lib;libopus.lib;libopusfile.lib;libFLAC.lib;libFLAC++.lib;Shlwapi.lib;d2d1.lib;dxguid.lib;dxva2.lib;evr.lib;mf.lib;mfplat.lib;mfplay.lib;mfreadwrite.lib;mfuuid.lib;strmiids.lib;avcodec.lib;avformat.lib;avutil.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;uxtheme.lib;comsupp.lib;libogg.lib;libvorbis.lib;libvorbisfile.lib;libopus.lib;libopusfile.lib;libFLAC.lib;libFLAC++.lib;Shlwapi.lib;d2d1.lib;dxguid.lib;dxva2.lib;evr.lib;mf.lib;mfplat.lib;mfplay.lib;mfreadwrite.lib;mfuuid.lib;strmiids.lib;avcodec.lib;avformat.lib;avutil.lib;SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)lib\bin\$(Configuration)</AdditionalLibraryDirectories>
     </Link>
     <ResourceCompile>
@@ -203,6 +203,7 @@
     <ClInclude Include="ffmpeg_pcm_provider.h" />
     <ClInclude Include="media_foundation_handler.h" />
     <ClInclude Include="mf.h" />
+    <ClInclude Include="sdl2.h" />
     <ClInclude Include="wic.h" />
     <ClInclude Include="wic_handler.h" />
     <ClInclude Include="wic_image_provider.h" />
@@ -266,6 +267,7 @@
     <ClCompile Include="ffmpeg_pcm_provider.cpp" />
     <ClCompile Include="media_foundation_handler.cpp" />
     <ClCompile Include="mf.cpp" />
+    <ClCompile Include="sdl2.cpp" />
     <ClCompile Include="win32.cpp" />
     <ClCompile Include="wic.cpp" />
     <ClCompile Include="wic_handler.cpp" />

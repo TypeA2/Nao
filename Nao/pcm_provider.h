@@ -2,7 +2,6 @@
 
 #include "binary_stream.h"
 
-#include <portaudio.h>
 
 enum sample_format : uint64_t {
     SAMPLE_NONE    = 0b00,
@@ -65,7 +64,6 @@ class pcm_samples final {
     static pcm_samples error(int64_t code);
 
     static size_t sample_size(sample_format type);
-    static PaSampleFormat pa_format(sample_format type);
 
     private:
     std::vector<char> _data;

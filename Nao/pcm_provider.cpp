@@ -13,14 +13,6 @@ size_t pcm_samples::sample_size(sample_format type) {
     }
 }
 
-PaSampleFormat pcm_samples::pa_format(sample_format type) {
-    switch (type) {
-        case SAMPLE_INT16:   return paInt16;
-        case SAMPLE_FLOAT32: return paFloat32;
-        default:             return 0;
-    }
-}
-
 pcm_samples::pcm_samples(pcm_samples&& other) noexcept
     : _data { std::move(other._data) }, _frames { other._frames }, _channels { other._channels }
     , _type { other._type }, _order { other._order } {
@@ -204,6 +196,10 @@ pcm_samples pcm_samples::as(sample_format type) const {
 }
 
 pcm_samples pcm_samples::downmix(int64_t channels) const {
+    if (_channels == channels) {
+        return *this;
+    }
+
     ASSERT(_channels == 6 && channels == 2);
     pcm_samples res { _type, _frames, channels, _order };
 
