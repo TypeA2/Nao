@@ -6,6 +6,7 @@
 
 #include <FLAC++/decoder.h>
 
+/*
 class flac_decoder : public FLAC::Decoder::Stream {
     public:
     explicit flac_decoder(const istream_ptr& stream) : _m_stream { stream }, _m_info { }, _m_ready { }, _m_current_header { } { }
@@ -58,15 +59,11 @@ flac_pcm_provider::flac_pcm_provider(const istream_ptr& stream) : pcm_provider(s
         1s / static_cast<double>(_m_decoder->get_sample_rate()));
 }
 
-pcm_samples flac_pcm_provider::get_samples(sample_format type) {
-    if (type != preferred_type()) {
-        return PCM_ERR;
-    }
-
+pcm_samples flac_pcm_provider::get_samples() {
     // Make sure there is audio available
     while (!_m_decoder->ready()) {
         if (_m_decoder->get_state() == FLAC__STREAM_DECODER_END_OF_STREAM) {
-            return PCM_DONE;
+            return { sample_format::int16};
         }
 
         _m_decoder->process_single();
@@ -102,10 +99,6 @@ int64_t flac_pcm_provider::rate() {
 
 int64_t flac_pcm_provider::channels() {
     return _m_decoder->get_channels();
-}
-
-channel_order flac_pcm_provider::order() {
-    return CHANNELS_SMPTE;
 }
 
 std::string flac_pcm_provider::name() {
@@ -220,3 +213,4 @@ void flac_decoder::metadata_callback(const FLAC__StreamMetadata* metadata) {
 void flac_decoder::error_callback(FLAC__StreamDecoderErrorStatus status) {
     utils::coutln("FLAC error:", status);
 }
+*/

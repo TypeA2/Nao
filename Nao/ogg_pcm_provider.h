@@ -2,6 +2,7 @@
 
 #include "pcm_provider.h"
 
+/*
 class opus_vorbis_decoder;
 
 enum ogg_pcm_type {
@@ -31,3 +32,4 @@ class ogg_pcm_provider : public pcm_provider {
     std::unique_ptr<opus_vorbis_decoder> _m_dec;
     ogg_pcm_type _m_type;
 };
+*/

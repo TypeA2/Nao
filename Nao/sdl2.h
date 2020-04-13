@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include <functional>
+#include <deque>
 
 #include <SDL.h>
 
@@ -35,13 +36,17 @@ namespace sdl {
     namespace audio {
         class device {
             public:
-            using callback = std::function<void(uint8_t*, int)>;
+            // Return the byte array containing the samples
+            using callback = std::function<std::vector<char>()>;
 
             private:
             subsystem_lock _lock { SDL_INIT_AUDIO };
 
             callback _cb;
+            std::function<void(uint8_t*, size_t)> _cb_fwd;
+            std::deque<std::vector<char>> _cb_stack;
 
+            SDL_AudioSpec _spec;
             SDL_AudioDeviceID _device;
 
             public:
@@ -51,6 +56,9 @@ namespace sdl {
 
             void pause() const;
             void play() const;
+
+            private:
+            void _callback(uint8_t* buffer, size_t len);
         };
     }
 }

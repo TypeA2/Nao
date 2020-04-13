@@ -11,12 +11,22 @@
 
 audio_player::audio_player(pcm_provider_ptr provider)
     : _provider { std::move(provider) }
-    , _device { 44100, AUDIO_S16LSB, 2, 1024,
-        std::bind(&audio_player::_audio_callback, this, std::placeholders::_1, std::placeholders::_2) } {
+    , _device { 44100, AUDIO_S16LSB, 2, 4096,
+        std::bind(&audio_player::_audio_callback, this) } {
+    _swr = swr_alloc_set_opts(nullptr,
+        AV_CH_LAYOUT_STEREO,
+        AV_SAMPLE_FMT_S16,
+        44100,
+        AV_CH_LAYOUT_STEREO,
+        av_get_packed_sample_fmt(samples::to_avutil(_provider->format())),
+        utils::narrow<int>(_provider->rate()), 0, nullptr);
 
+    ASSERT(_swr);
+    swr_init(_swr);
 }
 
 audio_player::~audio_player() {
+    swr_free(&_swr);
     trigger_event(EVENT_STOP);
 }
 
@@ -88,40 +98,32 @@ pcm_provider* audio_player::provider() const {
 }
 
 sample_format audio_player::pcm_format() const {
-    return SAMPLE_INT16;
+    return _provider->format();
 }
 
-void audio_player::_audio_callback(uint8_t* buf, int len) {
-    int64_t consumed = 0;
+std::vector<char> audio_player::_audio_callback() {
+    (void) this;
+    pcm_samples samples = _provider->get_samples();
 
-    if (_already_consumed > 0) {
-        // Remaining samples from previous invocation
-        int64_t remaining = _current_samples.samples() * 2 - _already_consumed;
+    int out_samples = swr_get_out_samples(_swr, utils::narrow<int>(samples.frames()));
+    ASSERT(out_samples > 0);
 
-        if (remaining < len) {
-            std::copy_n(_current_samples.data() + _already_consumed, remaining, buf);
-            consumed += remaining;
-            _already_consumed = 0;
-        } else {
-            // Need to truncate again
-            std::copy_n(_current_samples.data() + _already_consumed, len, buf);
-            _already_consumed -= len;
-            return;
-        }
+    std::vector<char> result(out_samples * size_t { 4 }, 0);
+
+    const uint8_t* in = reinterpret_cast<uint8_t*>(samples.data());
+    uint8_t* out = reinterpret_cast<uint8_t*>(result.data());
+
+    int converted = swr_convert(_swr, &out, utils::narrow<int>(result.size() / 2),
+        &in, utils::narrow<int>(samples.frames()));
+
+    result.resize(converted * size_t { 4 });
+
+    auto data = reinterpret_cast<sample_int16_t*>(result.data());
+
+    for (size_t i = 0; i < (result.size() / 2); ++i) {
+        data[i] = utils::narrow<sample_int16_t>(data[i] * _volume);
     }
 
-    do {
-        _current_samples = _provider->get_samples(SAMPLE_INT16).downmix(2);
-        _current_samples.scale(_volume);
 
-        int64_t this_time = std::min<int64_t>(_current_samples.samples() * 2, len - consumed);
-        std::copy_n(_current_samples.data(), this_time, buf + consumed);
-
-        consumed += this_time;
-
-        if (this_time != _current_samples.samples() * 2) {
-            // Buffer full
-            _already_consumed = this_time;
-        }
-    } while (consumed < len);
+    return result;
 }

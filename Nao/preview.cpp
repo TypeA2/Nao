@@ -197,7 +197,6 @@ audio_player_preview::audio_player_preview(nao_view& view, std::unique_ptr<audio
     , _codec { this, "Codec:", _player->provider()->name() }
     , _rate { this, "Sample rate:", std::to_string(_player->provider()->rate()) + " Hz" }
     , _channels { this, "Channels:", std::to_string(_player->provider()->channels()) }
-    , _order { this, "Channel order:", "" }
     , _type { this, "Sample type:", "" } {
 
     win32::dynamic_library mmcndmgr("mmcndmgr.dll");
@@ -232,23 +231,7 @@ audio_player_preview::audio_player_preview(nao_view& view, std::unique_ptr<audio
 
     auto provider = _player->provider();
 
-
-    std::string order_name;
-    switch (provider->order()) {
-        case CHANNELS_NONE:   order_name = "unspecified"; break;
-        case CHANNELS_VORBIS: order_name = "Vorbis";      break;
-        case CHANNELS_WAV:    order_name = "WAVE";        break;
-        case CHANNELS_SMPTE:  order_name = "SMPTE";       break;
-    }
-    _order.edit.set_text(order_name);
-
-    std::string sample_name;
-    switch (_player->pcm_format()) {
-        case SAMPLE_NONE:    sample_name = "<error>"; break;
-        case SAMPLE_INT16:   sample_name = "int16";   break;
-        case SAMPLE_FLOAT32: sample_name = "float32"; break;
-    }
-    _type.edit.set_text(sample_name);
+    _type.edit.set_text(samples::format_name(provider->format()));
 
     audio_player_preview::wm_size(0, dims());
 }
@@ -307,8 +290,7 @@ void audio_player_preview::wm_size(int, const dimensions& dims) {
     _codec.move(dwp, partial_offset, partial_width, info_offset, 0);
     _rate.move(dwp, partial_offset, partial_width, info_offset, 1);
     _channels.move(dwp, partial_offset, partial_width, info_offset, 2);
-    _order.move(dwp, partial_offset, partial_width, info_offset, 3);
-    _type.move(dwp, partial_offset, partial_width, info_offset, 4);
+    _type.move(dwp, partial_offset, partial_width, info_offset, 3);
 }
 
 void audio_player_preview::wm_command(WORD id, WORD code, HWND target) {
@@ -319,8 +301,10 @@ void audio_player_preview::wm_command(WORD id, WORD code, HWND target) {
             }
 
             _player->play();
+            _toggle_button.set_icon(_pause_icon);
         } else {
             _player->pause();
+            _toggle_button.set_icon(_play_icon);
         }
     }
 }

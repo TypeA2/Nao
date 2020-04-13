@@ -20,10 +20,13 @@ namespace ffmpeg {
             frame();
             ~frame();
 
-            int64_t samples() const;
-            int64_t channels() const;
+            uint64_t samples() const;
+            uint8_t channels() const;
 
             const char* data(size_t index = 0) const;
+
+            const char* operator[](size_t index) const;
+
             size_t size(size_t index = 0) const;
 
             operator AVFrame* () const noexcept;
@@ -39,6 +42,8 @@ namespace ffmpeg {
             int stream_index() const;
 
             operator AVPacket* () const noexcept;
+
+            void unref() const;
         };
     }
 
@@ -141,6 +146,8 @@ namespace ffmpeg {
             int decode(const packet& pkt, frame& frame) const;
 
             AVCodecContext* ctx() const;
+            uint64_t channel_layout() const;
+            uint8_t channels() const;
         };
     }
 }

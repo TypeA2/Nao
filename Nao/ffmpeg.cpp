@@ -49,15 +49,19 @@ namespace ffmpeg {
             av_frame_free(&_frame);
         }
 
-        int64_t frame::samples() const {
+        uint64_t frame::samples() const {
             return _frame->nb_samples;
         }
 
-        int64_t frame::channels() const {
+        uint8_t frame::channels() const {
             return _frame->channels;
         }
 
         const char* frame::data(size_t index) const {
+            return reinterpret_cast<char*>(_frame->buf[index]->data);
+        }
+
+        const char* frame::operator[](size_t index) const {
             return reinterpret_cast<char*>(_frame->buf[index]->data);
         }
 
@@ -84,6 +88,11 @@ namespace ffmpeg {
         packet::operator AVPacket* () const noexcept {
             return _packet;
         }
+
+        void packet::unref() const {
+            av_packet_unref(_packet);
+        }
+
     }
 
     namespace avio {
@@ -261,6 +270,14 @@ namespace ffmpeg {
 
         AVCodecContext* context::ctx() const {
             return _ctx;
+        }
+
+        uint64_t context::channel_layout() const {
+            return _ctx->channel_layout;
+        }
+
+        uint8_t context::channels() const {
+            return _ctx->channels;
         }
     }
 }

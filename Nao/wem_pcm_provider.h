@@ -2,6 +2,7 @@
 
 #include "pcm_provider.h"
 
+/*
 class vorbis_decoder;
 
 class wem_pcm_provider : public pcm_provider {
@@ -26,3 +27,4 @@ class wem_pcm_provider : public pcm_provider {
     iostream_ptr _m_buf;
     std::unique_ptr<vorbis_decoder> _m_dec;
 };
+*/

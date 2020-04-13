@@ -17,62 +17,51 @@ ffmpeg_pcm_provider::ffmpeg_pcm_provider(const istream_ptr& stream, const std::s
     ASSERT(_codec_ctx.parameters_to_context(_stream));
     ASSERT(_codec_ctx.open(_codec));
 
-    switch (_codec_ctx.sample_format()) {
-        case AV_SAMPLE_FMT_FLT:
-            _is_float = true;
-        case AV_SAMPLE_FMT_S16:
-            break;
-
-        case AV_SAMPLE_FMT_FLTP:
-            _is_float = true;
-        case AV_SAMPLE_FMT_S16P:
-            _is_planar = true;
-            break;
-
-        default: ASSERT(false);
-    }
+    _fmt = samples::from_avutil(_codec_ctx.sample_format());
+    _channel_layout = _codec_ctx.channel_layout();
+    _channels = _codec_ctx.channels();
 }
 
-pcm_samples ffmpeg_pcm_provider::get_samples(sample_format type) {
-    if (type != SAMPLE_INT16 && type != SAMPLE_FLOAT32) {
-        return pcm_samples::error(PCM_ERR);
-    }
+pcm_samples ffmpeg_pcm_provider::get_samples() {
 
+    // Read at least 1 frame
     int res;
     do {
         if (!_ctx.read_frame(_packet, _stream.index())) {
-            return pcm_samples::error(PCM_ERR);
+            throw pcm_decode_exception("failed to read frame");
         }
 
         res = _codec_ctx.decode(_packet, _frame);
 
         if (res != 0 && res != AVERROR(EAGAIN)) {
-            return pcm_samples::error(PCM_ERR);
+            throw pcm_decode_exception("failed to decode frame");
         }
+
+        _packet.unref();
     } while (res == AVERROR(EAGAIN));
 
-    pcm_samples samples { !_is_float ? SAMPLE_INT16 : SAMPLE_FLOAT32, _frame.samples(), _frame.channels(), CHANNELS_WAV };
+    pcm_samples samples { _fmt, _frame.samples(), _channels, _channel_layout };
 
     _samples_played += _frame.samples();
 
-    if (_is_planar) {
-        if (_is_float) {
-            sample_float32_t* dest = samples.data<SAMPLE_FLOAT32>();
-            for (int64_t i = 0; i < _frame.samples(); ++i) {
-                for (int64_t j = 0; j < _stream.channels(); ++j) {
-                    *dest++ = reinterpret_cast<const sample_float32_t*>(_frame.data(j))[i];
-                }
-            }
-        } else {
-            sample_int16_t* dest = samples.data<SAMPLE_INT16>();
-            for (int64_t i = 0; i < _frame.samples(); ++i) {
-                for (int64_t j = 0; j < _stream.channels(); ++j) {
-                    *dest++ = reinterpret_cast<const sample_int16_t*>(_frame.data(j))[i];
-                }
+    if (samples::is_planar(_fmt)) {
+        // Interleave planar data
+        char* const start = samples.data();
+        uint8_t channel_count = _frame.channels();
+        for (uint8_t i = 0; i < channel_count; ++i) {
+            char* cur = start;
+            const char* src = _frame[i];
+
+            for (uint64_t j = 0; j < _frame.samples(); ++j) {
+                *cur = *src++;
+
+                cur += channel_count;
             }
         }
+
     } else {
-        std::copy_n(_frame.data(), _frame.channels() * _frame.samples() * (_is_float ? 4 : 2), samples.data());
+        // Or just straight copy
+        samples.fill_n(_frame.data(), samples.bytes());
     }
 
     return samples;
@@ -84,10 +73,6 @@ int64_t ffmpeg_pcm_provider::rate() {
 
 int64_t ffmpeg_pcm_provider::channels() {
     return _stream.channels();
-}
-
-channel_order ffmpeg_pcm_provider::order() {
-    return CHANNELS_WAV;
 }
 
 std::string ffmpeg_pcm_provider::name() {
@@ -109,10 +94,6 @@ void ffmpeg_pcm_provider::seek(std::chrono::nanoseconds pos) {
     ASSERT(_ctx.seek(pos, _stream.index()));
 }
 
-sample_format ffmpeg_pcm_provider::types() {
-    return _is_float ? SAMPLE_FLOAT32 : SAMPLE_INT16;
-}
-
-sample_format ffmpeg_pcm_provider::preferred_type() {
-    return _is_float ? SAMPLE_FLOAT32 : SAMPLE_INT16;
+sample_format ffmpeg_pcm_provider::format() {
+    return _fmt;
 }

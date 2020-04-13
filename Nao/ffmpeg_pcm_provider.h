@@ -15,23 +15,22 @@ class ffmpeg_pcm_provider : public pcm_provider {
     ffmpeg::frame _frame;
     ffmpeg::packet _packet;
 
-    bool _is_float = false;
-    bool _is_planar = false;
+    sample_format _fmt;
+    uint64_t _channel_layout;
+    uint8_t _channels;
 
     public:
     explicit ffmpeg_pcm_provider(const istream_ptr& stream, const std::string& path = "");
     ~ffmpeg_pcm_provider() override = default;
 
-    pcm_samples get_samples(sample_format type) override;
+    pcm_samples get_samples() override;
     int64_t rate() override;
     int64_t channels() override;
-    channel_order order() override;
     std::string name() override;
 
     std::chrono::nanoseconds duration() override;
     std::chrono::nanoseconds pos() override;
     void seek(std::chrono::nanoseconds pos) override;
 
-    sample_format types() override;
-    sample_format preferred_type() override;
+    sample_format format() override;
 };

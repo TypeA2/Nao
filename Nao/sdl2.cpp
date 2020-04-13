@@ -2,9 +2,14 @@
 
 #include "utils.h"
 
+#include <numeric>
+
 namespace detail {
     void callback_fwd(void* userdata, uint8_t* buffer, int len) {
-        (*static_cast<sdl::audio::device::callback*>(userdata))(buffer, len);
+        if (len < 0) {
+            throw std::runtime_error("requested invalid number of bytes");
+        }
+        (*static_cast<std::function<void(uint8_t*, size_t)>*>(userdata))(buffer, len);
     }
 }
 
@@ -33,25 +38,24 @@ namespace sdl {
         audio_lock::~audio_lock() {
             SDL_UnlockAudioDevice(_device);
         }
-
-
     }
 
     namespace audio {
-        device::device(int freq, SDL_AudioFormat format, uint8_t channels, uint16_t samples, callback callback) : _cb { std::move(callback) } {
-            SDL_AudioSpec spec {
+        device::device(int freq, SDL_AudioFormat format, uint8_t channels, uint16_t samples, callback callback)
+            : _cb { std::move(callback) }
+            , _cb_fwd { std::bind(&device::_callback, this, std::placeholders::_1, std::placeholders::_2) }
+            , _spec {
                 .freq = freq,
                 .format = format,
                 .channels = channels,
                 .samples = samples,
                 .callback = detail::callback_fwd,
-                .userdata = &_cb
-            };
-
+                .userdata = &_cb_fwd
+            } {
             SDL_AudioSpec obtained;
-            _device = SDL_OpenAudioDevice(nullptr, 0, &spec, &obtained, 0);
+            _device = SDL_OpenAudioDevice(nullptr, 0, &_spec, &obtained, 0);
 
-            ASSERT(_device != 0 && spec.format == obtained.format);
+            ASSERT(_device != 0 && _spec.format == obtained.format);
         }
 
         device::~device() {
@@ -65,6 +69,39 @@ namespace sdl {
 
         void device::play() const {
             SDL_PauseAudioDevice(_device, 0);
+        }
+
+        void device::_callback(uint8_t* buffer, size_t len) {
+            size_t bytes_present = std::accumulate(_cb_stack.begin(), _cb_stack.end(), size_t { 0 },
+                [](size_t val, const std::vector<char>& vec) { return val + vec.size(); });
+
+            while (bytes_present < len) {
+                _cb_stack.push_back(_cb());
+                bytes_present += _cb_stack.back().size();
+            }
+
+            size_t bytes_left = len;
+            char* cur = reinterpret_cast<char*>(buffer);
+            while (bytes_left > 0) {
+                auto& data = _cb_stack.front();
+                if (bytes_left >= data.size()) {
+                    // Whole vector can fit
+                    std::copy(data.begin(), data.end(), cur);
+
+                    cur += data.size();
+
+                    bytes_left -= data.size();
+
+                    _cb_stack.pop_front();
+                } else {
+                    // Truncate this vector
+                    std::copy_n(data.begin(), bytes_left, cur);
+
+                    data = std::vector<char> { data.begin() + bytes_left, data.end() };
+
+                    break;
+                }
+            }
         }
     }
 }

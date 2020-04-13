@@ -5,6 +5,11 @@
 
 #include "sdl2.h"
 
+extern "C" {
+#include <libswresample/swresample.h>
+#include <libavutil/samplefmt.h>
+}
+
 enum event_type {
     EVENT_START,
     EVENT_STOP
@@ -18,14 +23,13 @@ class audio_player {
     pcm_provider_ptr _provider;
     sdl::audio::device _device;
 
-    pcm_samples _current_samples = pcm_samples::error(-1);
-    int64_t _already_consumed = 0;
-
     float _volume = 1.f;
     bool _eof = false;
     bool _paused = true;
 
     std::unordered_map<event_type, std::vector<event_handler>> _events;
+
+    SwrContext* _swr;
 
     public:
     explicit audio_player(pcm_provider_ptr provider);
@@ -53,5 +57,5 @@ class audio_player {
     sample_format pcm_format() const;
 
     private:
-    void _audio_callback(uint8_t* buf, int len);
+    std::vector<char> _audio_callback();
 };

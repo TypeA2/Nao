@@ -9,7 +9,8 @@ file_handler_tag flac_handler::tag() const {
 }
 
 pcm_provider_ptr flac_handler::make_provider() {
-    return std::make_shared<flac_pcm_provider>(stream);
+    //return std::make_shared<flac_pcm_provider>(stream);
+    return nullptr;
 }
 
 static file_handler_ptr create(const istream_ptr& stream, const std::string& path) {

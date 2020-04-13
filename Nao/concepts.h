@@ -38,4 +38,12 @@ namespace concepts {
     // POD or arithmetic type
     template <typename T>
     concept pod = std::is_pod_v<T>;
+
+    // Dereferencable
+    template <typename T, typename R>
+    concept iterator = requires (T c) {
+        { *c } -> std::convertible_to<R>;
+        { c++ };
+        { ++c };
+    };
 }

@@ -6,6 +6,7 @@
 #include "vorbis_decoder.h"
 #include "opus_decoder.h"
 
+/*
 ogg_pcm_provider::ogg_pcm_provider(const istream_ptr& stream) : pcm_provider(stream) {
     bool is_valid = false;
     
@@ -117,3 +118,4 @@ sample_format ogg_pcm_provider::preferred_type() {
     return SAMPLE_FLOAT32;
 }
 
+*/

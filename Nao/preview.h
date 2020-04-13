@@ -86,7 +86,6 @@ class audio_player_preview : public preview {
     info_pair _codec;
     info_pair _rate;
     info_pair _channels;
-    info_pair _order;
     info_pair _type;
 
     win32::icon _play_icon;

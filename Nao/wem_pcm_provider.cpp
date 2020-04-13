@@ -13,7 +13,7 @@
 #include "namespaces.h"
 
 #include "vorbis_decoder.h"
-
+/*
 wem_pcm_provider::wem_pcm_provider(const istream_ptr& stream) : pcm_provider(stream) {
     _m_buf = std::make_shared<binary_iostream>(
         std::make_unique<std::stringstream>(std::ios::in | std::ios::out | std::ios::binary));
@@ -106,3 +106,4 @@ sample_format wem_pcm_provider::preferred_type() {
     return SAMPLE_FLOAT32;
 }
 
+*/

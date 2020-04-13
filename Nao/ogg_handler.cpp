@@ -8,7 +8,8 @@ file_handler_tag ogg_handler::tag() const {
 }
 
 pcm_provider_ptr ogg_handler::make_provider() {
-    return std::make_shared<ogg_pcm_provider>(stream);
+    //return std::make_shared<ogg_pcm_provider>(stream);
+    return nullptr;
 }
 
 static file_handler_ptr create(const istream_ptr& stream, const std::string& path) {

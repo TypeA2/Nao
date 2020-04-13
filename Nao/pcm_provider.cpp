@@ -1,42 +1,101 @@
 #include "pcm_provider.h"
 #include "utils.h"
 
-pcm_samples pcm_samples::error(int64_t code) {
-    return pcm_samples { SAMPLE_NONE, code, 0, CHANNELS_NONE };
-}
-
-size_t pcm_samples::sample_size(sample_format type) {
-    switch (type) {
-        case SAMPLE_INT16:   return sizeof(sample_int16_t);
-        case SAMPLE_FLOAT32: return sizeof(sample_float32_t);
-        default:             return 0;
+namespace samples {
+    size_t sample_size(sample_format fmt) {
+        switch (fmt & sample_format::type_mask) {
+            case sample_format::none:    return 0;
+            case sample_format::uint8:   return 1;
+            case sample_format::int16:   return 2;
+            case sample_format::int32:   return 4;
+            case sample_format::int64:   return 8;
+            case sample_format::float32: return 4;
+            case sample_format::float64: return 8;
+            default:                     return 0;
+        }
     }
+
+    AVSampleFormat to_avutil(sample_format fmt) {
+        switch (fmt) {
+            case sample_format::uint8:    return AV_SAMPLE_FMT_U8;
+            case sample_format::int16:    return AV_SAMPLE_FMT_S16;
+            case sample_format::int32:    return AV_SAMPLE_FMT_S32;
+            case sample_format::int64:    return AV_SAMPLE_FMT_S64;
+            case sample_format::float32:  return AV_SAMPLE_FMT_FLT;
+            case sample_format::float64:  return AV_SAMPLE_FMT_DBL;
+            case sample_format::uint8p:   return AV_SAMPLE_FMT_U8P;
+            case sample_format::int16p:   return AV_SAMPLE_FMT_S16P;
+            case sample_format::int32p:   return AV_SAMPLE_FMT_S32P;
+            case sample_format::int64p:   return AV_SAMPLE_FMT_S64P;
+            case sample_format::float32p: return AV_SAMPLE_FMT_FLTP;
+            case sample_format::float64p: return AV_SAMPLE_FMT_DBLP;
+            default:                      return AV_SAMPLE_FMT_NONE;
+        }
+    }
+
+    sample_format from_avutil(AVSampleFormat fmt) {
+        switch (fmt) {
+            case AV_SAMPLE_FMT_U8:   return sample_format::uint8;
+            case AV_SAMPLE_FMT_S16:  return sample_format::int16;
+            case AV_SAMPLE_FMT_S32:  return sample_format::int32;
+            case AV_SAMPLE_FMT_S64:  return sample_format::int64;
+            case AV_SAMPLE_FMT_FLT:  return sample_format::float32;
+            case AV_SAMPLE_FMT_DBL:  return sample_format::float64;
+            case AV_SAMPLE_FMT_U8P:  return sample_format::uint8p;
+            case AV_SAMPLE_FMT_S16P: return sample_format::int16p;
+            case AV_SAMPLE_FMT_S32P: return sample_format::int32p;
+            case AV_SAMPLE_FMT_S64P: return sample_format::int64p;
+            case AV_SAMPLE_FMT_FLTP: return sample_format::float32p;
+            case AV_SAMPLE_FMT_DBLP: return sample_format::float64p;
+            default:                 return sample_format::none;
+        }
+    }
+
+    bool is_planar(sample_format fmt) {
+        return static_cast<std::underlying_type_t<sample_format>>(fmt & sample_format::planar_flag);
+    }
+
+    std::string format_name(sample_format fmt) {
+        switch (fmt) {
+            case sample_format::uint8:    return "uint8";
+            case sample_format::int16:    return "int16";
+            case sample_format::int32:    return "int32";
+            case sample_format::int64:    return "int64";
+            case sample_format::float32:  return "float";
+            case sample_format::float64:  return "double";
+            case sample_format::uint8p:   return "uint8 planar";
+            case sample_format::int16p:   return "int16 planar";
+            case sample_format::int32p:   return "int32 planar";
+            case sample_format::int64p:   return "int64 planar";
+            case sample_format::float32p: return "float planar";
+            case sample_format::float64p: return "double planar";
+            default:                      return "none";
+        }
+    }
+
+
 }
 
-pcm_samples::pcm_samples(pcm_samples&& other) noexcept
-    : _data { std::move(other._data) }, _frames { other._frames }, _channels { other._channels }
-    , _type { other._type }, _order { other._order } {
+pcm_samples::pcm_samples(sample_format type, uint64_t frames, uint8_t channels, uint64_t channel_layout)
+    : _type { type }, _frames { frames }, _channels { channels }, _channel_layout { channel_layout }
+    , _data(_frames * _channels * samples::sample_size(type), 0) {
     
 }
 
-pcm_samples& pcm_samples::operator=(pcm_samples&& other) noexcept {
-    _data = std::move(other._data);
-    _frames = other._frames;
-    _channels = other._channels;
-    _type = other._type;
-    _order = other._order;
-
-    return *this;
+int64_t pcm_samples::frames() const {
+    return _frames;
 }
 
-pcm_samples::pcm_samples(pcm_state state) : pcm_samples(SAMPLE_NONE, state, 0, CHANNELS_NONE) {
-    
+uint8_t pcm_samples::channels() const {
+    return _channels;
 }
 
-pcm_samples::pcm_samples(sample_format type, int64_t frames, int64_t channels, channel_order order)
-    : _data(sample_size(type) * frames * channels, 0)
-    , _frames { frames }, _channels { channels }, _type { type }, _order { order } {
-    
+int64_t pcm_samples::samples() const {
+    return _frames * channels();
+}
+
+size_t pcm_samples::bytes() const {
+    return _data.size();
 }
 
 char* pcm_samples::data() {
@@ -48,233 +107,7 @@ const char* pcm_samples::data() const {
 }
 
 pcm_samples::operator bool() const {
-    return !_data.empty();
-}
-
-int64_t pcm_samples::frames() const {
-    return _frames;
-}
-
-int64_t pcm_samples::channels() const {
-    return _channels;
-}
-
-sample_format pcm_samples::type() const {
-    return _type;
-}
-
-channel_order pcm_samples::order() const {
-    return _order;
-}
-
-int64_t pcm_samples::samples() const {
-    return _frames * _channels;
-}
-
-size_t pcm_samples::sample_size() const {
-    return sample_size(_type);
-}
-
-size_t pcm_samples::frame_size() const {
-    return sample_size(_type) * _channels;
-}
-
-pcm_samples& pcm_samples::scale(float scalar) {
-    switch (_type) {
-        case SAMPLE_INT16: {
-            sample_int16_t* src = data<SAMPLE_INT16>();
-
-            for (int64_t i = 0; i < samples(); ++i) {
-                src[i] = static_cast<sample_int16_t>(static_cast<float>(src[i]) * scalar);
-            }
-            break;
-        }
-
-        case SAMPLE_FLOAT32: {
-            sample_float32_t* src = data<SAMPLE_FLOAT32>();
-
-            for (int64_t i = 0; i < samples(); ++i) {
-                src[i] = src[i] * scalar, 0.f, 1.f;
-            }
-            break;
-        }
-
-        case SAMPLE_NONE: ASSERT(false);
-    }
-
-    return *this;
-}
-
-pcm_samples& pcm_samples::resize(int64_t frames) {
-    ASSERT(frames <= _frames);
-
-    if (frames == _frames) {
-        return *this;
-    }
-
-    _frames = frames;
-    _data.resize(_frames * _channels * sample_size(_type));
-
-    return *this;
-}
-
-pcm_samples& pcm_samples::resize_samples(int64_t samples) {
-    ASSERT(samples <= this->samples());
-
-    if (samples == this->samples()) {
-        return *this;
-    }
-
-    _frames = samples / _channels;
-    _data.resize(samples * sample_size(_type));
-    return *this;
-}
-
-pcm_samples& pcm_samples::resize_bytes(size_t bytes) {
-    ASSERT(bytes <= _data.size());
-
-    if (bytes == _data.size()) {
-        return *this;
-    }
-
-    _frames = bytes / _channels / sample_size(_type);
-    _data.resize(bytes);
-    return *this;
-}
-
-
-pcm_samples pcm_samples::as(sample_format type) const {
-    if (type == _type) {
-        return *this;
-    }
-
-    pcm_samples res { type, _frames, _channels, _order };
-
-    // Source type
-    switch (_type) {
-        case SAMPLE_INT16: {
-            auto src = data<SAMPLE_INT16>();
-
-            // Destination type
-            switch (type) {
-                case SAMPLE_FLOAT32: {
-                    std::transform(src, src + samples(), res.data<SAMPLE_FLOAT32>(),
-                        [](sample_int16_t from) -> sample_float32_t {
-                            return static_cast<float>(from) / std::numeric_limits<sample_int16_t>::max();
-                        });
-                    break;
-                }
-
-                case SAMPLE_INT16:
-                case SAMPLE_NONE: ASSERT(false);
-            }
-            break;
-        }
-
-        case SAMPLE_FLOAT32: {
-            auto src = data<SAMPLE_FLOAT32>();
-
-            switch (type) {
-                case SAMPLE_INT16: {
-                    std::transform(src, src + samples(), res.data<SAMPLE_INT16>(),
-                        [](sample_float32_t from) -> sample_int16_t {
-                            return static_cast<sample_int16_t>(
-                                std::clamp(from, 0.f, 1.f) * std::numeric_limits<sample_int16_t>::max());
-                        });
-                    break;
-                }
-
-                case SAMPLE_FLOAT32:
-                case SAMPLE_NONE: ASSERT(false);
-            }
-        }
-
-        case SAMPLE_NONE: ASSERT(false);
-    }
-
-    return res;
-}
-
-pcm_samples pcm_samples::downmix(int64_t channels) const {
-    if (_channels == channels) {
-        return *this;
-    }
-
-    ASSERT(_channels == 6 && channels == 2);
-    pcm_samples res { _type, _frames, channels, _order };
-
-    // For 6 channels to 2:
-    // L = L + k * C + k * Ls
-    // R = R + k * C + k * Rs
-
-    int64_t off_left = 0;
-    int64_t off_left_s = 0;
-    int64_t off_center = 0;
-    int64_t off_right_s = 0;
-    int64_t off_right = 0;
-    switch (_order) {
-        case CHANNELS_VORBIS:
-            off_left = 0;
-            off_left_s = 3;
-            off_center = 1;
-            off_right_s = 4;
-            off_right = 2;
-            break;
-        case CHANNELS_WAV:
-            off_left = 0;
-            off_left_s = 4;
-            off_center = 2;
-            off_right = 1;
-            off_right_s = 5;
-            break;
-
-        case CHANNELS_SMPTE:
-        case CHANNELS_NONE: ASSERT(false);
-    }
-
-    static constexpr float k = 0.7071f;
-
-    size_t res_index = 0;
-    switch (_type) {
-        case SAMPLE_INT16: {
-            const sample_int16_t* src = data<SAMPLE_INT16>();
-            sample_int16_t* dest = res.data<SAMPLE_INT16>();
-
-            static constexpr float min = std::numeric_limits<sample_int16_t>::min();
-            static constexpr float max = std::numeric_limits<sample_int16_t>::max();
-
-            for (int64_t i = 0; i < samples(); i += _channels) {
-                dest[res_index++] = static_cast<sample_int16_t>(std::clamp(
-                    static_cast<float>(src[i + off_left]) +
-                    (k * static_cast<float>(src[i + off_center])) +
-                    (k * static_cast<float>(src[i + off_left_s])), min, max));
-
-                dest[res_index++] = static_cast<sample_int16_t>(std::clamp(
-                    static_cast<float>(src[i + off_right]) +
-                    (k * static_cast<float>(src[i + off_center])) +
-                    (k * static_cast<float>(src[i + off_right_s])), min, max));
-            }
-            break;
-        }
-
-        case SAMPLE_FLOAT32: {
-            auto src = data<SAMPLE_FLOAT32>();
-            auto dest = res.data<SAMPLE_FLOAT32>();
-
-            for (int64_t i = 0; i < samples(); i += _channels) {
-                dest[res_index++] = std::clamp(
-                    src[i + off_left] + k * src[i + off_center] + k * src[i + off_left_s], -1.f, 1.f);
-
-                dest[res_index++] = std::clamp(
-                    src[i + off_right] + k * src[i + off_center] + k * src[i + off_right_s], -1.f, 1.f);
-            }
-            break;
-        }
-
-        case SAMPLE_NONE: ASSERT(false);
-    }
-
-    return res;
+    return _frames > 0 && _channels > 0 && !_data.empty() && _type != sample_format::none;
 }
 
 pcm_provider::pcm_provider(const istream_ptr& stream) : stream(stream) {
