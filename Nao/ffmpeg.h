@@ -5,6 +5,7 @@
 extern "C" {
 #include <libavutil/avutil.h>
 #include <libavcodec/avcodec.h>
+#include <libswresample/swresample.h>
 }
 
 struct AVFormatContext;
@@ -102,9 +103,9 @@ namespace ffmpeg {
             size_t stream_count() const;
             const std::vector<stream>& streams() const;
 
-            bool read_frame(packet& pkt) const;
+            int read_frame(packet& pkt) const;
             // Read and discard until the next packet with the specified index;
-            bool read_frame(packet& pkt, int index) const;
+            int read_frame(packet& pkt, int index) const;
 
             bool seek(std::chrono::nanoseconds pos, int index);
         };
@@ -141,6 +142,7 @@ namespace ffmpeg {
             bool open(const codec& codec) const;
 
             AVSampleFormat sample_format() const;
+            int64_t sample_rate() const;
 
             // Send and receive
             int decode(const packet& pkt, frame& frame) const;
@@ -148,6 +150,33 @@ namespace ffmpeg {
             AVCodecContext* ctx() const;
             uint64_t channel_layout() const;
             uint8_t channels() const;
+        };
+    }
+
+    namespace swresample {
+        class context {
+            public:
+            struct audio_info {
+                int64_t channel_layout;
+                AVSampleFormat sample_format;
+                int64_t sample_rate;
+            };
+
+            private:
+            SwrContext* _swr;
+
+            audio_info _in;
+            audio_info _out;
+
+            int _bytes_per_out_sample;
+
+            public:
+            context(const audio_info& in, const audio_info& out);
+            ~context();
+
+            int64_t frames_for_input(int64_t frames) const;
+
+            int64_t convert(char** in, int64_t in_frames, char** out, int64_t out_frames) const;
         };
     }
 }

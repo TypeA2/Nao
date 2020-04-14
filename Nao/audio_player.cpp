@@ -6,27 +6,35 @@
 
 #include <SDL.h>
 
-#include <compare>
+namespace detail {
+    static constexpr int out_sample_rate = 48000;
+    static constexpr SDL_AudioFormat sdl_out_sample_format = AUDIO_S16LSB;
+    static constexpr AVSampleFormat av_out_sample_format = AV_SAMPLE_FMT_S16;
+    static constexpr int64_t out_channel_count = 2;
+    static constexpr uint64_t out_channel_layout = AV_CH_LAYOUT_STEREO;
+    static constexpr int out_buffer_size = 4096;
 
+    static constexpr size_t out_sample_size = 2;
+
+    static constexpr ffmpeg::swresample::context::audio_info output_audio {
+        .channel_layout = out_channel_layout,
+        .sample_format = av_out_sample_format,
+        .sample_rate = out_sample_rate
+    };
+}
 
 audio_player::audio_player(pcm_provider_ptr provider)
     : _provider { std::move(provider) }
-    , _device { 44100, AUDIO_S16LSB, 2, 4096,
-        std::bind(&audio_player::_audio_callback, this) } {
-    _swr = swr_alloc_set_opts(nullptr,
-        AV_CH_LAYOUT_STEREO,
-        AV_SAMPLE_FMT_S16,
-        44100,
-        AV_CH_LAYOUT_STEREO,
-        av_get_packed_sample_fmt(samples::to_avutil(_provider->format())),
-        utils::narrow<int>(_provider->rate()), 0, nullptr);
+    , _device { detail::out_sample_rate, detail::sdl_out_sample_format, detail::out_channel_count,
+        detail::out_buffer_size, std::bind(&audio_player::_audio_callback, this) }
+    , _swr { { av_get_default_channel_layout(utils::narrow<int>(_provider->channels())),
+                av_get_packed_sample_fmt(samples::to_av(_provider->format())),
+                utils::narrow<int>(_provider->rate())  },
+            detail::output_audio } {
 
-    ASSERT(_swr);
-    swr_init(_swr);
 }
 
 audio_player::~audio_player() {
-    swr_free(&_swr);
     trigger_event(EVENT_STOP);
 }
 
@@ -53,11 +61,15 @@ bool audio_player::eof() const {
 void audio_player::pause() {
     _paused = true;
     _device.pause();
+
+    trigger_event(EVENT_STOP);
 }
 
 void audio_player::play() {
     _paused = false;
     _device.play();
+
+    trigger_event(EVENT_START);
 }
 
 
@@ -105,25 +117,26 @@ std::vector<char> audio_player::_audio_callback() {
     (void) this;
     pcm_samples samples = _provider->get_samples();
 
-    int out_samples = swr_get_out_samples(_swr, utils::narrow<int>(samples.frames()));
-    ASSERT(out_samples > 0);
+    if (!samples) {
+        _eof = true;
+        pause();
+        return { };
+    }
 
-    std::vector<char> result(out_samples * size_t { 4 }, 0);
+    int64_t max_out_frames = _swr.frames_for_input(samples.frames());
+    std::vector<char> result(max_out_frames * detail::out_sample_size * detail::out_channel_count);
 
-    const uint8_t* in = reinterpret_cast<uint8_t*>(samples.data());
-    uint8_t* out = reinterpret_cast<uint8_t*>(result.data());
+    char* in = samples.data();
+    char* out = result.data();
+    int64_t converted = _swr.convert(&in, samples.frames(), &out, max_out_frames);
 
-    int converted = swr_convert(_swr, &out, utils::narrow<int>(result.size() / 2),
-        &in, utils::narrow<int>(samples.frames()));
-
-    result.resize(converted * size_t { 4 });
+    result.resize(converted * detail::out_sample_size * detail::out_channel_count);
 
     auto data = reinterpret_cast<sample_int16_t*>(result.data());
 
-    for (size_t i = 0; i < (result.size() / 2); ++i) {
+    for (int64_t i = 0; i < (converted * detail::out_channel_count); ++i) {
         data[i] = utils::narrow<sample_int16_t>(data[i] * _volume);
     }
-
 
     return result;
 }

@@ -297,18 +297,15 @@ void audio_player_preview::wm_command(WORD id, WORD code, HWND target) {
     if (target == _toggle_button.handle()) {
         if (_player->paused()) {
             if (_player->eof()) {
-                _player->reset();
+                _player->seek(std::chrono::nanoseconds { 0 });
             }
 
             _player->play();
-            _toggle_button.set_icon(_pause_icon);
         } else {
             _player->pause();
-            _toggle_button.set_icon(_play_icon);
         }
     }
 }
-
 
 LRESULT audio_player_preview::wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
     switch (msg) {
@@ -375,7 +372,7 @@ LRESULT audio_player_preview::wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARA
             break;
         }
 
-        default: return DefWindowProcW(hwnd, msg, wparam, lparam);
+        default: return ui_element::wnd_proc(hwnd, msg, wparam, lparam);
     }
 
     return 0;

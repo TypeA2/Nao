@@ -15,7 +15,7 @@ namespace samples {
         }
     }
 
-    AVSampleFormat to_avutil(sample_format fmt) {
+    AVSampleFormat to_av(sample_format fmt) {
         switch (fmt) {
             case sample_format::uint8:    return AV_SAMPLE_FMT_U8;
             case sample_format::int16:    return AV_SAMPLE_FMT_S16;
@@ -33,7 +33,7 @@ namespace samples {
         }
     }
 
-    sample_format from_avutil(AVSampleFormat fmt) {
+    sample_format from_av(AVSampleFormat fmt) {
         switch (fmt) {
             case AV_SAMPLE_FMT_U8:   return sample_format::uint8;
             case AV_SAMPLE_FMT_S16:  return sample_format::int16;

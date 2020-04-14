@@ -11,8 +11,7 @@ file_handler_tag wem_handler::tag() const {
 }
 
 pcm_provider_ptr wem_handler::make_provider() {
-    //return std::make_shared<wem_pcm_provider>(stream);
-    return nullptr;
+    return std::make_shared<wem_pcm_provider>(stream);
 }
 
 static file_handler_ptr create(const istream_ptr& stream, const std::string& path) {

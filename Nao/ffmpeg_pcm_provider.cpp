@@ -1,5 +1,7 @@
 #include "ffmpeg_pcm_provider.h"
 
+#include "namespaces.h"
+
 ffmpeg_pcm_provider::ffmpeg_pcm_provider(const istream_ptr& stream, const std::string& path)
     : pcm_provider(stream), _ctx { stream, path } {
 
@@ -17,7 +19,7 @@ ffmpeg_pcm_provider::ffmpeg_pcm_provider(const istream_ptr& stream, const std::s
     ASSERT(_codec_ctx.parameters_to_context(_stream));
     ASSERT(_codec_ctx.open(_codec));
 
-    _fmt = samples::from_avutil(_codec_ctx.sample_format());
+    _fmt = samples::from_av(_codec_ctx.sample_format());
     _channel_layout = _codec_ctx.channel_layout();
     _channels = _codec_ctx.channels();
 }
@@ -27,14 +29,18 @@ pcm_samples ffmpeg_pcm_provider::get_samples() {
     // Read at least 1 frame
     int res;
     do {
-        if (!_ctx.read_frame(_packet, _stream.index())) {
-            throw pcm_decode_exception("failed to read frame");
+        res = _ctx.read_frame(_packet, _stream.index());
+        if (res != 0) {
+            // EOF
+            return { _fmt, 0, _channels, _channel_layout };
         }
 
         res = _codec_ctx.decode(_packet, _frame);
 
         if (res != 0 && res != AVERROR(EAGAIN)) {
-            throw pcm_decode_exception("failed to decode frame");
+            char buf[AV_ERROR_MAX_STRING_SIZE];
+            av_strerror(res, buf, AV_ERROR_MAX_STRING_SIZE);
+            throw pcm_decode_exception("failed to decode frame "s + buf);
         }
 
         _packet.unref();
@@ -46,16 +52,12 @@ pcm_samples ffmpeg_pcm_provider::get_samples() {
 
     if (samples::is_planar(_fmt)) {
         // Interleave planar data
-        char* const start = samples.data();
-        uint8_t channel_count = _frame.channels();
-        for (uint8_t i = 0; i < channel_count; ++i) {
-            char* cur = start;
-            const char* src = _frame[i];
-
-            for (uint64_t j = 0; j < _frame.samples(); ++j) {
-                *cur = *src++;
-
-                cur += channel_count;
+        size_t sample_size = av_get_bytes_per_sample(samples::to_av(_fmt));
+        char* dest = samples.data();
+        for (uint64_t i = 0; i < _frame.samples(); ++i) {
+            for (uint8_t j = 0; j < _channels; ++j) {
+                std::copy_n(_frame[j] + sample_size * i, sample_size, dest);
+                dest += sample_size;
             }
         }
 
@@ -68,11 +70,11 @@ pcm_samples ffmpeg_pcm_provider::get_samples() {
 }
 
 int64_t ffmpeg_pcm_provider::rate() {
-    return _stream.sample_rate();
+    return _codec_ctx.sample_rate();
 }
 
 int64_t ffmpeg_pcm_provider::channels() {
-    return _stream.channels();
+    return _codec_ctx.channels();
 }
 
 std::string ffmpeg_pcm_provider::name() {

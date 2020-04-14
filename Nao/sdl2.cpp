@@ -76,7 +76,14 @@ namespace sdl {
                 [](size_t val, const std::vector<char>& vec) { return val + vec.size(); });
 
             while (bytes_present < len) {
-                _cb_stack.push_back(_cb());
+                auto samples = _cb();
+
+                if (samples.empty()) {
+                    // End of file
+                    _cb_stack.push_back(std::vector<char>(len - bytes_present, _spec.silence));
+                } else {
+                    _cb_stack.push_back(std::move(samples));
+                }
                 bytes_present += _cb_stack.back().size();
             }
 

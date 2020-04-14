@@ -34,8 +34,8 @@ enum class sample_format : uint64_t {
 namespace samples {
     size_t sample_size(sample_format fmt);
 
-    AVSampleFormat to_avutil(sample_format fmt);
-    sample_format from_avutil(AVSampleFormat fmt);
+    AVSampleFormat to_av(sample_format fmt);
+    sample_format from_av(AVSampleFormat fmt);
 
     bool is_planar(sample_format fmt);
 

@@ -184,18 +184,19 @@ namespace ffmpeg {
             return _streams;
         }
 
-        bool context::read_frame(packet& pkt) const {
-            return av_read_frame(_ctx, pkt) == 0;
+        int context::read_frame(packet& pkt) const {
+            return av_read_frame(_ctx, pkt);
         }
 
-        bool context::read_frame(packet& pkt, int index) const {
+        int context::read_frame(packet& pkt, int index) const {
+            int ret;
             do {
-                if (!read_frame(pkt)) {
-                    return false;
+                if ((ret = read_frame(pkt)) != 0) {
+                    return ret;
                 }
             } while (pkt.stream_index() != index);
 
-            return true;
+            return ret;
         }
 
         bool context::seek(std::chrono::nanoseconds pos, int index) {
@@ -259,6 +260,10 @@ namespace ffmpeg {
             return _ctx->sample_fmt;
         }
 
+        int64_t context::sample_rate() const {
+            return _ctx->sample_rate;
+        }
+
         int context::decode(const packet& pkt, frame& frame) const {
             int res = avcodec_send_packet(_ctx, pkt);
             if (res != 0) {
@@ -278,6 +283,37 @@ namespace ffmpeg {
 
         uint8_t context::channels() const {
             return _ctx->channels;
+        }
+    }
+
+    namespace swresample {
+        context::context(const audio_info& in, const audio_info& out)
+            : _swr { swr_alloc_set_opts(nullptr,
+                out.channel_layout,
+                out.sample_format,
+                utils::narrow<int>(out.sample_rate),
+                in.channel_layout,
+                in.sample_format,
+                utils::narrow<int>(in.sample_rate), 0, nullptr) }
+            , _in { in }, _out { out }, _bytes_per_out_sample { av_get_bytes_per_sample(_out.sample_format) } {
+            ASSERT(_swr);
+            ASSERT(swr_init(_swr) == 0);
+        }
+
+        context::~context() {
+            swr_free(&_swr);
+        }
+
+        int64_t context::frames_for_input(int64_t frames) const {
+            return swr_get_out_samples(_swr, utils::narrow<int>(frames));
+        }
+
+        int64_t context::convert(char** in, int64_t in_frames, char** out, int64_t out_frames) const {
+            return swr_convert(_swr,
+                reinterpret_cast<uint8_t**>(out),
+                utils::narrow<int>(out_frames * _bytes_per_out_sample),
+                const_cast<const uint8_t**>(reinterpret_cast<uint8_t**>(in)),
+                utils::narrow<int>(in_frames));
         }
     }
 }

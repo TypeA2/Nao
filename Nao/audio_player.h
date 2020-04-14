@@ -4,11 +4,7 @@
 #include "thread_pool.h"
 
 #include "sdl2.h"
-
-extern "C" {
-#include <libswresample/swresample.h>
-#include <libavutil/samplefmt.h>
-}
+#include "ffmpeg.h"
 
 enum event_type {
     EVENT_START,
@@ -29,7 +25,7 @@ class audio_player {
 
     std::unordered_map<event_type, std::vector<event_handler>> _events;
 
-    SwrContext* _swr;
+    ffmpeg::swresample::context _swr;
 
     public:
     explicit audio_player(pcm_provider_ptr provider);
@@ -43,7 +39,6 @@ class audio_player {
     bool eof() const;
     void pause();
     void play();
-    void reset() {};
 
     void set_volume_scaled(float val);
     void set_volume_log(float orig, float curve = 2.f);
