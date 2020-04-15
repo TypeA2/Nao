@@ -1,1 +1,0 @@
-Before build, opusfile.h was modified to export it's symbols into a .dll for Windows usage.

@@ -172,9 +172,6 @@
     <ClInclude Include="pcm_provider.h">
       <Filter>Header Files\AV\PCM</Filter>
     </ClInclude>
-    <ClInclude Include="ogg_pcm_provider.h">
-      <Filter>Header Files\AV\PCM</Filter>
-    </ClInclude>
     <ClInclude Include="audio_player.h">
       <Filter>Header Files\AV</Filter>
     </ClInclude>
@@ -187,17 +184,8 @@
     <ClInclude Include="filesystem_handler.h">
       <Filter>Header Files\Handlers</Filter>
     </ClInclude>
-    <ClInclude Include="ogg_handler.h">
-      <Filter>Header Files\Handlers</Filter>
-    </ClInclude>
     <ClInclude Include="wsp_handler.h">
       <Filter>Header Files\Handlers</Filter>
-    </ClInclude>
-    <ClInclude Include="flac_handler.h">
-      <Filter>Header Files\Handlers</Filter>
-    </ClInclude>
-    <ClInclude Include="flac_pcm_provider.h">
-      <Filter>Header Files\AV\PCM</Filter>
     </ClInclude>
     <ClInclude Include="wem_handler.h">
       <Filter>Header Files\Handlers</Filter>
@@ -216,15 +204,6 @@
     </ClInclude>
     <ClInclude Include="namespaces.h">
       <Filter>Header Files\Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="vorbis_decoder.h">
-      <Filter>Header Files\AV\Codec</Filter>
-    </ClInclude>
-    <ClInclude Include="opus_decoder.h">
-      <Filter>Header Files\AV\Codec</Filter>
-    </ClInclude>
-    <ClInclude Include="opus_vorbis_decoder.h">
-      <Filter>Header Files\AV\Codec</Filter>
     </ClInclude>
     <ClInclude Include="wwriff.h">
       <Filter>Header Files\AV\Codec</Filter>
@@ -351,9 +330,6 @@
     <ClCompile Include="pcm_provider.cpp">
       <Filter>Source Files\AV\PCM</Filter>
     </ClCompile>
-    <ClCompile Include="ogg_pcm_provider.cpp">
-      <Filter>Source Files\AV\PCM</Filter>
-    </ClCompile>
     <ClCompile Include="audio_player.cpp">
       <Filter>Source Files\AV</Filter>
     </ClCompile>
@@ -366,17 +342,8 @@
     <ClCompile Include="filesystem_handler.cpp">
       <Filter>Source Files\Handlers</Filter>
     </ClCompile>
-    <ClCompile Include="ogg_handler.cpp">
-      <Filter>Source Files\Handlers</Filter>
-    </ClCompile>
     <ClCompile Include="wsp_handler.cpp">
       <Filter>Source Files\Handlers</Filter>
-    </ClCompile>
-    <ClCompile Include="flac_handler.cpp">
-      <Filter>Source Files\Handlers</Filter>
-    </ClCompile>
-    <ClCompile Include="flac_pcm_provider.cpp">
-      <Filter>Source Files\AV\PCM</Filter>
     </ClCompile>
     <ClCompile Include="wem_handler.cpp">
       <Filter>Source Files\Handlers</Filter>
@@ -389,15 +356,6 @@
     </ClCompile>
     <ClCompile Include="byte_array_streambuf.cpp">
       <Filter>Source Files\Utils\IO</Filter>
-    </ClCompile>
-    <ClCompile Include="vorbis_decoder.cpp">
-      <Filter>Source Files\AV\Codec</Filter>
-    </ClCompile>
-    <ClCompile Include="opus_decoder.cpp">
-      <Filter>Source Files\AV\Codec</Filter>
-    </ClCompile>
-    <ClCompile Include="opus_vorbis_decoder.cpp">
-      <Filter>Source Files\AV\Codec</Filter>
     </ClCompile>
     <ClCompile Include="wwriff.cpp">
       <Filter>Source Files\AV\Codec</Filter>

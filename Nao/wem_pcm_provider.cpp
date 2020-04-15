@@ -5,15 +5,6 @@
 
 #include "utils.h"
 
-#include <ogg/ogg.h>
-
-#include "frameworks.h"
-#include "resource.h"
-
-#include "namespaces.h"
-
-#include "vorbis_decoder.h"
-
 namespace detail {
     static istream_ptr decode(const istream_ptr& stream) {
         auto buf = std::make_shared<binary_iostream>(

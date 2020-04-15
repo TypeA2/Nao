@@ -126,7 +126,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LargeAddressAware>true</LargeAddressAware>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>comctl32.lib;uxtheme.lib;comsupp.lib;libogg.lib;libvorbis.lib;libvorbisfile.lib;libopus.lib;libopusfile.lib;libFLAC.lib;libFLAC++.lib;Shlwapi.lib;d2d1.lib;dxguid.lib;dxva2.lib;evr.lib;mf.lib;mfplat.lib;mfplay.lib;mfreadwrite.lib;mfuuid.lib;strmiids.lib;avcodec.lib;avformat.lib;avutil.lib;swresample.lib;SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;uxtheme.lib;comsupp.lib;libogg.lib;libvorbis.lib;Shlwapi.lib;d2d1.lib;dxguid.lib;dxva2.lib;evr.lib;mf.lib;mfplat.lib;mfplay.lib;mfreadwrite.lib;mfuuid.lib;strmiids.lib;avcodec.lib;avformat.lib;avutil.lib;swresample.lib;SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)lib\bin\$(Configuration)</AdditionalLibraryDirectories>
     </Link>
     <ResourceCompile>
@@ -179,7 +179,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <LargeAddressAware>true</LargeAddressAware>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>comctl32.lib;uxtheme.lib;comsupp.lib;libogg.lib;libvorbis.lib;libvorbisfile.lib;libopus.lib;libopusfile.lib;libFLAC.lib;libFLAC++.lib;Shlwapi.lib;d2d1.lib;dxguid.lib;dxva2.lib;evr.lib;mf.lib;mfplat.lib;mfplay.lib;mfreadwrite.lib;mfuuid.lib;strmiids.lib;avcodec.lib;avformat.lib;avutil.lib;swresample.lib;SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;uxtheme.lib;comsupp.lib;libogg.lib;libvorbis.lib;Shlwapi.lib;d2d1.lib;dxguid.lib;dxva2.lib;evr.lib;mf.lib;mfplat.lib;mfplay.lib;mfreadwrite.lib;mfuuid.lib;strmiids.lib;avcodec.lib;avformat.lib;avutil.lib;swresample.lib;SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)lib\bin\$(Configuration)</AdditionalLibraryDirectories>
     </Link>
     <ResourceCompile>
@@ -213,8 +213,6 @@
     <ClInclude Include="direct2d_image_display.h" />
     <ClInclude Include="filesystem_handler.h" />
     <ClInclude Include="filesystem_utils.h" />
-    <ClInclude Include="flac_handler.h" />
-    <ClInclude Include="flac_pcm_provider.h" />
     <ClInclude Include="image_provider.h" />
     <ClInclude Include="partial_file_streambuf.h" />
     <ClInclude Include="namespaces.h" />
@@ -230,11 +228,7 @@
     <ClInclude Include="file_handler.h" />
     <ClInclude Include="file_handler_factory.h" />
     <ClInclude Include="nao_view.h" />
-    <ClInclude Include="ogg_pcm_provider.h" />
-    <ClInclude Include="ogg_handler.h" />
     <ClInclude Include="ogg_stream.h" />
-    <ClInclude Include="opus_decoder.h" />
-    <ClInclude Include="opus_vorbis_decoder.h" />
     <ClInclude Include="pcm_provider.h" />
     <ClInclude Include="preview.h" />
     <ClInclude Include="push_button.h" />
@@ -249,7 +243,6 @@
     <ClInclude Include="ui_element.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="vdf_parser.h" />
-    <ClInclude Include="vorbis_decoder.h" />
     <ClInclude Include="vorbis_encoder.h" />
     <ClInclude Include="wem_handler.h" />
     <ClInclude Include="wem_pcm_provider.h" />
@@ -276,8 +269,6 @@
     <ClCompile Include="direct2d_image_display.cpp" />
     <ClCompile Include="filesystem_handler.cpp" />
     <ClCompile Include="filesystem_utils.cpp" />
-    <ClCompile Include="flac_handler.cpp" />
-    <ClCompile Include="flac_pcm_provider.cpp" />
     <ClCompile Include="image_provider.cpp" />
     <ClCompile Include="item_data.cpp" />
     <ClCompile Include="label.cpp" />
@@ -291,11 +282,7 @@
     <ClCompile Include="file_handler_factory.cpp" />
     <ClCompile Include="nao.cpp" />
     <ClCompile Include="nao_view.cpp" />
-    <ClCompile Include="ogg_pcm_provider.cpp" />
-    <ClCompile Include="ogg_handler.cpp" />
     <ClCompile Include="ogg_stream.cpp" />
-    <ClCompile Include="opus_decoder.cpp" />
-    <ClCompile Include="opus_vorbis_decoder.cpp" />
     <ClCompile Include="partial_file_streambuf.cpp" />
     <ClCompile Include="pcm_provider.cpp" />
     <ClCompile Include="preview.cpp" />
@@ -308,7 +295,6 @@
     <ClCompile Include="thread_pool.cpp" />
     <ClCompile Include="ui_element.cpp" />
     <ClCompile Include="utils.cpp" />
-    <ClCompile Include="vorbis_decoder.cpp" />
     <ClCompile Include="vorbis_encoder.cpp" />
     <ClCompile Include="wem_handler.cpp" />
     <ClCompile Include="wem_pcm_provider.cpp" />
