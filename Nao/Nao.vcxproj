@@ -200,6 +200,7 @@
     <ClInclude Include="direct2d.h" />
     <ClInclude Include="ffmpeg.h" />
     <ClInclude Include="ffmpeg_audio_handler.h" />
+    <ClInclude Include="ffmpeg_image_handler.h" />
     <ClInclude Include="ffmpeg_pcm_provider.h" />
     <ClInclude Include="media_foundation_handler.h" />
     <ClInclude Include="mf.h" />
@@ -257,6 +258,7 @@
     <ClCompile Include="direct2d.cpp" />
     <ClCompile Include="ffmpeg.cpp" />
     <ClCompile Include="ffmpeg_audio_handler.cpp" />
+    <ClCompile Include="ffmpeg_image_handler.cpp" />
     <ClCompile Include="ffmpeg_pcm_provider.cpp" />
     <ClCompile Include="media_foundation_handler.cpp" />
     <ClCompile Include="mf.cpp" />

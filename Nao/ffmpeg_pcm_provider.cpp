@@ -8,8 +8,7 @@
 
 ffmpeg_pcm_provider::ffmpeg_pcm_provider(istream_ptr s, const std::string& path)
     : pcm_provider(std::move(s)), _ctx { stream, path } {
-    // Find first audio stream and use that
-    _stream = _ctx.first_stream(AVMEDIA_TYPE_AUDIO);
+    _stream = _ctx.best_stream(AVMEDIA_TYPE_AUDIO);
 
     ASSERT(_stream);
     ASSERT(_stream.id() != AV_CODEC_ID_NONE);

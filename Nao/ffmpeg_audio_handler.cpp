@@ -27,7 +27,7 @@ static bool supports(const istream_ptr& stream, const std::string& path) {
         // First stream is audio
         if (ctx.stream_count() > 0
             && ctx.streams()[0].type() == AVMEDIA_TYPE_AUDIO
-            && ctx.first_stream(AVMEDIA_TYPE_AUDIO).id() != AV_CODEC_ID_NONE) {
+            && ctx.best_stream(AVMEDIA_TYPE_AUDIO).id() != AV_CODEC_ID_NONE) {
             return true;
         }
     } catch (const std::runtime_error&) {

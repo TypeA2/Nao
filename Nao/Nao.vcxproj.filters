@@ -262,6 +262,9 @@
     <ClInclude Include="sdl2.h">
       <Filter>Header Files\AV\SDL</Filter>
     </ClInclude>
+    <ClInclude Include="ffmpeg_image_handler.h">
+      <Filter>Header Files\Handlers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="nao.cpp">
@@ -410,6 +413,9 @@
     </ClCompile>
     <ClCompile Include="sdl2.cpp">
       <Filter>Source Files\AV\SDL</Filter>
+    </ClCompile>
+    <ClCompile Include="ffmpeg_image_handler.cpp">
+      <Filter>Source Files\Handlers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

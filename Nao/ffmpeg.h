@@ -81,6 +81,8 @@ namespace ffmpeg {
             int64_t sample_rate() const;
             int64_t channels() const;
 
+            int64_t codec_frame_count() const;
+
             std::chrono::nanoseconds duration() const;
             double time_base() const;
 
@@ -110,6 +112,9 @@ namespace ffmpeg {
 
             // Return the first stream of the specified type
             stream first_stream(AVMediaType type) const;
+
+            // FFmpeg's "best" stream
+            stream best_stream(AVMediaType type) const;
 
             int read_frame(packet& pkt) const;
 

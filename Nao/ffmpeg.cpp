@@ -143,6 +143,10 @@ namespace ffmpeg {
             return _stream->codecpar->channels;
         }
 
+        int64_t stream::codec_frame_count() const {
+            return _stream->codec_info_nb_frames;
+        }
+
         std::chrono::nanoseconds stream::duration() const {
             return std::chrono::nanoseconds { static_cast<int64_t>(round(1e9 * _stream->duration * time_base())) };
         }
@@ -174,6 +178,8 @@ namespace ffmpeg {
             if (res != 0) {
                 throw std::runtime_error(strerror(res));
             }
+
+            ASSERT(avformat_find_stream_info(_ctx, nullptr) >= 0);
 
             if (_ctx->nb_streams > 0) {
                 _streams = std::vector<avformat::stream> { _ctx->streams, _ctx->streams + _ctx->nb_streams };
@@ -207,6 +213,13 @@ namespace ffmpeg {
 
             return stream { nullptr };
         }
+
+        stream context::best_stream(AVMediaType type) const {
+            int index = av_find_best_stream(_ctx, type, -1, -1, nullptr, 0);
+            ASSERT(index >= 0);
+            return _streams[index];
+        }
+
 
         int context::read_frame(packet& pkt) const {
             return av_read_frame(_ctx, pkt);
