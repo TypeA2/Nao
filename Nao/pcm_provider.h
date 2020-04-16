@@ -162,7 +162,7 @@ class pcm_decode_exception : public std::runtime_error {
 
 class pcm_provider {
     public:
-    explicit pcm_provider(const istream_ptr& stream);
+    explicit pcm_provider(istream_ptr stream);
     virtual ~pcm_provider() = default;
 
     // Retrieve some samples, return 0 for eof, negative for error

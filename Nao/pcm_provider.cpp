@@ -110,6 +110,6 @@ pcm_samples::operator bool() const {
     return _frames > 0 && _channels > 0 && !_data.empty() && _type != sample_format::none;
 }
 
-pcm_provider::pcm_provider(const istream_ptr& stream) : stream(stream) {
+pcm_provider::pcm_provider(istream_ptr stream) : stream { std::move(stream) } {
     
 }

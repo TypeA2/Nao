@@ -1,20 +1,20 @@
 #include "ffmpeg_pcm_provider.h"
 
+#include <mmreg.h>
+
 #include "namespaces.h"
 
-ffmpeg_pcm_provider::ffmpeg_pcm_provider(const istream_ptr& stream, const std::string& path)
-    : pcm_provider(stream), _ctx { stream, path } {
+#include "riff.h"
 
+ffmpeg_pcm_provider::ffmpeg_pcm_provider(istream_ptr s, const std::string& path)
+    : pcm_provider(std::move(s)), _ctx { stream, path } {
     // Find first audio stream and use that
-    for (const ffmpeg::avformat::stream& s : _ctx.streams()) {
-        if (s.type() == AVMEDIA_TYPE_AUDIO) {
-            _stream = s;
-            break;
-        }
-    }
+    _stream = _ctx.first_stream(AVMEDIA_TYPE_AUDIO);
 
     ASSERT(_stream);
+    ASSERT(_stream.id() != AV_CODEC_ID_NONE);
     _codec = ffmpeg::avcodec::codec { _stream.id() };
+
     _codec_ctx = ffmpeg::avcodec::context { _codec };
     ASSERT(_codec_ctx.parameters_to_context(_stream));
     ASSERT(_codec_ctx.open(_codec));
@@ -38,9 +38,7 @@ pcm_samples ffmpeg_pcm_provider::get_samples() {
         res = _codec_ctx.decode(_packet, _frame);
 
         if (res != 0 && res != AVERROR(EAGAIN)) {
-            char buf[AV_ERROR_MAX_STRING_SIZE];
-            av_strerror(res, buf, AV_ERROR_MAX_STRING_SIZE);
-            throw pcm_decode_exception("failed to decode frame "s + buf);
+            throw pcm_decode_exception("failed to decode frame " + ffmpeg::strerror(res));
         }
 
         _packet.unref();
@@ -52,7 +50,7 @@ pcm_samples ffmpeg_pcm_provider::get_samples() {
 
     if (samples::is_planar(_fmt)) {
         // Interleave planar data
-        size_t sample_size = av_get_bytes_per_sample(samples::to_av(_fmt));
+        const size_t sample_size = av_get_bytes_per_sample(samples::to_av(_fmt));
         char* dest = samples.data();
         for (uint64_t i = 0; i < _frame.samples(); ++i) {
             for (uint8_t j = 0; j < _channels; ++j) {

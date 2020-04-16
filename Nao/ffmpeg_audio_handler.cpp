@@ -25,9 +25,11 @@ static bool supports(const istream_ptr& stream, const std::string& path) {
         ffmpeg::avformat::context ctx { stream, path };
 
         // First stream is audio
-        return ctx.stream_count() > 0
-        && ctx.streams()[0].type() == AVMEDIA_TYPE_AUDIO
-        && ctx.streams()[0].params()->codec_id != AV_CODEC_ID_NONE;
+        if (ctx.stream_count() > 0
+            && ctx.streams()[0].type() == AVMEDIA_TYPE_AUDIO
+            && ctx.first_stream(AVMEDIA_TYPE_AUDIO).id() != AV_CODEC_ID_NONE) {
+            return true;
+        }
     } catch (const std::runtime_error&) {
         
     }

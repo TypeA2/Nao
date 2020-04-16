@@ -44,16 +44,11 @@ wsp_handler::wsp_handler(const istream_ptr& stream, const std::string& path)
         SHGFI_TYPENAME | SHGFI_ICON | SHGFI_ICONLOCATION | SHGFI_ADDOVERLAYS | SHGFI_USEFILEATTRIBUTES);
     ASSERT(hr != 0);
 
-    SHFILEINFOW finfo_wav {};
-    hr = SHGetFileInfoW(L".wav", FILE_ATTRIBUTE_NORMAL, &finfo_wav, sizeof(finfo_wav),
-        SHGFI_TYPENAME | SHGFI_ICON | SHGFI_ICONLOCATION | SHGFI_ADDOVERLAYS | SHGFI_USEFILEATTRIBUTES);
-    ASSERT(hr != 0);
-
     std::string filename = std::filesystem::path(path).stem().string();
 
-    for (const auto& wwriff : _m_riff) {
+    for (const wwriff_file& wwriff : _m_riff) {
         std::stringstream ss;
-        ss << filename << "_" << std::setfill('0') << std::setw(name_width) << i++;
+        ss << filename << "_" << std::setfill('0') << std::setw(name_width) << i++ << ".wem";
 
         stream->seekg(wwriff.offset + 12);
         riff_header hdr;
@@ -64,26 +59,12 @@ wsp_handler::wsp_handler(const istream_ptr& stream, const std::string& path)
         stream->read(&fmt, sizeof(fmt));
         ASSERT(stream->gcount() == sizeof(fmt));
 
-        std::reference_wrapper<SHFILEINFOW> finfo { finfo_wem };
-        switch (fmt.format) {
-            case 0xFFFF:
-                ss << ".wem";
-                break;
-
-            case 0xFFFE:
-                finfo = finfo_wav;
-                ss << ".wav";
-                break;
-
-            default: ASSERT(false);
-        }
-
         items.push_back(item_data {
             .handler = this,
             .name    = ss.str(),
-            .type    = utils::utf8(finfo.get().szTypeName),
+            .type    = utils::utf8(finfo_wem.szTypeName),
             .size    = wwriff.size,
-            .icon    = finfo.get().iIcon,
+            .icon    = finfo_wem.iIcon,
             .stream  = std::make_shared<binary_istream>(std::make_unique<partial_file_streambuf>(stream, wwriff.offset, wwriff.size)),
             .data    = std::make_shared<wwriff_file>(wwriff)
             });

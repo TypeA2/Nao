@@ -6,6 +6,7 @@ extern "C" {
 #include <libavutil/avutil.h>
 #include <libavcodec/avcodec.h>
 #include <libswresample/swresample.h>
+#include <libavformat/avformat.h>
 }
 
 struct AVFormatContext;
@@ -14,6 +15,8 @@ struct AVStream;
 
 namespace ffmpeg {
     inline namespace generic {
+        std::string strerror(int err);
+
         class frame {
             AVFrame* _frame;
 
@@ -84,6 +87,8 @@ namespace ffmpeg {
             AVCodecParameters* params() const;
 
             operator bool() const;
+
+            operator AVStream* () const;
         };
 
         class context {
@@ -95,7 +100,7 @@ namespace ffmpeg {
             std::vector<stream> _streams;
 
             public:
-            explicit context(const istream_ptr& stream, const std::string& path = "");
+            explicit context(istream_ptr stream, const std::string& path = "");
             ~context();
 
             AVFormatContext* ctx() const;
@@ -103,7 +108,11 @@ namespace ffmpeg {
             size_t stream_count() const;
             const std::vector<stream>& streams() const;
 
+            // Return the first stream of the specified type
+            stream first_stream(AVMediaType type) const;
+
             int read_frame(packet& pkt) const;
+
             // Read and discard until the next packet with the specified index;
             int read_frame(packet& pkt, int index) const;
 
@@ -116,6 +125,7 @@ namespace ffmpeg {
             AVCodec* _codec;
             public:
             explicit codec(AVCodecID id);
+            explicit codec(AVCodec* codec);
             codec() = default;
 
             AVCodec* ctx() const;

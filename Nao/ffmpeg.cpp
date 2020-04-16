@@ -41,6 +41,12 @@ namespace detail {
 
 namespace ffmpeg {
     inline namespace generic {
+        std::string strerror(int err) {
+            char buf[AV_ERROR_MAX_STRING_SIZE];
+            av_strerror(err, buf, AV_ERROR_MAX_STRING_SIZE);
+            return buf;
+        }
+
         frame::frame() : _frame { av_frame_alloc() } {
             ASSERT(_frame);
         }
@@ -92,7 +98,6 @@ namespace ffmpeg {
         void packet::unref() const {
             av_packet_unref(_packet);
         }
-
     }
 
     namespace avio {
@@ -154,18 +159,27 @@ namespace ffmpeg {
             return _stream;
         }
 
-        context::context(const istream_ptr& stream, const std::string& path)
-            : _ctx { avformat_alloc_context() }
-            , _stream { stream }, _ioctx { stream } {
+        stream::operator AVStream*() const {
+            return _stream;
+        }
+
+        context::context(istream_ptr stream, const std::string& path)
+            : _ctx { avformat_alloc_context() }, _stream { std::move(stream) }, _ioctx { _stream } {
 
             ASSERT(_ctx);
             _ctx->pb = _ioctx.ctx();
             _ctx->flags |= AVFMT_FLAG_CUSTOM_IO;
 
-            ASSERT(avformat_open_input(&_ctx, path.c_str(), nullptr, nullptr) == 0);
+            int res = avformat_open_input(&_ctx, path.c_str(), nullptr, nullptr);
+            if (res != 0) {
+                throw std::runtime_error(strerror(res));
+            }
 
-            _streams = std::vector<avformat::stream> { _ctx->streams, _ctx->streams + _ctx->nb_streams };
+            if (_ctx->nb_streams > 0) {
+                _streams = std::vector<avformat::stream> { _ctx->streams, _ctx->streams + _ctx->nb_streams };
+            }
         }
+
 
         context::~context() {
             avformat_close_input(&_ctx);
@@ -182,6 +196,16 @@ namespace ffmpeg {
 
         const std::vector<stream>& context::streams() const {
             return _streams;
+        }
+
+        stream context::first_stream(AVMediaType type) const {
+            for (const stream& s : _streams) {
+                if (s.type() == type) {
+                    return s;
+                }
+            }
+
+            return stream { nullptr };
         }
 
         int context::read_frame(packet& pkt) const {
@@ -211,6 +235,11 @@ namespace ffmpeg {
         codec::codec(AVCodecID id) : _codec { avcodec_find_decoder(id) } {
             ASSERT(_codec);
         }
+        
+        codec::codec(AVCodec* codec) : _codec { codec } {
+            ASSERT(_codec);
+        }
+
 
         AVCodec* codec::ctx() const {
             return _codec;
@@ -242,7 +271,6 @@ namespace ffmpeg {
             other._ctx = nullptr;
             return *this;
         }
-
 
         context::~context() {
             avcodec_free_context(&_ctx);

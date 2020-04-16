@@ -20,7 +20,7 @@ class ffmpeg_pcm_provider : public pcm_provider {
     uint8_t _channels;
 
     public:
-    explicit ffmpeg_pcm_provider(const istream_ptr& stream, const std::string& path = "");
+    explicit ffmpeg_pcm_provider(istream_ptr s, const std::string& path = "");
     ~ffmpeg_pcm_provider() override = default;
 
     pcm_samples get_samples() override;

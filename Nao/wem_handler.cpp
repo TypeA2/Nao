@@ -40,7 +40,7 @@ static bool supports(const istream_ptr& stream, const std::string& path) {
         fmt_chunk fmt;
         stream->read(&fmt, sizeof(fmt));
 
-        if (hdr.size == 66 && fmt.format == 0xFFFF) {
+        if ((hdr.size == 66 && fmt.format == 0xFFFF) || (hdr.size == 24 && fmt.format == 0xFFFE)) {
             return true;
         }
     }
