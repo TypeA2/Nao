@@ -64,15 +64,23 @@ namespace ffmpeg {
         }
 
         const char* frame::data(size_t index) const {
-            return reinterpret_cast<char*>(_frame->buf[index]->data);
+            return reinterpret_cast<char*>(_frame->data[index]);
         }
 
         const char* frame::operator[](size_t index) const {
-            return reinterpret_cast<char*>(_frame->buf[index]->data);
+            return reinterpret_cast<char*>(_frame->data[index]);
         }
 
         size_t frame::size(size_t index) const {
             return _frame->buf[index]->size;
+        }
+
+        int frame::width() const {
+            return _frame->width;
+        }
+
+        int frame::height() const {
+            return _frame->height;
         }
 
         frame::operator AVFrame* () const noexcept {
@@ -89,6 +97,14 @@ namespace ffmpeg {
 
         int packet::stream_index() const {
             return _packet->stream_index;
+        }
+
+        size_t packet::size() const {
+            return _packet->size;
+        }
+
+        const char* packet::data() const {
+            return reinterpret_cast<char*>(_packet->data);
         }
 
         packet::operator AVPacket* () const noexcept {
@@ -303,6 +319,10 @@ namespace ffmpeg {
 
         int64_t context::sample_rate() const {
             return _ctx->sample_rate;
+        }
+
+        AVPixelFormat context::pix_fmt() const {
+            return _ctx->pix_fmt;
         }
 
         int context::decode(const packet& pkt, frame& frame) const {

@@ -109,7 +109,7 @@ class pcm_samples final {
     // avutil channel layout
     uint64_t _channel_layout = 0;
 
-    std::vector<char> _data { 0 };
+    std::vector<char> _data { };
     public:
     pcm_samples() = default;
     pcm_samples(sample_format type, uint64_t frames, uint8_t channels, uint64_t channel_layout);
@@ -161,12 +161,13 @@ class pcm_decode_exception : public std::runtime_error {
 };
 
 class pcm_provider {
+    protected:
+    istream_ptr stream;
+
     public:
     explicit pcm_provider(istream_ptr stream);
     virtual ~pcm_provider() = default;
 
-    // Retrieve some samples, return 0 for eof, negative for error
-    // or positive for read frames (sample_count = frames * channel_count), interleaved
     virtual pcm_samples get_samples() = 0;
     virtual int64_t rate() = 0;
     virtual int64_t channels() = 0;
@@ -176,11 +177,7 @@ class pcm_provider {
     virtual std::chrono::nanoseconds pos() = 0;
     virtual void seek(std::chrono::nanoseconds pos) = 0;
 
-    // Should return the native-est type available
     virtual sample_format format() = 0;
-
-    protected:
-    istream_ptr stream;
 };
 
 using pcm_provider_ptr = std::shared_ptr<pcm_provider>;

@@ -2,16 +2,16 @@
 
 #include "wic.h"
 
-bool wic_image_provider::supports(const istream_ptr& stream) {
-    wic::binary_stream_istream ss(stream);
+bool wic_image_provider::supports(istream_ptr stream) {
+    wic::binary_stream_istream ss(std::move(stream));
     auto decoder = wic::imaging_factory().create_decoder(ss);
 
     return decoder ? true : false;
 }
 
 
-wic_image_provider::wic_image_provider(const istream_ptr& stream)
-    : image_provider(stream)
+wic_image_provider::wic_image_provider(istream_ptr stream)
+    : image_provider { std::move(stream) }
     , _converter { _factory }, _decoder { _factory, this->stream } {
 
     _frame = _decoder.get_frame(0);
@@ -24,14 +24,14 @@ wic_image_provider::wic_image_provider(const istream_ptr& stream)
 }
 
 image_data wic_image_provider::data() {
-    return image_data(PIXEL_BGRA32, _dims, _converter.get_pixels());
+    return image_data { AV_PIX_FMT_BGRA, _dims, std::move(_converter.get_pixels()) };
 }
 
 dimensions wic_image_provider::dims() {
     return _dims;
 }
 
-pixel_format wic_image_provider::type() {
-    return PIXEL_BGRA32;
+AVPixelFormat wic_image_provider::format() {
+    return AV_PIX_FMT_BGRA;
 }
 

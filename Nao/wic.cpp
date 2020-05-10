@@ -12,7 +12,7 @@ static const com_ptr<IWICImagingFactory>& static_factory() {
 }
 
 namespace wic {
-    binary_stream_istream::binary_stream_istream(const istream_ptr& stream) : _stream { stream } {
+    binary_stream_istream::binary_stream_istream(istream_ptr stream) : _stream { std::move(stream) } {
 
     }
 

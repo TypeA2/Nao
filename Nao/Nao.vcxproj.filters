@@ -265,6 +265,9 @@
     <ClInclude Include="ffmpeg_image_handler.h">
       <Filter>Header Files\Handlers</Filter>
     </ClInclude>
+    <ClInclude Include="ffmpeg_image_provider.h">
+      <Filter>Header Files\AV\Image</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="nao.cpp">
@@ -416,6 +419,9 @@
     </ClCompile>
     <ClCompile Include="ffmpeg_image_handler.cpp">
       <Filter>Source Files\Handlers</Filter>
+    </ClCompile>
+    <ClCompile Include="ffmpeg_image_provider.cpp">
+      <Filter>Source Files\AV\Image</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

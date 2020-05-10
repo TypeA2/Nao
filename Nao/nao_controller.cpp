@@ -353,10 +353,10 @@ void nao_controller::_refresh_preview(item_data* data, void* lparam) {
             preview = std::make_unique<list_view_preview>(view, pv->query<TAG_ITEMS>());
         } else if (tag & TAG_PCM) {
             preview = std::make_unique<audio_player_preview>(view,
-                std::unique_ptr<audio_player>(reinterpret_cast<audio_player*>(lparam)));
+                std::unique_ptr<audio_player>(static_cast<audio_player*>(lparam)));
         } else if (tag & TAG_IMAGE) {
             preview = std::make_unique<image_viewer_preview>(view,
-                std::unique_ptr<image_provider>(reinterpret_cast<image_provider*>(lparam))->data());
+                std::unique_ptr<image_provider>(static_cast<image_provider*>(lparam))->data());
         } else if (tag & TAG_AV) {
             preview = std::make_unique<video_player_preview>(view,
                 reinterpret_cast<av_file_handler*>(lparam));

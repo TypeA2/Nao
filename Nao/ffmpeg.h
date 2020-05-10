@@ -33,6 +33,9 @@ namespace ffmpeg {
 
             size_t size(size_t index = 0) const;
 
+            int width() const;
+            int height() const;
+
             operator AVFrame* () const noexcept;
         };
 
@@ -44,6 +47,9 @@ namespace ffmpeg {
             ~packet();
 
             int stream_index() const;
+
+            size_t size() const;
+            const char* data() const;
 
             operator AVPacket* () const noexcept;
 
@@ -158,6 +164,8 @@ namespace ffmpeg {
 
             AVSampleFormat sample_format() const;
             int64_t sample_rate() const;
+
+            AVPixelFormat pix_fmt() const;
 
             // Send and receive
             int decode(const packet& pkt, frame& frame) const;

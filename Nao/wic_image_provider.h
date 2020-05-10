@@ -14,12 +14,12 @@ class wic_image_provider : public image_provider {
     dimensions _dims;
 
     public:
-    static bool supports(const istream_ptr& stream);
+    static bool supports(istream_ptr stream);
 
-    explicit wic_image_provider(const istream_ptr& stream);
+    explicit wic_image_provider(istream_ptr stream);
     ~wic_image_provider() override = default;
 
     image_data data() override;
     dimensions dims() override;
-    pixel_format type() override;
+    AVPixelFormat format() override;
 };

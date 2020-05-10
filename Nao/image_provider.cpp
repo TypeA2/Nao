@@ -1,40 +1,22 @@
 #include "image_provider.h"
 
-size_t image_data::pixel_size(pixel_format type) {
-    switch (type) {
-        case PIXEL_NONE:   break;
-        case PIXEL_RGBA32: return sizeof(pixel_rgba32_t);
-        case PIXEL_BGRA32: return sizeof(pixel_bgra32_t);
-    }
-
-    return 0;
+extern "C" {
+#include <libavutil/pixdesc.h>
 }
 
-image_data::image_data(image_data&& other) noexcept
-    : _data { std::move(other._data) }, _dims { other._dims }, _format { other._format } {
+image_data::image_data(AVPixelFormat format, dimensions dims)
+    : _format { format }, _dims { dims }
+    , _data(dims.width * dims.height
+            * (av_get_padded_bits_per_pixel(av_pix_fmt_desc_get(_format)) / CHAR_BIT)) {
     
 }
 
-image_data& image_data::operator=(image_data&& other) noexcept {
-    _data = std::move(other._data);
-    _dims = other._dims;
-    _format = other._format;
-
-    return *this;
-}
-
-image_data::image_data(pixel_format type, dimensions size)
-    : _data(pixel_size(type) * size.width * size.height)
-    , _dims { size }, _format { type } {
+image_data::image_data(AVPixelFormat format, dimensions dims, std::vector<char> data)
+    : _format { format }, _dims { dims }, _data { std::move(data) } {
     
 }
 
-image_data::image_data(pixel_format type, dimensions size, const std::vector<char>& data)
-    : _data { data }, _dims { size }, _format { type } {
-    ASSERT(data.size() == (pixel_size(type) * size.width * size.height));
-}
-
-pixel_format image_data::format() const {
+AVPixelFormat image_data::format() const {
     return _format;
 }
 
@@ -50,18 +32,11 @@ const char* image_data::data() const {
     return _data.data();
 }
 
-size_t image_data::size() const {
+size_t image_data::bytes() const {
     return _data.size();
 }
 
-image_data image_data::as(pixel_format type) const {
-    if (type == _format) {
-        return *this;
-    }
+image_provider::image_provider(istream_ptr stream) : stream { std::move(stream) } {
 
-    throw std::runtime_error("unsupported pixel format conversion");
 }
 
-image_provider::image_provider(const istream_ptr& stream) : stream { stream } {
-    
-}

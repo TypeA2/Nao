@@ -80,6 +80,7 @@
     <CodeAnalysisRuleSet>..\MSVC.ruleset</CodeAnalysisRuleSet>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
+    <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -91,6 +92,7 @@
     <CodeAnalysisRuleSet>..\MSVC.ruleset</CodeAnalysisRuleSet>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
+    <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -126,7 +128,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LargeAddressAware>true</LargeAddressAware>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>comctl32.lib;uxtheme.lib;comsupp.lib;libogg.lib;libvorbis.lib;Shlwapi.lib;d2d1.lib;dxguid.lib;dxva2.lib;evr.lib;mf.lib;mfplat.lib;mfplay.lib;mfreadwrite.lib;mfuuid.lib;strmiids.lib;avcodec.lib;avformat.lib;avutil.lib;swresample.lib;SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;uxtheme.lib;comsupp.lib;libogg.lib;libvorbis.lib;Shlwapi.lib;d2d1.lib;dxguid.lib;dxva2.lib;evr.lib;mf.lib;mfplat.lib;mfplay.lib;mfreadwrite.lib;mfuuid.lib;strmiids.lib;avcodec.lib;avformat.lib;avutil.lib;swresample.lib;swscale.lib;SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)lib\bin\$(Configuration)</AdditionalLibraryDirectories>
     </Link>
     <ResourceCompile>
@@ -179,7 +181,7 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <LargeAddressAware>true</LargeAddressAware>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>comctl32.lib;uxtheme.lib;comsupp.lib;libogg.lib;libvorbis.lib;Shlwapi.lib;d2d1.lib;dxguid.lib;dxva2.lib;evr.lib;mf.lib;mfplat.lib;mfplay.lib;mfreadwrite.lib;mfuuid.lib;strmiids.lib;avcodec.lib;avformat.lib;avutil.lib;swresample.lib;SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>comctl32.lib;uxtheme.lib;comsupp.lib;libogg.lib;libvorbis.lib;Shlwapi.lib;d2d1.lib;dxguid.lib;dxva2.lib;evr.lib;mf.lib;mfplat.lib;mfplay.lib;mfreadwrite.lib;mfuuid.lib;strmiids.lib;avcodec.lib;avformat.lib;avutil.lib;swresample.lib;swscale.lib;SDL2.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)lib\bin\$(Configuration)</AdditionalLibraryDirectories>
     </Link>
     <ResourceCompile>
@@ -201,6 +203,7 @@
     <ClInclude Include="ffmpeg.h" />
     <ClInclude Include="ffmpeg_audio_handler.h" />
     <ClInclude Include="ffmpeg_image_handler.h" />
+    <ClInclude Include="ffmpeg_image_provider.h" />
     <ClInclude Include="ffmpeg_pcm_provider.h" />
     <ClInclude Include="media_foundation_handler.h" />
     <ClInclude Include="mf.h" />
@@ -259,6 +262,7 @@
     <ClCompile Include="ffmpeg.cpp" />
     <ClCompile Include="ffmpeg_audio_handler.cpp" />
     <ClCompile Include="ffmpeg_image_handler.cpp" />
+    <ClCompile Include="ffmpeg_image_provider.cpp" />
     <ClCompile Include="ffmpeg_pcm_provider.cpp" />
     <ClCompile Include="media_foundation_handler.cpp" />
     <ClCompile Include="mf.cpp" />

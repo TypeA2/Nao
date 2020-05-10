@@ -11,7 +11,7 @@ namespace wic {
         volatile uint32_t _refcount = 1;
 
         public:
-        explicit binary_stream_istream(const istream_ptr & stream);
+        explicit binary_stream_istream(istream_ptr stream);
         virtual ~binary_stream_istream() = default;
 
         STDMETHODIMP QueryInterface(const IID & riid, void** ppvObject) override;

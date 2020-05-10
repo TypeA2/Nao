@@ -2,32 +2,49 @@
 
 #include "binary_stream.h"
 
-enum pixel_format : uint64_t {
-    PIXEL_NONE,
-    PIXEL_RGBA32,
-    PIXEL_BGRA32
-};
-
-using pixel_rgba32_t = uint32_t;
-using pixel_bgra32_t = uint32_t;
-
-template <pixel_format> struct pixel_type { };
-template <> struct pixel_type<PIXEL_RGBA32> { using type = pixel_rgba32_t; };
-template <> struct pixel_type<PIXEL_BGRA32> { using type = pixel_bgra32_t; };
-
-template <pixel_format fmt>
-using pixel_type_t = typename pixel_type<fmt>::type;
+extern "C" {
+#include <libavutil/pixfmt.h>
+}
 
 class image_data final {
-    public:
-    static size_t pixel_size(pixel_format type);
-
-    private:
-    std::vector<char> _data;
+    AVPixelFormat _format;
     dimensions _dims;
-    pixel_format _format;
+    std::vector<char> _data { };
 
     public:
+    image_data() = default;
+    image_data(AVPixelFormat format, dimensions dims);
+    image_data(AVPixelFormat format, dimensions dims, std::vector<char> data);
+
+    AVPixelFormat format() const;
+    dimensions dims() const;
+
+    char* data();
+    const char* data() const;
+
+    size_t bytes() const;
+
+    template <concepts::iterator<char> InputIt>
+    size_t fill(InputIt begin, InputIt end) {
+        if (std::distance(begin, end) > _data.size()) {
+            throw std::out_of_range("tried to fill past end");
+        }
+
+        return std::distance(_data.begin(),
+            std::copy(begin, end, _data.begin()));
+    }
+
+    template <concepts::iterator<char> InputIt>
+    size_t fill_n(InputIt begin, size_t count) {
+        if (count > _data.size()) {
+            throw std::out_of_range("tried to fill past end");
+        }
+
+        return std::distance(_data.begin(),
+            std::copy_n(begin, count, _data.begin()));
+    }
+
+    /*
     image_data() = delete;
     image_data(image_data&& other) noexcept;
     image_data& operator=(image_data&& other) noexcept;
@@ -57,7 +74,7 @@ class image_data final {
 
     private:
     image_data(const image_data& other) = default;
-    image_data& operator=(const image_data& other) = default;
+    image_data& operator=(const image_data& other) = default;*/
 };
 
 class image_provider {
@@ -65,12 +82,17 @@ class image_provider {
     istream_ptr stream;
 
     public:
-    explicit image_provider(const istream_ptr& stream);
+    explicit image_provider(istream_ptr stream);
     virtual ~image_provider() = default;
 
     virtual image_data data() = 0;
     virtual dimensions dims() = 0;
-    virtual pixel_format type() = 0;
+    virtual AVPixelFormat format() = 0;
 };
 
 using image_provider_ptr = std::unique_ptr<image_provider>;
+
+class image_decode_exception : public std::runtime_error {
+    public:
+    using std::runtime_error::runtime_error;
+};

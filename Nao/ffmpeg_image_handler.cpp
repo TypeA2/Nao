@@ -3,17 +3,18 @@
 #include "file_handler_factory.h"
 
 #include "ffmpeg.h"
+#include "ffmpeg_image_provider.h"
 
 file_handler_tag ffmpeg_image_handler::tag() const {
     return TAG_IMAGE;
 }
 
 image_provider_ptr ffmpeg_image_handler::make_provider() {
-    return nullptr;
+    return std::make_unique<ffmpeg_image_provider>(stream, path);
 }
 
 static file_handler_ptr create(const istream_ptr& stream, const std::string& path) {
-    return nullptr;
+    return std::make_shared<ffmpeg_image_handler>(stream, path);
 }
 
 static bool supports(const istream_ptr& stream, const std::string& path) {

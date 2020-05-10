@@ -388,8 +388,8 @@ void audio_player_preview::_set_progress(std::chrono::nanoseconds progress) {
 
 image_viewer_preview::image_viewer_preview(nao_view& view, const image_data& data)
     : preview(view, IDS_IMAGE_PREVIEW)
-    , _window { this, (data.format() == PIXEL_BGRA32) ? data.data() : data.as(PIXEL_BGRA32).data(), data.dims() } {
-
+    , _window { this, data.data(), data.dims() } {
+    ASSERT(data.format() == AV_PIX_FMT_BGRA);
 }
 
 void image_viewer_preview::wm_size(int, const dimensions& dims) {
