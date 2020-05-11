@@ -208,6 +208,7 @@
     <ClInclude Include="media_foundation_handler.h" />
     <ClInclude Include="mf.h" />
     <ClInclude Include="sdl2.h" />
+    <ClInclude Include="sdl_image_display.h" />
     <ClInclude Include="wic.h" />
     <ClInclude Include="wic_handler.h" />
     <ClInclude Include="wic_image_provider.h" />
@@ -267,6 +268,7 @@
     <ClCompile Include="media_foundation_handler.cpp" />
     <ClCompile Include="mf.cpp" />
     <ClCompile Include="sdl2.cpp" />
+    <ClCompile Include="sdl_image_display.cpp" />
     <ClCompile Include="win32.cpp" />
     <ClCompile Include="wic.cpp" />
     <ClCompile Include="wic_handler.cpp" />

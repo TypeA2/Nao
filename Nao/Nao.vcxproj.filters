@@ -268,6 +268,9 @@
     <ClInclude Include="ffmpeg_image_provider.h">
       <Filter>Header Files\AV\Image</Filter>
     </ClInclude>
+    <ClInclude Include="sdl_image_display.h">
+      <Filter>Header Files\UI\Generic</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="nao.cpp">
@@ -422,6 +425,9 @@
     </ClCompile>
     <ClCompile Include="ffmpeg_image_provider.cpp">
       <Filter>Source Files\AV\Image</Filter>
+    </ClCompile>
+    <ClCompile Include="sdl_image_display.cpp">
+      <Filter>Source Files\UI\Generic</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

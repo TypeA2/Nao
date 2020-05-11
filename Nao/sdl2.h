@@ -11,7 +11,7 @@ namespace sdl {
     inline namespace raii {
         class lock {
             public:
-            lock(uint32_t flags = 0);
+            lock(uint32_t flags = SDL_INIT_EVERYTHING);
             ~lock();
         };
 

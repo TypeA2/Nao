@@ -12,7 +12,7 @@
 #include "label.h"
 #include "separator.h"
 #include "line_edit.h"
-#include "direct2d_image_display.h"
+#include "sdl_image_display.h"
 
 #include <chrono>
 
@@ -115,7 +115,7 @@ class audio_player_preview : public preview {
 
 // Display a single image
 class image_viewer_preview : public preview {
-    direct2d_image_display _window;
+    sdl_image_display _window;
 
     public:
     explicit image_viewer_preview(nao_view& view, const image_data& data);
