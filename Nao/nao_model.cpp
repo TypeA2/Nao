@@ -79,7 +79,7 @@ void nao_model::move_to(std::string path) {
 
     _m_path = path;
     
-    controller.post_message(TM_CONTENTS_CHANGED, 0, item);
+    controller.post_message(TM_CONTENTS_CHANGED, nullptr, const_cast<item_data*>(item));
 }
 
 void nao_model::move_up() {
@@ -139,7 +139,7 @@ void nao_model::fetch_preview(item_data* item) {
         _m_preview_provider.reset();
     }
 
-    controller.post_message(TM_PREVIEW_CHANGED, reinterpret_cast<WPARAM>(item), lparam);
+    controller.post_message(TM_PREVIEW_CHANGED, item, lparam);
 }
 
 void nao_model::clear_preview() {

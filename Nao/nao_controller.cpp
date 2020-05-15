@@ -7,6 +7,8 @@
 #include <filesystem>
 #include <clocale>
 
+#include <SDL_syswm.h>
+
 list_view_row nao_controller::transform_data_to_row(const item_data& data) {
     return {
         .name = data.name,
@@ -48,29 +50,69 @@ int nao_controller::pump() {
     if (GetCurrentThreadId() != _m_main_threadid) {
         throw std::runtime_error("message pump called from outside main thread");
     }
-    
-    // Event loop
-    MSG msg;
-    while (GetMessageW(&msg, nullptr, 0, 0)) {
-        if (!msg.hwnd && msg.message > TM_FIRST && msg.message < TM_LAST) {
-            _handle_message(static_cast<nao_thread_message>(msg.message), msg.wParam, msg.lParam);
 
-            continue;
+    bool running = true;
+    while (running) {
+        SDL_Event event;
+        MSG msg;
+
+        while (SDL_PollEvent(&event)) {
+            utils::coutln("Event: ", event.type);
+            switch (event.type) {
+                case SDL_WINDOWEVENT_CLOSE:
+                    event.type = SDL_QUIT;
+                    SDL_PushEvent(&event);
+                    break;
+
+                case SDL_SYSWMEVENT: {
+                    auto sdl_msg = event.syswm.msg->msg.win;
+                    msg = {
+                        .hwnd = sdl_msg.hwnd,
+                        .message = sdl_msg.msg,
+                        .wParam = sdl_msg.wParam,
+                        .lParam = sdl_msg.lParam
+                    };
+
+                    utils::coutln("win32 event:", msg.message);
+
+                    if (!msg.hwnd && msg.message > TM_FIRST && msg.message < TM_LAST) {
+                        _handle_message(static_cast<nao_thread_message>(msg.message), msg.wParam, msg.lParam);
+
+                        continue;
+                    }
+
+                    //TranslateMessage(&msg);
+                    //DispatchMessageW(&msg);
+                    break;
+                }
+
+                case SDL_USEREVENT:
+                    _handle_message(static_cast<nao_thread_message>(event.user.code), WPARAM(event.user.data1), LPARAM(event.user.data2));
+                    break;
+
+                case SDL_QUIT: running = false; break;
+                default:
+                    utils::coutln("SDL event:", event.type);
+            } 
         }
-
-        TranslateMessage(&msg);
-        DispatchMessageW(&msg);
     }
 
-    return static_cast<int>(msg.wParam);
+    return 0;
 }
 
 DWORD nao_controller::main_threadid() const {
     return _m_main_threadid;
 }
 
-void nao_controller::post_message(nao_thread_message message, WPARAM wparam, LPARAM lparam) const {
-    PostThreadMessageW(_m_main_threadid, message, wparam, lparam);
+void nao_controller::post_message(nao_thread_message message, void* param1, void* param2) const {
+    SDL_Event event {
+        .type = SDL_USEREVENT
+    };
+
+    event.user.code = message;
+    event.user.data1 = param1;
+    event.user.data2 = param2;
+    SDL_PushEvent(&event);
 }
 
 void nao_controller::post_work(const std::function<void()>& func) {
@@ -359,7 +401,7 @@ void nao_controller::_refresh_preview(item_data* data, void* lparam) {
                 std::unique_ptr<image_provider>(static_cast<image_provider*>(lparam))->data());
         } else if (tag & TAG_AV) {
             preview = std::make_unique<video_player_preview>(view,
-                reinterpret_cast<av_file_handler*>(lparam));
+                static_cast<av_file_handler*>(lparam));
         }
 
         if (preview) {

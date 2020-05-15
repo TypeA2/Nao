@@ -76,12 +76,7 @@ class nao_controller {
 
     DWORD main_threadid() const;
 
-    void post_message(nao_thread_message message, WPARAM wparam = 0, LPARAM lparam = 0) const;
-
-    template <concepts::pointer P>
-    void post_message(nao_thread_message message, WPARAM wparam, P lparam) const {
-        post_message(message, wparam, reinterpret_cast<LPARAM>(lparam));
-    }
+    void post_message(nao_thread_message message, void* param1 = nullptr, void* param2 = nullptr) const;
 
     // Post work to the work queue
     void post_work(const std::function<void()>& func);
