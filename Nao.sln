@@ -4,8 +4,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 16.0.29503.13
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Nao", "Nao\Nao.vcxproj", "{FAA9B3E5-7D49-41FA-BCCA-5140067810B9}"
+	ProjectSection(ProjectDependencies) = postProject
+		{74F4639D-705D-4852-864A-2AD24135431E} = {74F4639D-705D-4852-864A-2AD24135431E}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "revorb-patch", "revorb-patch\revorb-patch.vcxproj", "{C247EE3C-E7A3-4E4E-821C-92BFD8F37946}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libnao-util", "libnao-util\libnao-util.vcxproj", "{74F4639D-705D-4852-864A-2AD24135431E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,6 +24,10 @@ Global
 		{FAA9B3E5-7D49-41FA-BCCA-5140067810B9}.Release|x64.Build.0 = Release|x64
 		{C247EE3C-E7A3-4E4E-821C-92BFD8F37946}.Debug|x64.ActiveCfg = Debug|x64
 		{C247EE3C-E7A3-4E4E-821C-92BFD8F37946}.Release|x64.ActiveCfg = Release|x64
+		{74F4639D-705D-4852-864A-2AD24135431E}.Debug|x64.ActiveCfg = Debug|x64
+		{74F4639D-705D-4852-864A-2AD24135431E}.Debug|x64.Build.0 = Debug|x64
+		{74F4639D-705D-4852-864A-2AD24135431E}.Release|x64.ActiveCfg = Release|x64
+		{74F4639D-705D-4852-864A-2AD24135431E}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
