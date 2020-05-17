@@ -7,7 +7,7 @@
 #include <filesystem>
 #include <clocale>
 
-#include <SDL_syswm.h>
+#include <logging.h>
 
 list_view_row nao_controller::transform_data_to_row(const item_data& data) {
     return {
@@ -50,59 +50,27 @@ int nao_controller::pump() {
     if (GetCurrentThreadId() != _m_main_threadid) {
         throw std::runtime_error("message pump called from outside main thread");
     }
-    SDL_EventState(SDL_SYSWMEVENT, SDL_ENABLE);
+    
     bool running = true;
     while (running) {
         SDL_Event event;
-        MSG msg;
 
-        
-
-        while (SDL_WaitEvent(&event)) {
-            utils::coutln("Event: ", event.type);
+        while (SDL_PollEvent(&event)) {
             switch (event.type) {
                 case SDL_WINDOWEVENT_CLOSE:
                     event.type = SDL_QUIT;
                     SDL_PushEvent(&event);
                     break;
 
-                case SDL_SYSWMEVENT: {
-                    auto sdl_msg = event.syswm.msg->msg.win;
-                    msg = {
-                        .hwnd = sdl_msg.hwnd,
-                        .message = sdl_msg.msg,
-                        .wParam = sdl_msg.wParam,
-                        .lParam = sdl_msg.lParam
-                    };
-
-                    utils::coutln("win32 event:", msg.message);
-
-                    if (!msg.hwnd && msg.message > TM_FIRST && msg.message < TM_LAST) {
-                        _handle_message(static_cast<nao_thread_message>(msg.message), msg.wParam, msg.lParam);
-
-                        continue;
-                    }
-
-                    //TranslateMessage(&msg);
-                    //DispatchMessageW(&msg);
-                    break;
-                }
-
                 case SDL_USEREVENT:
                     _handle_message(static_cast<nao_thread_message>(event.user.code), WPARAM(event.user.data1), LPARAM(event.user.data2));
                     break;
 
-                case SDL_WINDOWEVENT:
-                    switch(event.window.event) {
-                        case SDL_WINDOWEVENT_CLOSE: utils::coutln("close"); break;
-                    }
-                    break;
-
                 case SDL_QUIT:
-                    utils::coutln("quit");
-                    running = false; break;
+                    running = false;
+                    break;
                 default:
-                    utils::coutln("SDL event:", event.type);
+                    logging::coutln("SDL event:", event.type);
             } 
         }
     }
@@ -371,7 +339,7 @@ void nao_controller::_handle_message(nao_thread_message msg, WPARAM wparam, LPAR
         //// End controller messages
 
         default:
-            utils::coutln("thread message:", msg, wparam, lparam);
+            logging::coutln("thread message:", msg, wparam, lparam);
     }
 }
 

@@ -24,13 +24,13 @@
 #include <cassert>
 #define ASSERT(cond) assert(cond);
 
-#define CHECK(cond) if (!(cond)) { utils::coutln("Error in:", #cond); DebugBreak(); return false; }
+#define CHECK(cond) if (!(cond)) { logging::coutln("Error in:", #cond); DebugBreak(); return false; }
 #endif
 
 #define HASSERT(hr) ASSERT(SUCCEEDED(hr))
 
 namespace utils {
-    inline namespace logging {
+    /*inline namespace logging {
         void cout(const char* str);
         void cout(const wchar_t* wstr);
 
@@ -69,7 +69,7 @@ namespace utils {
             cout(std::forward<Args>(args)...);
             cout("\n");
         }
-    }
+    }*/
 
     inline namespace formatting {
         std::string bytes(int64_t n);

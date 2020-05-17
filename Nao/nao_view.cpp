@@ -13,6 +13,8 @@
 
 #include "utils.h"
 
+#include <logging.h>
+
 const std::vector<std::string>& nao_view::list_view_header() {
     static std::vector<std::string> vec { "Name", "Type", "Size", "Compressed" };
 
@@ -35,7 +37,7 @@ IImageList* nao_view::shell_image_list() {
 
     if (!imglist) {
         if (FAILED(SHGetImageList(SHIL_SMALL, IID_PPV_ARGS(&imglist)))) {
-            utils::coutln("failed to retrieve main image list");
+            logging::coutln("failed to retrieve main image list");
             return nullptr;
         }
 
@@ -134,7 +136,7 @@ void nao_view::button_clicked(view_button_type which) const {
                         LPWSTR path;
                         hr = item->GetDisplayName(SIGDN_FILESYSPATH, &path);
                         if (FAILED(hr)) {
-                            utils::coutln("Failed to get path");
+                            logging::coutln("Failed to get path");
                         } else {
                             controller.move_to(utils::utf8(path));
                         }

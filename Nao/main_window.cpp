@@ -12,6 +12,7 @@
 
 #include <clocale>
 #include <filesystem>
+#include <logging.h>
 
 static rectangle start_rect() {
     return {
@@ -44,7 +45,10 @@ right_window& main_window::right() {
 }
 
 void main_window::wm_destroy() {
-    PostQuitMessage(EXIT_SUCCESS);
+    SDL_Event event;
+    event.type = SDL_QUIT;
+    event.quit.timestamp = SDL_GetTicks();
+    SDL_PushEvent(&event);
 }
 
 void main_window::wm_size(int, const dimensions& dims) {
@@ -121,7 +125,7 @@ void main_window::wm_command(WORD id, WORD code, HWND target) {
             break;
 
         default:
-            utils::coutln("WM_COMMAND", code);
+            logging::coutln("WM_COMMAND", code);
             ui_element::wnd_proc(handle(), WM_COMMAND, MAKEWPARAM(id, code), reinterpret_cast<LPARAM>(target));
     }
 }

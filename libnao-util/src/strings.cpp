@@ -21,15 +21,15 @@
 namespace strings {
     std::wstring to_utf16(const std::string& utf8) {
         int size = MultiByteToWideChar(
-            CP_UTF8, WC_COMPOSITECHECK | WC_NO_BEST_FIT_CHARS,
-            utf8.c_str(), static_cast<int>(utf8.size()),
+            CP_UTF8, MB_ERR_INVALID_CHARS,
+            utf8.c_str(), -1,
             nullptr, 0);
 
-        std::wstring conv(size, '\0');
+        std::wstring conv(size, L'\0');
         int converted = MultiByteToWideChar(
-            CP_UTF8, WC_COMPOSITECHECK | WC_NO_BEST_FIT_CHARS,
-            utf8.c_str(), static_cast<int>(utf8.size()),
-            conv.data(), size);
+            CP_UTF8, MB_ERR_INVALID_CHARS,
+            utf8.c_str(), -1,
+            conv.data(), size + 1);
 
         if (converted != size) {
             throw std::runtime_error(__FUNCTION__ ": conversion failed");

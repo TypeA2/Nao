@@ -7,17 +7,16 @@
 #include <CommCtrl.h>
 
 #include <logging.h>
+#include <strings.h>
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
-    _In_opt_ HINSTANCE hPrevInstance,
-    _In_ LPWSTR lpCmdLine,
-    _In_ int nShowCmd) {
+                      _In_opt_ HINSTANCE hPrevInstance,
+                      _In_ LPWSTR lpCmdLine,
+                      _In_ int nShowCmd) {
     (void) hInstance;
     (void) hPrevInstance;
     (void) lpCmdLine;
     (void) nShowCmd;
-
-    logging::coutln("Hello from libnao-util!");
 
     sdl::lock sdl_lock;
 

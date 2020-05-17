@@ -68,7 +68,6 @@ namespace {
         void _log_func() {
             // Fallthrough to wait immediately
             bool is_empty = true;
-
             while (true) {
                 // Print elements if there are any
                 while (!is_empty) {
@@ -79,6 +78,8 @@ namespace {
                     if (_stop) {
                         return;
                     }
+
+                    is_empty = _queue.empty();
                 }
 
                 // Else wait for a notification

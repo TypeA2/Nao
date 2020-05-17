@@ -17,7 +17,6 @@
 #include "naoutil_defs.h"
 
 #include <sstream>
-#include <iostream>
 
 /**
  * Asynchronous logging, function interface
@@ -33,7 +32,9 @@ namespace logging {
     template <typename... Args>
     void cout(Args&&... args) {
         std::stringstream ss;
-        (ss << ... << printable(std::forward<Args>(args)));
+        ((ss << printable(std::forward<Args>(args)) << ' '), ...);
+        auto string = ss.str();
+        static_cast<void(*)(const std::string&)>(cout)(string.substr(0, string.size() - 1));
     }
 
     template <typename... Args>

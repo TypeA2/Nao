@@ -2,12 +2,12 @@
 
 #include "binary_stream.h"
 
-#include "utils.h"
+#include <logging.h>
 
 size_t file_handler_factory::register_class(const factory_entry& entry) {
     _registered_classes().emplace_back(factory_registry(entry, _next_id()));
 
-    utils::coutln("[ITEM FACTORY] Registered class", entry.name, "with ID", _next_id());
+    logging::coutln("[ITEM FACTORY] Registered class", entry.name, "with ID", _next_id());
 
     return _next_id()++;
 }

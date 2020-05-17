@@ -1,9 +1,9 @@
 #include "file_handler.h"
 
-#include "utils.h"
+#include <logging.h>
 
 file_handler::~file_handler() {
-    utils::coutln("[FILE] Deleting for", path);
+    logging::coutln("[FILE] Deleting for", path);
 }
 
 const istream_ptr& file_handler::get_stream() const {
@@ -16,7 +16,7 @@ const std::string& file_handler::get_path() const {
 
 file_handler::file_handler(const istream_ptr& stream, const std::string& path)
     : stream(stream), path(path) {
-    utils::coutln("[FILE] Creating for", path);
+    logging::coutln("[FILE] Creating for", path);
 }
 
 size_t item_file_handler::count() const {
