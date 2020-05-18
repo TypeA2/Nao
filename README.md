@@ -1,2 +1,4 @@
-### Requirements
- - MPEG-2 Video Extension (Microsoft Store)
+## Nao
+ - Nao Win32 desktop application: MIT
+ - libnao-utils: LGPL utilities library.
+ 
