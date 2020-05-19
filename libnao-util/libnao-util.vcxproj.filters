@@ -30,12 +30,21 @@
     <ClInclude Include="include\windows_min.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\steam.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\vdf_parser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\dllmain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\logging.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\steam.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\strings.cpp">

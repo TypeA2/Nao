@@ -243,11 +243,9 @@
     <ClInclude Include="seekable_progress_bar.h" />
     <ClInclude Include="separator.h" />
     <ClInclude Include="slider.h" />
-    <ClInclude Include="steam_utils.h" />
     <ClInclude Include="thread_pool.h" />
     <ClInclude Include="ui_element.h" />
     <ClInclude Include="utils.h" />
-    <ClInclude Include="vdf_parser.h" />
     <ClInclude Include="vorbis_encoder.h" />
     <ClInclude Include="wem_handler.h" />
     <ClInclude Include="wem_pcm_provider.h" />
@@ -299,7 +297,6 @@
     <ClCompile Include="seekable_progress_bar.cpp" />
     <ClCompile Include="separator.cpp" />
     <ClCompile Include="slider.cpp" />
-    <ClCompile Include="steam_utils.cpp" />
     <ClCompile Include="thread_pool.cpp" />
     <ClCompile Include="ui_element.cpp" />
     <ClCompile Include="utils.cpp" />

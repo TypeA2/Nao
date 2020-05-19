@@ -34,7 +34,7 @@ namespace strings {
             conv.data(), size);
 
         if (converted != size) {
-            throw std::runtime_error(__FUNCTION__ ": conversion failed");
+            throw std::runtime_error(__FUNCTION__ ": utf8 -> utf16 conversion failed");
         }
 
         return conv;
@@ -53,7 +53,7 @@ namespace strings {
             conv.data(), size, nullptr, nullptr);
 
         if (converted != size) {
-            throw std::runtime_error(__FUNCTION__ ": conversion failed");
+            throw std::runtime_error(__FUNCTION__ ": utf16 -> utf8 conversion failed");
         }
 
         return conv;

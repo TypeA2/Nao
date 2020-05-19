@@ -106,16 +106,10 @@
     <ClInclude Include="nao_controller.h">
       <Filter>Header Files\MVC</Filter>
     </ClInclude>
-    <ClInclude Include="steam_utils.h">
-      <Filter>Header Files\Utils</Filter>
-    </ClInclude>
     <ClInclude Include="utils.h">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
     <ClInclude Include="thread_pool.h">
-      <Filter>Header Files\Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="vdf_parser.h">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
     <ClInclude Include="left_window.h">
@@ -298,9 +292,6 @@
       <Filter>Source Files\Utils</Filter>
     </ClCompile>
     <ClCompile Include="thread_pool.cpp">
-      <Filter>Source Files\Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="steam_utils.cpp">
       <Filter>Source Files\Utils</Filter>
     </ClCompile>
     <ClCompile Include="push_button.cpp">

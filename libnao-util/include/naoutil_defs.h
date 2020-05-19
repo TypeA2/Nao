@@ -19,21 +19,3 @@
 #else
 #define NAOUTIL_API __declspec(dllimport)
 #endif
-
-/*
-#define LINE_STRINGIFY(x) LINE_STRINGIFY2(x)
-#define LINE_STRINGIFY2(x) #x
-#define FILE_AT __FILE__ ":" LINE_STRINGIFY(__LINE__)
-
-#ifdef NDEBUG
-#include "logging.h"
-
-#define ASSERT(cond) do { if (!(cond)) { \
-    constexpr const char* str = "assertion failed in " FILE_AT " -> " #cond; \
-    logging::cout(str); \
-    throw std::runtime_error(str); }} while (0)
-#else
-#include <cassert>
-#define ASSERT(cond) assert(cond);}
-#endif
-*/

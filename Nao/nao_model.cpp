@@ -5,19 +5,21 @@
 #include "file_handler_factory.h"
 #include "binary_stream.h"
 #include "nao_controller.h"
-#include "steam_utils.h"
 #include "audio_player.h"
 
 #include <filesystem>
 
 #include <logging.h>
+#include <steam.h>
 
 nao_model::nao_model(nao_view& view, nao_controller& controller) : view(view), controller(controller) {
 
 }
 
 void nao_model::setup() {
-    move_to(steam_utils::game_path("NieRAutomata", "data"));
+    bool found;
+    std::string path = steam::game_path("NieRAutomata", found);
+    move_to(found ? (path + "\\data") : "\\");
 }
 
 void nao_model::move_to(std::string path) {

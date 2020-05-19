@@ -170,12 +170,15 @@
   <ItemGroup>
     <ClInclude Include="include\logging.h" />
     <ClInclude Include="include\naoutil_defs.h" />
+    <ClInclude Include="include\steam.h" />
     <ClInclude Include="include\strings.h" />
+    <ClInclude Include="include\vdf_parser.h" />
     <ClInclude Include="include\windows_min.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\dllmain.cpp" />
     <ClCompile Include="src\logging.cpp" />
+    <ClCompile Include="src\steam.cpp" />
     <ClCompile Include="src\strings.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

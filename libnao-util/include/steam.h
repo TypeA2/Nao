@@ -16,22 +16,17 @@
 
 #include "naoutil_defs.h"
 
-#include <string_view>
-#include <chrono>
+#include <string>
+#include <vector>
 
-/**
- * Functions related to string conversions, etc.
- */
+namespace steam {
+    // Steam root path
+    NAOUTIL_API std::string path();
 
-namespace strings {
-    NAOUTIL_API std::wstring to_utf16(std::string_view utf8);
-    NAOUTIL_API std::string to_utf8(std::wstring_view utf16);
+    // A list of all steam install forlders
+    NAOUTIL_API std::vector<std::string> install_folders();
 
-    NAOUTIL_API std::string bytes(size_t n);
-    NAOUTIL_API std::string bits(size_t n);
-
-    NAOUTIL_API std::string percent(double v);
-
-    NAOUTIL_API std::string time_hours(std::chrono::nanoseconds ns, bool ms = true);
-    NAOUTIL_API std::string time_minutes(std::chrono::nanoseconds ns, bool ms = true);
+    // Retrieve a game's path, if possible
+    NAOUTIL_API std::string game_path(std::string_view game);
+    NAOUTIL_API std::string game_path(std::string_view game, bool& found);
 }
