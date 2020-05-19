@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <ranges>
 
+#include <strings.h>
+
 static constexpr DWORD listview_style = win32::style | LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS;
 
 list_view::list_view(ui_element* parent)
@@ -40,7 +42,7 @@ void list_view::set_columns(const std::vector<std::string>& hdr) const {
     for (const std::string& header : hdr) {
         col.iOrder = i++;
         
-        std::wstring wide = utils::utf16(header);
+        std::wstring wide = strings::to_utf16(header);
         col.pszText = wide.data();
 
         if (col.iOrder == (columns - 1)) {
@@ -89,7 +91,7 @@ int list_view::add_item(const std::vector<std::string>& text, int image, void* e
     ASSERT(utils::narrow<int>(text.size()) == column_count());
 
     std::vector<std::wstring> utf16;
-    std::transform(text.begin(), text.end(), std::back_inserter(utf16), utils::utf16);
+    std::transform(text.begin(), text.end(), std::back_inserter(utf16), strings::to_utf16);
 
     LVITEMW item { };
     item.mask = LVIF_TEXT | LVIF_IMAGE | LVIF_PARAM;

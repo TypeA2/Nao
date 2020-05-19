@@ -7,6 +7,8 @@
 
 #include <filesystem>
 
+#include <strings.h>
+
 namespace steam_utils {
     std::string steam_path() {
         DWORD type;
@@ -18,7 +20,7 @@ namespace steam_utils {
 
         ASSERT(status == ERROR_SUCCESS);
 
-        return utils::utf8(str);
+        return strings::to_utf8(str);
     }
 
     std::vector<std::string> steam_install_folders() {
@@ -45,7 +47,7 @@ namespace steam_utils {
     std::string game_path(const std::string& game, const std::string& subdir) {
         for (const std::string& dir : steam_install_folders()) {
             try {
-                for (const auto& entry : std::filesystem::directory_iterator(dir + "/SteamApps/common")) {
+                for (const auto& entry : std::filesystem::directory_iterator(dir + "\\SteamApps\\common")) {
                     if (is_directory(entry.path()) && entry.path().filename() == game) {
                         return std::filesystem::path(entry.path().string() + '\\' + subdir).lexically_normal().string();
                     }

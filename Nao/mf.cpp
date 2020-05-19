@@ -5,6 +5,8 @@
 
 #include "ui_element.h"
 
+#include <strings.h>
+
 namespace detail {
     class DECLSPEC_UUID("1E89C9C0-318E-4E1B-9EE1-81A586111507") async_result : public IUnknown {
         volatile uint32_t _refcount = 1;
@@ -429,7 +431,7 @@ namespace mf {
     com_ptr<IUnknown> source_resolver::create_source(binary_stream_imfbytestream& bs, const std::string& path) const {
         com_ptr<IUnknown> unk;
         MF_OBJECT_TYPE type;
-        HRESULT hr = com_object->CreateObjectFromByteStream(&bs, utils::utf16(path).c_str(),
+        HRESULT hr = com_object->CreateObjectFromByteStream(&bs, strings::to_utf16(path).c_str(),
             MF_RESOLUTION_KEEP_BYTE_STREAM_ALIVE_ON_FAIL | MF_RESOLUTION_MEDIASOURCE,
             nullptr, &type, &unk);
 

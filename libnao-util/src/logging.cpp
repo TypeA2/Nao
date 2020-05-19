@@ -22,7 +22,7 @@
 #include <mutex>
 
 namespace {
-    void print(const std::string& str) {
+    void print(std::string_view str) {
         OutputDebugStringW(strings::to_utf16(str).c_str());
     }
 
@@ -54,9 +54,9 @@ namespace {
             }
         }
 
-        void push(const std::string& str) {
+        void push(std::string_view str) {
             std::unique_lock lock { _queue_mutex };
-            _queue.push_back(str);
+            _queue.emplace_back(str);
         }
 
         void notify() {
@@ -100,7 +100,7 @@ namespace {
 }
 
 namespace logging {
-    void cout(const std::string& str) {
+    void cout(std::string_view str) {
         logger.push(str);
         logger.notify();
     }

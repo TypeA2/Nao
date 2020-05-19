@@ -26,7 +26,7 @@ namespace logging {
     template <typename T>
     const T& printable(const T& arg) { return arg; }
 
-    NAOUTIL_API void cout(const std::string& str);
+    NAOUTIL_API void cout(std::string_view str);
 
     // Print to the appropriate output stream
     template <typename... Args>
@@ -34,7 +34,7 @@ namespace logging {
         std::stringstream ss;
         ((ss << printable(std::forward<Args>(args)) << ' '), ...);
         auto string = ss.str();
-        static_cast<void(*)(const std::string&)>(cout)(string.substr(0, string.size() - 1));
+        static_cast<void(*)(std::string_view)>(cout)(string.substr(0, string.size() - 1));
     }
 
     template <typename... Args>

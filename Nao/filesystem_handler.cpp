@@ -9,6 +9,8 @@
 
 #include "binary_stream.h"
 
+#include <strings.h>
+
 filesystem_handler::filesystem_handler(const std::string& path)
     : file_handler(nullptr, path), item_file_handler(nullptr, path) {
     if (path == "\\") {
@@ -17,16 +19,16 @@ filesystem_handler::filesystem_handler(const std::string& path)
         SHFILEINFOW finfo { };
         for (auto [letter, name, icon, total, free] : fs_utils::drive_list()) {
 
-            ASSERT(SHGetFileInfoW(utils::utf16({ letter, ':', '\\'}).c_str(), 0, &finfo, sizeof(finfo), SHGFI_TYPENAME));
+            ASSERT(SHGetFileInfoW(strings::to_utf16(std::string { letter, ':', '\\'}).c_str(), 0, &finfo, sizeof(finfo), SHGFI_TYPENAME));
 
             std::stringstream ss;
-            ss << utils::bytes(total) << " ("
-                << utils::bytes(free) << " free)";
+            ss << strings::bytes(total) << " ("
+                << strings::bytes(free) << " free)";
 
             items.push_back({
                 .handler      = this,
                 .name         = name,
-                .type         = utils::utf8(finfo.szTypeName),
+                .type         = strings::to_utf8(finfo.szTypeName),
                 .size         = free,
                 .size_str     = ss.str(),
                 .icon         = icon,
@@ -55,7 +57,7 @@ filesystem_handler::filesystem_handler(const std::string& path)
             items.push_back({
                 .handler = this,
                 .name    = entry.path().filename().string(),
-                .type    = utils::utf8(finfo.szTypeName),
+                .type    = strings::to_utf8(finfo.szTypeName),
                 .size    = entry.is_directory() ? 0 : static_cast<std::streamsize>(entry.file_size()),
                 .icon    = finfo.iIcon,
                 .dir     = entry.is_directory(),

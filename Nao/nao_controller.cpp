@@ -8,12 +8,13 @@
 #include <clocale>
 
 #include <logging.h>
+#include <strings.h>
 
 list_view_row nao_controller::transform_data_to_row(const item_data& data) {
     return {
         .name = data.name,
         .type = data.type,
-        .size = (!data.dir && data.size_str.empty()) ? utils::bytes(data.size) : data.size_str,
+        .size = (!data.dir && data.size_str.empty()) ? strings::bytes(data.size) : data.size_str,
         .compressed = (data.compression == 0.) ? "" : (std::to_string(int64_t(data.compression / 100.)) + '%'),
         .icon = data.icon,
         .data = const_cast<item_data*>(&data)
@@ -261,7 +262,7 @@ void nao_controller::create_context_menu(item_data* data, POINT pt) {
             menu.push_back({
                 .text = "Show in explorer",
                 .func = [=] {
-                        LPITEMIDLIST idl = ILCreateFromPathW(utils::utf16(data->path()).c_str());
+                        LPITEMIDLIST idl = ILCreateFromPathW(strings::to_utf16(data->path()).c_str());
                         if (idl) {
                             SHOpenFolderAndSelectItems(idl, 0, nullptr, 0);
                             ILFree(idl);
@@ -293,7 +294,7 @@ void nao_controller::create_context_menu_preview(item_data* data, POINT pt) {
                     std::bind(&nao_view::execute_context_menu, &view, context_menu { {
                         .text = "Show in explorer",
                         .func = std::bind([](const std::string& path) {
-                            LPITEMIDLIST idl = ILCreateFromPathW(utils::utf16(path).c_str());
+                            LPITEMIDLIST idl = ILCreateFromPathW(strings::to_utf16(path).c_str());
                             if (idl) {
                                 SHOpenFolderAndSelectItems(idl, 0, nullptr, 0);
                                 ILFree(idl);

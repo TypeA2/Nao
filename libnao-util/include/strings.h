@@ -17,11 +17,21 @@
 #include "naoutil_defs.h"
 
 #include <string>
+#include <chrono>
 
 /**
- * Functions related to string conversion, etc.
+ * Functions related to string conversions, etc.
  */
 
 namespace strings {
-    NAOUTIL_API std::wstring to_utf16(const std::string& utf8);
+    NAOUTIL_API std::wstring to_utf16(std::string_view utf8);
+    NAOUTIL_API std::string to_utf8(std::wstring_view utf16);
+
+    NAOUTIL_API std::string bytes(size_t n);
+    NAOUTIL_API std::string bits(size_t n);
+
+    NAOUTIL_API std::string percent(double v);
+
+    NAOUTIL_API std::string time_hours(std::chrono::nanoseconds ns, bool ms = true);
+    NAOUTIL_API std::string time_minutes(std::chrono::nanoseconds ns, bool ms = true);
 }

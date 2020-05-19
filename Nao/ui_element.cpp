@@ -1,7 +1,10 @@
 #include "ui_element.h"
 
 #include "utils.h"
+
 #include <unordered_set>
+
+#include <strings.h>
 
 ui_element::ui_element(ui_element* parent) : _parent { parent } {
 
@@ -68,7 +71,7 @@ win32::device_context ui_element::dc() const {
 }
 
 dimensions ui_element::text_extent_point(const std::string& str) const {
-    std::wstring wide = utils::utf16(str);
+    std::wstring wide = strings::to_utf16(str);
     SIZE size;
     ASSERT(GetTextExtentPoint32W(dc(), wide.c_str(), utils::narrow<uint32_t>(wide.size()), &size));
 
@@ -203,7 +206,7 @@ void ui_element::set_window_text(const std::wstring& text) const {
 }
 
 void ui_element::set_text(const std::string& text) const {
-    set_text(utils::utf16(text));
+    set_text(strings::to_utf16(text));
 }
 
 void ui_element::set_text(const std::wstring& text) const {

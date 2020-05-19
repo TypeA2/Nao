@@ -1,5 +1,8 @@
 #include "wsp_handler.h"
 
+#include <strings.h>
+
+
 #include "file_handler_factory.h"
 #include "binary_stream.h"
 #include "utils.h"
@@ -62,7 +65,7 @@ wsp_handler::wsp_handler(const istream_ptr& stream, const std::string& path)
         items.push_back(item_data {
             .handler = this,
             .name    = ss.str(),
-            .type    = utils::utf8(finfo_wem.szTypeName),
+            .type    = strings::to_utf8(finfo_wem.szTypeName),
             .size    = wwriff.size,
             .icon    = finfo_wem.iIcon,
             .stream  = std::make_shared<binary_istream>(std::make_unique<partial_file_streambuf>(stream, wwriff.offset, wwriff.size)),

@@ -14,6 +14,7 @@
 #include "utils.h"
 
 #include <logging.h>
+#include <strings.h>
 
 const std::vector<std::string>& nao_view::list_view_header() {
     static std::vector<std::string> vec { "Name", "Type", "Size", "Compressed" };
@@ -138,7 +139,7 @@ void nao_view::button_clicked(view_button_type which) const {
                         if (FAILED(hr)) {
                             logging::coutln("Failed to get path");
                         } else {
-                            controller.move_to(utils::utf8(path));
+                            controller.move_to(strings::to_utf8(path));
                         }
                     }
                 }
@@ -272,7 +273,7 @@ void nao_view::execute_context_menu(const context_menu& menu, POINT pt) const {
                 InsertMenuItemW(popup, -1, true, &separator_item);
             }
         } else {
-            auto wide = utils::utf16(text);
+            auto wide = strings::to_utf16(text);
             item.dwTypeData = wide.data();
             item.dwItemData = reinterpret_cast<UINT_PTR>(&function);
             item.wID = id;

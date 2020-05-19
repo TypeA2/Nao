@@ -8,6 +8,8 @@
 
 #include "byte_array_streambuf.h"
 
+#include <strings.h>
+
 binary_istream::binary_istream(const std::string& path)
     : file { std::make_unique<std::fstream>(path, std::ios::in | std::ios::binary) } {
     
@@ -28,7 +30,7 @@ binary_istream::binary_istream(binary_istream&& other) noexcept
 }
 
 binary_istream::binary_istream(int resource, const std::string& type) {
-    HRSRC handle = FindResourceW(nullptr, MAKEINTRESOURCEW(resource), utils::utf16(type).c_str());
+    HRSRC handle = FindResourceW(nullptr, MAKEINTRESOURCEW(resource), strings::to_utf16(type).c_str());
     HGLOBAL res = LoadResource(nullptr, handle);
     streambuf = std::make_unique<byte_array_streambuf>(static_cast<char*>(LockResource(res)),
         SizeofResource(nullptr, handle));

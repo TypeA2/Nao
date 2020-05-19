@@ -30,22 +30,6 @@
 #define HASSERT(hr) ASSERT(SUCCEEDED(hr))
 
 namespace utils {
-    inline namespace formatting {
-        std::string bytes(int64_t n);
-        std::wstring wbytes(int64_t n);
-
-        std::string bits(int64_t n);
-
-        std::string perc(double p);
-        std::wstring wperc(double p);
-
-        std::string utf8(const std::wstring& str);
-        std::wstring utf16(const std::string& str);
-
-        std::string format_hours(std::chrono::nanoseconds ns, bool ms = true);
-        std::string format_minutes(std::chrono::nanoseconds ns, bool ms = true);
-    }
-
     inline namespace arithmetic {
         static constexpr uint64_t make_quad(uint32_t low, uint32_t high) {
             return (static_cast<uint64_t>(high) << 32) | low;

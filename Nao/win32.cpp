@@ -6,6 +6,8 @@
 
 #include "ui_element.h"
 
+#include <strings.h>
+
 namespace win32 {
     inline namespace raii {
         prop_variant::prop_variant() {
@@ -39,7 +41,7 @@ namespace win32 {
 
 
         dynamic_library::dynamic_library(const std::string& name)
-            : _handle(LoadLibraryW(utils::utf16(name).c_str())) {
+            : _handle(LoadLibraryW(strings::to_utf16(name).c_str())) {
             ASSERT(_handle);
         }
 
