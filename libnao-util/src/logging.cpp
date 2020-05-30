@@ -12,23 +12,23 @@
 
     You should have received a copy of the GNU General Public License
     along with libnao-util.  If not, see <https://www.gnu.org/licenses/>.   */
-#include "logging.h"
+#include "nao/logging.h"
 
-#include "windows_min.h"
-#include "strings.h"
+#include "nao/windows_min.h"
+#include "nao/strings.h"
 
 #include <atomic>
 #include <deque>
 #include <mutex>
 
 namespace {
-    void print(std::string_view str) {
-        OutputDebugStringW(strings::to_utf16(str).c_str());
+    void print(const nao::string& str) {
+        OutputDebugStringW(str.wide().c_str());
     }
 
     class log_helper {
         // Contains all strings to be printed
-        std::deque<std::string> _queue;
+        std::deque<nao::string> _queue;
         // Guards the queue
         std::mutex _queue_mutex;
 
@@ -54,9 +54,9 @@ namespace {
             }
         }
 
-        void push(std::string_view str) {
+        void push(nao::string str) {
             std::unique_lock lock { _queue_mutex };
-            _queue.emplace_back(str);
+            _queue.emplace_back(std::move(str));
         }
 
         void notify() {
@@ -99,9 +99,9 @@ namespace {
     log_helper logger;
 }
 
-namespace logging {
-    void cout(std::string_view str) {
-        logger.push(str);
+namespace nao {
+    void cout(string str) {
+        logger.push(std::move(str));
         logger.notify();
     }
 

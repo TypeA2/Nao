@@ -8,7 +8,7 @@
 #include <atomic>
 #include <future>
 
-#include <logging.h>
+#include <nao/logging.h>
 
 class thread_pool {
     public:
@@ -41,7 +41,7 @@ class thread_pool {
                 try {
                     future.get();
                 } catch (const std::exception& e) {
-                    logging::coutln("exception in thread", std::this_thread::get_id(), ":", e.what());
+                    nao::coutln("exception in thread", std::this_thread::get_id(), ":", e.what());
                     throw;
                 }
             }));

@@ -9,17 +9,16 @@
 
 #include <filesystem>
 
-#include <logging.h>
-#include <steam.h>
+#include <nao/logging.h>
+#include <nao/steam.h>
 
 nao_model::nao_model(nao_view& view, nao_controller& controller) : view(view), controller(controller) {
 
 }
 
 void nao_model::setup() {
-    bool found;
-    std::string path = steam::game_path("NieRAutomata", found);
-    move_to(found ? (path + "\\data") : "\\");
+    auto path = nao::steam::game_path("NieRAutomata");
+    move_to(path.good() ? (path + "\\data").c_str() : "\\");
 }
 
 void nao_model::move_to(std::string path) {
@@ -77,7 +76,7 @@ void nao_model::move_to(std::string path) {
         return;
     }
 
-    logging::coutln("move from", old_path, "to", path);
+    nao::coutln("move from", old_path, "to", path);
 
     _create_tree(path);
 
@@ -123,7 +122,7 @@ void nao_model::fetch_preview(item_data* item) {
     if (file_handler_ptr p = _provider_for(item->path()); p != nullptr) {
         // Nothing changed
         if (_m_preview_provider && p == _m_preview_provider) {
-            logging::coutln("preview not changed");
+            nao::coutln("preview not changed");
             return;
         }
 
@@ -139,7 +138,7 @@ void nao_model::fetch_preview(item_data* item) {
             lparam = _m_preview_provider->query<TAG_AV>();
         }
     } else {
-        logging::coutln("no preview found");
+        nao::coutln("no preview found");
         _m_preview_provider.reset();
     }
 

@@ -5,7 +5,7 @@
 
 #include "resource.h"
 
-#include <logging.h>
+#include <nao/logging.h>
 
 sdl_image_display::sdl_image_display(ui_element* parent, const char* data, const dimensions& dims)
     : ui_element(parent, IDS_SDL_WINDOW, parent->dims().rect(), win32::style | WS_OVERLAPPED)
@@ -32,13 +32,13 @@ sdl_image_display::sdl_image_display(ui_element* parent, const char* data, const
     };
     SDL_RenderCopy(_renderer, _texture, nullptr, &dest);
     SDL_RenderPresent(_renderer);
-    logging::coutln("displaying");
+    nao::coutln("displaying");
     //SDL_Delay(2500);
-    logging::coutln("done");
+    nao::coutln("done");
 }
 
 void sdl_image_display::wm_paint() {
-    logging::coutln("PAINT!");
+    nao::coutln("PAINT!");
     SDL_RenderClear(_renderer);
     SDL_Rect dest {
         .x = 0,

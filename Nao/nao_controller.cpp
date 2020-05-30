@@ -7,14 +7,14 @@
 #include <filesystem>
 #include <clocale>
 
-#include <logging.h>
-#include <strings.h>
+#include <nao/logging.h>
+#include <nao/strings.h>
 
 list_view_row nao_controller::transform_data_to_row(const item_data& data) {
     return {
         .name = data.name,
         .type = data.type,
-        .size = (!data.dir && data.size_str.empty()) ? strings::bytes(data.size) : data.size_str,
+        .size = (!data.dir && data.size_str.empty()) ? std::string{nao::bytes(data.size).c_str()} : data.size_str,
         .compressed = (data.compression == 0.) ? "" : (std::to_string(int64_t(data.compression / 100.)) + '%'),
         .icon = data.icon,
         .data = const_cast<item_data*>(&data)
@@ -71,7 +71,7 @@ int nao_controller::pump() {
                     running = false;
                     break;
                 default:
-                    logging::coutln("SDL event:", event.type);
+                    nao::coutln("SDL event:", event.type);
             } 
         }
     }
@@ -262,7 +262,7 @@ void nao_controller::create_context_menu(item_data* data, POINT pt) {
             menu.push_back({
                 .text = "Show in explorer",
                 .func = [=] {
-                        LPITEMIDLIST idl = ILCreateFromPathW(strings::to_utf16(data->path()).c_str());
+                        LPITEMIDLIST idl = ILCreateFromPathW(nao::string(data->path()).wide().c_str());
                         if (idl) {
                             SHOpenFolderAndSelectItems(idl, 0, nullptr, 0);
                             ILFree(idl);
@@ -294,7 +294,7 @@ void nao_controller::create_context_menu_preview(item_data* data, POINT pt) {
                     std::bind(&nao_view::execute_context_menu, &view, context_menu { {
                         .text = "Show in explorer",
                         .func = std::bind([](const std::string& path) {
-                            LPITEMIDLIST idl = ILCreateFromPathW(strings::to_utf16(path).c_str());
+                            LPITEMIDLIST idl = ILCreateFromPathW(nao::string(path).wide().c_str());
                             if (idl) {
                                 SHOpenFolderAndSelectItems(idl, 0, nullptr, 0);
                                 ILFree(idl);
@@ -340,7 +340,7 @@ void nao_controller::_handle_message(nao_thread_message msg, WPARAM wparam, LPAR
         //// End controller messages
 
         default:
-            logging::coutln("thread message:", msg, wparam, lparam);
+            nao::coutln("thread message:", msg, wparam, lparam);
     }
 }
 

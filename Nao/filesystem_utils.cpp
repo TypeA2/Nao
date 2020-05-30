@@ -2,7 +2,7 @@
 
 #include "utils.h"
 
-#include <strings.h>
+#include <nao/strings.h>
 
 namespace fs_utils {
     bool is_child(const std::string& base, const std::string& child) {
@@ -47,7 +47,7 @@ namespace fs_utils {
 
     inline namespace classes {
         file_info::file_info(const std::string& path) : _path(path) {
-            if (!GetFileAttributesExW(strings::to_utf16(path).c_str(), GetFileExInfoStandard, &_data)) {
+            if (!GetFileAttributesExW(nao::string { path }.wide().c_str(), GetFileExInfoStandard, &_data)) {
                 _data.dwFileAttributes = INVALID_FILE_ATTRIBUTES;
             }
         }
@@ -141,8 +141,8 @@ namespace fs_utils {
                     GetDiskFreeSpaceExW(s, nullptr, &total, &free);
 
                     _drive_info.push_back({
-                        .letter     = strings::to_utf8(s).front(),
-                        .name       = strings::to_utf8(finfo.szDisplayName),
+                        .letter     = nao::wstring { s }.narrow().front(),
+                        .name       = nao::wstring { finfo.szDisplayName }.narrow().c_str(),
                         .icon       = finfo.iIcon,
                         .total_size = static_cast<std::streamsize>(total.QuadPart),
                         .free_size  = static_cast<std::streamsize>(free.QuadPart)

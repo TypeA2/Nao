@@ -13,8 +13,8 @@
 
 #include "utils.h"
 
-#include <logging.h>
-#include <strings.h>
+#include <nao/logging.h>
+#include <nao/strings.h>
 
 const std::vector<std::string>& nao_view::list_view_header() {
     static std::vector<std::string> vec { "Name", "Type", "Size", "Compressed" };
@@ -38,7 +38,7 @@ IImageList* nao_view::shell_image_list() {
 
     if (!imglist) {
         if (FAILED(SHGetImageList(SHIL_SMALL, IID_PPV_ARGS(&imglist)))) {
-            logging::coutln("failed to retrieve main image list");
+            nao::coutln("failed to retrieve main image list");
             return nullptr;
         }
 
@@ -101,7 +101,6 @@ void nao_view::fill_view(std::vector<list_view_row> items) const {
 
     for (const auto& [name, type, size, compressed,
             icon ,data] : items) {
-
         list.add_item({ name, type, size, compressed }, icon, data);
     }
 
@@ -137,9 +136,9 @@ void nao_view::button_clicked(view_button_type which) const {
                         LPWSTR path;
                         hr = item->GetDisplayName(SIGDN_FILESYSPATH, &path);
                         if (FAILED(hr)) {
-                            logging::coutln("Failed to get path");
+                            nao::coutln("Failed to get path");
                         } else {
-                            controller.move_to(strings::to_utf8(path));
+                            controller.move_to(nao::wstring(path).narrow().c_str());
                         }
                     }
                 }
@@ -273,7 +272,7 @@ void nao_view::execute_context_menu(const context_menu& menu, POINT pt) const {
                 InsertMenuItemW(popup, -1, true, &separator_item);
             }
         } else {
-            auto wide = strings::to_utf16(text);
+            auto wide = nao::string(text).wide();
             item.dwTypeData = wide.data();
             item.dwItemData = reinterpret_cast<UINT_PTR>(&function);
             item.wID = id;

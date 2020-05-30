@@ -16,29 +16,18 @@
 
 #include "naoutil_defs.h"
 
-#include <sstream>
+#include <nao/string.h>
 
 /**
- * Asynchronous logging, function interface
+ * Functions related to string conversions, etc.
  */
 
-namespace logging {
-    template <typename T>
-    const T& printable(const T& arg) { return arg; }
+namespace nao {
+    NAOUTIL_API string bytes(size_t n);
+    NAOUTIL_API string bits(size_t n);
 
-    NAOUTIL_API void cout(std::string_view str);
+    NAOUTIL_API string percent(double v);
 
-    // Print to the appropriate output stream
-    template <typename... Args>
-    void cout(Args&&... args) {
-        std::stringstream ss;
-        ((ss << printable(std::forward<Args>(args)) << ' '), ...);
-        auto string = ss.str();
-        static_cast<void(*)(std::string_view)>(cout)(string.substr(0, string.size() - 1));
-    }
-
-    template <typename... Args>
-    void coutln(Args&&... args) {
-        cout(args..., '\n');
-    }
+    NAOUTIL_API string time_hours(uint64_t nanoseconds, bool ms = true);
+    NAOUTIL_API string time_minutes(uint64_t nanoseconds, bool ms = true);
 }

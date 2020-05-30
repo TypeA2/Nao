@@ -12,8 +12,8 @@
 
 #include <clocale>
 #include <filesystem>
-#include <logging.h>
-#include <strings.h>
+#include <nao/logging.h>
+#include <nao/strings.h>
 
 static rectangle start_rect() {
     return {
@@ -86,7 +86,7 @@ static INT_PTR _about(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 
                 if (idl) {
                     // I don't even know what the API is doing at this point
-                    ShellExecuteA(hwnd, "open", fs_path.string().c_str(), nullptr, strings::to_utf8(path).c_str(), SW_SHOW);
+                    ShellExecuteA(hwnd, "open", fs_path.string().c_str(), nullptr, nao::wstring(path).narrow().c_str(), SW_SHOW);
                     ILFree(idl);
                 }
             }
@@ -126,7 +126,7 @@ void main_window::wm_command(WORD id, WORD code, HWND target) {
             break;
 
         default:
-            logging::coutln("WM_COMMAND", code);
+            nao::coutln("WM_COMMAND", code);
             ui_element::wnd_proc(handle(), WM_COMMAND, MAKEWPARAM(id, code), reinterpret_cast<LPARAM>(target));
     }
 }

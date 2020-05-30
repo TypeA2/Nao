@@ -6,8 +6,8 @@
 
 #include <CommCtrl.h>
 
-#include <logging.h>
-#include <strings.h>
+#include <nao/logging.h>
+#include <nao/strings.h>
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                       _In_opt_ HINSTANCE hPrevInstance,

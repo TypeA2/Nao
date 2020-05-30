@@ -24,7 +24,7 @@
 #include <cassert>
 #define ASSERT(cond) assert(cond);
 
-#define CHECK(cond) if (!(cond)) { logging::coutln("Error in:", #cond); DebugBreak(); return false; }
+#define CHECK(cond) if (!(cond)) { nao::coutln("Error in:", #cond); DebugBreak(); return false; }
 #endif
 
 #define HASSERT(hr) ASSERT(SUCCEEDED(hr))

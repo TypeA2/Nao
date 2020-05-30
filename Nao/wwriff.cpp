@@ -7,7 +7,7 @@
 #include "ogg_stream.h"
 #include "vorbis_encoder.h"
 
-#include <logging.h>
+#include <nao/logging.h>
 
 namespace wwriff {
     // libvorbis
@@ -80,7 +80,7 @@ namespace wwriff {
         }
 
         auto end = std::chrono::steady_clock::now();
-        logging::coutln("Converted in", (end - start).count() / 1e6, "ms");
+        nao::coutln("Converted in", (end - start).count() / 1e6, "ms");
 
         return true;
     }

@@ -12,55 +12,19 @@
 
     You should have received a copy of the GNU General Public License
     along with libnao-util.  If not, see <https://www.gnu.org/licenses/>.   */
-#include "strings.h"
+#include "nao/strings.h"
 
-#include "windows_min.h"
+#include <chrono>
+
+
+#include "nao/windows_min.h"
 
 #include <stdexcept>
 #include <sstream>
 #include <iomanip>
 
-namespace strings {
-    std::wstring to_utf16(std::string_view utf8) {
-        int size = MultiByteToWideChar(
-            CP_UTF8, MB_ERR_INVALID_CHARS,
-            utf8.data(), static_cast<int>(utf8.size()),
-            nullptr, 0);
-
-        std::wstring conv(size, L'\0');
-        int converted = MultiByteToWideChar(
-            CP_UTF8, MB_ERR_INVALID_CHARS,
-            utf8.data(), static_cast<int>(utf8.size()),
-            conv.data(), size);
-
-        if (converted != size) {
-            throw std::runtime_error(__FUNCTION__ ": utf8 -> utf16 conversion failed");
-        }
-
-        return conv;
-    }
-
-    std::string to_utf8(std::wstring_view utf16) {
-        int size = WideCharToMultiByte(
-            CP_UTF8, WC_COMPOSITECHECK | WC_NO_BEST_FIT_CHARS,
-            utf16.data(), static_cast<int>(utf16.size()),
-            nullptr, 0, nullptr, nullptr);
-
-        std::string conv(size, '\0');
-        int converted = WideCharToMultiByte(
-            CP_UTF8, WC_COMPOSITECHECK | WC_NO_BEST_FIT_CHARS,
-            utf16.data(), static_cast<int>(utf16.size()),
-            conv.data(), size, nullptr, nullptr);
-
-        if (converted != size) {
-            throw std::runtime_error(__FUNCTION__ ": utf16 -> utf8 conversion failed");
-        }
-
-        return conv;
-    }
-
-
-    std::string bytes(size_t n) {
+namespace nao {
+    string bytes(size_t n) {
         std::stringstream ss;
         ss << std::setprecision(3) << std::fixed;
         
@@ -96,7 +60,7 @@ namespace strings {
         return (s.erase(s.find_last_not_of("0.") + 1) + ' ').append(suffix);
     }
 
-    std::string bits(size_t n) {
+    string bits(size_t n) {
         std::stringstream ss;
         ss << std::setprecision(3) << std::fixed;
 
@@ -132,13 +96,15 @@ namespace strings {
         return (s.erase(s.find_last_not_of("0.") + 1) + ' ').append(suffix);
     }
 
-    std::string percent(double v) {
+    string percent(double v) {
         return std::to_string(static_cast<int64_t>(round(v * 100.))) + '%';
     }
 
-    std::string time_hours(std::chrono::nanoseconds ns, bool ms) {
+    string time_hours(uint64_t nanoseconds, bool ms) {
         std::stringstream ss;
         ss.fill('0');
+
+        std::chrono::nanoseconds ns { nanoseconds };
 
         auto hours = std::chrono::duration_cast<std::chrono::hours>(ns);
         ns -= hours;
@@ -162,9 +128,11 @@ namespace strings {
         return ss.str();
     }
 
-    std::string time_minutes(std::chrono::nanoseconds ns, bool ms) {
+    string time_minutes(uint64_t nanoseconds, bool ms) {
         std::stringstream ss;
         ss.fill('0');
+
+        std::chrono::nanoseconds ns { nanoseconds };
 
         auto minutes = std::chrono::duration_cast<std::chrono::minutes>(ns);
         ns -= minutes;

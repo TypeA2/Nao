@@ -19,7 +19,7 @@
 #include "dimensions.h"
 
 #include <algorithm>
-#include <strings.h>
+#include <nao/strings.h>
 
 preview::preview(nao_view& view)
     : ui_element(&view.window()->right())
@@ -213,7 +213,7 @@ audio_player_preview::audio_player_preview(nao_view& view, std::unique_ptr<audio
     _volume_display.set_text(std::to_string(volume) + "%");
 
     _duration = _player->duration();
-    _duration_display.set_text(strings::time_minutes(_duration, false));
+    _duration_display.set_text(nao::time_minutes(_duration.count(), false).c_str());
 
     _volume_display_size = _volume_display.text_extent_point();
     _duration_size = _duration_display.text_extent_point();
@@ -380,7 +380,7 @@ LRESULT audio_player_preview::wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARA
 }
 
 void audio_player_preview::_set_progress(std::chrono::nanoseconds progress) {
-    _progress_display.set_text(strings::time_minutes(progress, false));
+    _progress_display.set_text(nao::time_minutes(progress.count(), false).c_str());
 
     _progress_size = _progress_display.text_extent_point();
 }

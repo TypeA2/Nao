@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <ranges>
 
-#include <strings.h>
+#include <nao/strings.h>
 
 static constexpr DWORD listview_style = win32::style | LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS;
 
@@ -42,7 +42,7 @@ void list_view::set_columns(const std::vector<std::string>& hdr) const {
     for (const std::string& header : hdr) {
         col.iOrder = i++;
         
-        std::wstring wide = strings::to_utf16(header);
+        std::wstring wide = nao::string { header }.wide().c_str();
         col.pszText = wide.data();
 
         if (col.iOrder == (columns - 1)) {
@@ -90,8 +90,9 @@ int list_view::add_item(const std::vector<std::string>& text, int image, void* e
     ASSERT(!text.empty());
     ASSERT(utils::narrow<int>(text.size()) == column_count());
 
-    std::vector<std::wstring> utf16;
-    std::transform(text.begin(), text.end(), std::back_inserter(utf16), strings::to_utf16);
+    std::vector<nao::wstring> utf16;
+    std::transform(text.begin(), text.end(), std::back_inserter(utf16),
+        [](const auto& str) { return nao::string { str }.wide(); });
 
     LVITEMW item { };
     item.mask = LVIF_TEXT | LVIF_IMAGE | LVIF_PARAM;

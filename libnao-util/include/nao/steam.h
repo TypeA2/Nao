@@ -18,15 +18,38 @@
 
 #include <string>
 #include <vector>
+#include <memory>
+#include <unordered_map>
 
-namespace steam {
+#include <nao/error.h>
+#include <nao/string_view.h>
+
+namespace nao::steam {
     // Steam root path
-    NAOUTIL_API std::string path();
+    NAOUTIL_API expected<string> path();
 
     // A list of all steam install forlders
-    NAOUTIL_API std::vector<std::string> install_folders();
+    //NAOUTIL_API std::vector<string> install_folders();
 
     // Retrieve a game's path, if possible
-    NAOUTIL_API std::string game_path(std::string_view game);
-    NAOUTIL_API std::string game_path(std::string_view game, bool& found);
+    NAOUTIL_API expected<string> game_path(string_view game);
+
+    // Basic VDF parsing, only supports quoted identifiers
+    namespace vdf {
+        struct NAOUTIL_API object {
+            class opaque;
+            opaque* d;
+
+            object();
+            ~object();
+
+            std::string& name();
+            std::unordered_map<std::string, std::string>& attributes();
+            std::unordered_map<std::string, object>& children();
+
+            void print(std::ostream& os, size_t indent = 0) const;
+        };
+
+        NAOUTIL_API object parse(std::istream& in);
+    }
 }

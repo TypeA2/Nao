@@ -16,22 +16,31 @@
 
 #include "naoutil_defs.h"
 
-#include <string_view>
-#include <chrono>
+#include <nao/string.h>
+
+#include <sstream>
 
 /**
- * Functions related to string conversions, etc.
+ * Asynchronous logging, function interface
  */
 
-namespace strings {
-    NAOUTIL_API std::wstring to_utf16(std::string_view utf8);
-    NAOUTIL_API std::string to_utf8(std::wstring_view utf16);
+namespace nao {
+    template <typename T>
+    const T& printable(const T& arg) { return arg; }
 
-    NAOUTIL_API std::string bytes(size_t n);
-    NAOUTIL_API std::string bits(size_t n);
+    NAOUTIL_API void cout(string str);
 
-    NAOUTIL_API std::string percent(double v);
+    // Print to the appropriate output stream
+    template <typename... Args>
+    void cout(Args&&... args) {
+        std::stringstream ss;
+        ((ss << printable(std::forward<Args>(args)) << ' '), ...);
+        auto string = ss.str();
+        static_cast<void(*)(nao::string)>(cout)(string.substr(0, string.size() - 1));
+    }
 
-    NAOUTIL_API std::string time_hours(std::chrono::nanoseconds ns, bool ms = true);
-    NAOUTIL_API std::string time_minutes(std::chrono::nanoseconds ns, bool ms = true);
+    template <typename... Args>
+    void coutln(Args&&... args) {
+        cout(args..., '\n');
+    }
 }

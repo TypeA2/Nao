@@ -9,7 +9,7 @@
 
 #include "binary_stream.h"
 
-#include <strings.h>
+#include <nao/strings.h>
 
 filesystem_handler::filesystem_handler(const std::string& path)
     : file_handler(nullptr, path), item_file_handler(nullptr, path) {
@@ -19,16 +19,16 @@ filesystem_handler::filesystem_handler(const std::string& path)
         SHFILEINFOW finfo { };
         for (auto [letter, name, icon, total, free] : fs_utils::drive_list()) {
 
-            ASSERT(SHGetFileInfoW(strings::to_utf16(std::string { letter, ':', '\\'}).c_str(), 0, &finfo, sizeof(finfo), SHGFI_TYPENAME));
+            ASSERT(SHGetFileInfoW(nao::string(std::string { letter, ':', '\\'}).wide().c_str(), 0, &finfo, sizeof(finfo), SHGFI_TYPENAME));
 
             std::stringstream ss;
-            ss << strings::bytes(total) << " ("
-                << strings::bytes(free) << " free)";
+            ss << nao::bytes(total).c_str() << " ("
+                << nao::bytes(free).c_str() << " free)";
 
             items.push_back({
                 .handler      = this,
                 .name         = name,
-                .type         = strings::to_utf8(finfo.szTypeName),
+                .type         = nao::wstring(finfo.szTypeName).narrow().c_str(),
                 .size         = free,
                 .size_str     = ss.str(),
                 .icon         = icon,
@@ -57,7 +57,7 @@ filesystem_handler::filesystem_handler(const std::string& path)
             items.push_back({
                 .handler = this,
                 .name    = entry.path().filename().string(),
-                .type    = strings::to_utf8(finfo.szTypeName),
+                .type    = nao::wstring(finfo.szTypeName).narrow().c_str(),
                 .size    = entry.is_directory() ? 0 : static_cast<std::streamsize>(entry.file_size()),
                 .icon    = finfo.iIcon,
                 .dir     = entry.is_directory(),

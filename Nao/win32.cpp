@@ -6,7 +6,7 @@
 
 #include "ui_element.h"
 
-#include <strings.h>
+#include <nao/strings.h>
 
 namespace win32 {
     inline namespace raii {
@@ -41,7 +41,7 @@ namespace win32 {
 
 
         dynamic_library::dynamic_library(const std::string& name)
-            : _handle(LoadLibraryW(strings::to_utf16(name).c_str())) {
+            : _handle(LoadLibraryW(nao::string(name).wide().c_str())) {
             ASSERT(_handle);
         }
 

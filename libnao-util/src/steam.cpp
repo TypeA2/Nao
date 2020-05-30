@@ -14,44 +14,89 @@
     along with libnao-util.  If not, see <https://www.gnu.org/licenses/>.   */
 #define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING
 
-#include "steam.h"
+#include "nao/steam.h"
 
-#include "windows_min.h"
-#include "strings.h"
+#include "nao/windows_min.h"
+#include "nao/strings.h"
+#include "nao/logging.h"
 
 #include <stdexcept>
 #include <filesystem>
 #include <fstream>
+#include <sstream>
+
 
 // TODO in-house VDF parser
 #include "vdf_parser.h"
 
-namespace steam {
-    std::string path() {
-        DWORD type;
-        DWORD size = MAX_PATH;
-        WCHAR str[MAX_PATH] { };
+namespace {
+    // Simple auto-destructor
+    struct hkey_lock {
+        HKEY key = nullptr;
+        ~hkey_lock() {
+            if (key) {
+                RegCloseKey(key);
+            }
+        }
+    };
+}
 
-        LSTATUS status = RegGetValueW(
-            HKEY_CURRENT_USER, L"Software\\Valve\\Steam", L"SteamPath",
-            RRF_RT_REG_SZ, &type, str, &size);
+namespace nao::steam {
+    expected<string> path() {
+        hkey_lock key;
+        LSTATUS status = RegOpenKeyExW(HKEY_CURRENT_USER,
+            L"Software\\Valve\\Steam", 0, KEY_READ, &key.key);
 
         if (status != ERROR_SUCCESS) {
-            throw std::runtime_error(__FUNCTION__ ": Steam path registry retrieval failed");
+            return { except::runtime_error, __FUNCTION__": Key opening failed" };
         }
 
-        return strings::to_utf8(str);
+        DWORD type, size;
+        status = RegQueryValueExW(key.key,
+            L"SteamPath", nullptr,
+            &type, nullptr, &size);
+
+        if (status != ERROR_SUCCESS) {
+            return { except::runtime_error, __FUNCTION__": Key length retrieval failed" };
+        }
+
+        if (type != REG_SZ) {
+            return { except::runtime_error, __FUNCTION__": Expected REG_SZ" };
+        }
+
+        if (size == 0) {
+            return { except::runtime_error, __FUNCTION__": No size" };
+        }
+
+        // Size includes null terminator
+        wstring str((size / sizeof(WCHAR)) - 1, 0);
+        status = RegQueryValueExW(key.key, L"SteamPath",
+            nullptr, nullptr, reinterpret_cast<uint8_t*>(str.data()), &size);
+
+        if (status != ERROR_SUCCESS) {
+            return { except::runtime_error, __FUNCTION__": Key retrieval failed" };
+        }
+
+        return str.narrow();
     }
 
-    std::vector<std::string> install_folders() {
+    std::vector<string> install_folders() {
+        auto p = path() + "\\SteamApps\\libraryfolders.vdf";
         auto vdf_path = std::filesystem::path {
-            path() + "\\SteamApps\\libraryfolders.vdf" }.lexically_normal();
+            p.c_str() }.lexically_normal();
 
         std::ifstream in { vdf_path };
 
         tyti::vdf::object root = tyti::vdf::read(in);
 
-        std::vector<std::string> folders { root.attribs.size() - 1 };
+        //in.seekg(0);
+        //in.clear();
+        //auto root1 = vdf::parse(in);
+        //std::stringstream ss;
+        //root1.print(ss);
+        //logging::coutln(ss.str());
+
+        std::vector<string> folders { root.attribs.size() - 1 };
 
         folders[0] = path();
 
@@ -60,30 +105,19 @@ namespace steam {
         }
 
         std::transform(folders.begin(), folders.end(), folders.begin(), [](auto& path) {
-            return std::filesystem::absolute(path).lexically_normal().string();
+            return std::filesystem::absolute(path.c_str()).lexically_normal().string();
             });
 
         return folders;
     }
 
-    std::string game_path(std::string_view game) {
-        bool found;
-        std::string path = game_path(game, found);
 
-        if (!found) {
-            throw std::runtime_error(__FUNCTION__ ": game path not found");
-        }
-
-        return path;
-    }
-
-    std::string game_path(std::string_view game, bool& found) {
-        for (const std::string& dir : install_folders()) {
+    expected<string> game_path(string_view game) {
+        for (const string& dir : install_folders()) {
             try {
-                std::filesystem::directory_iterator it { dir + "\\SteamApps\\common" };
+                std::filesystem::directory_iterator it { (dir + "\\SteamApps\\common").c_str() };
                 for (const auto& entry : it) {
-                    if (is_directory(entry) && entry.path().filename() == game) {
-                        found = true;
+                    if (is_directory(entry) && entry.path().filename() == game.data()) {
                         return absolute(entry).lexically_normal().string();
                     }
                 }
@@ -92,9 +126,114 @@ namespace steam {
             }
         }
 
-        found = false;
-        return {};
+        return { except::runtime_error, string { __FUNCTION__": Path not found:" } + game };
     }
 
+    namespace vdf {
+        class object::opaque {
+            public:
+            std::string name;
+            std::unordered_map<std::string, std::string> attributes;
+            std::unordered_map<std::string, object> children;
+        };
 
+        object::object() {
+            d = new opaque;
+        }
+
+        object::~object() {
+            delete d;
+        }
+
+        std::string& object::name() {
+            return d->name;
+        }
+
+        std::unordered_map<std::string, std::string>& object::attributes() {
+            return d->attributes;
+        }
+
+        std::unordered_map<std::string, object>& object::children() {
+            return d->children;
+        }
+
+        void object::print(std::ostream& os, size_t indent) const {
+            std::string indent_child(indent + 4, ' ');
+            os << std::string(indent, ' ') << std::quoted(d->name) << "\n{\n";
+            for (const auto& [key, val] : d->attributes) {
+                os << std::quoted(key) << ' ' << std::quoted(val) << '\n';
+            }
+
+            for (const auto& [key, obj] : d->children) {
+                obj.print(os, indent + 4);
+            }
+
+            os << std::string(indent, ' ') << "}\n";
+        }
+
+
+        static void check_eof(std::istream& in) {
+            if (in.eof() || !in) {
+                throw std::runtime_error(__FUNCTION__ ": unexpected EOF");
+            }
+        }
+
+        static void consume_whitespace(std::istream& in) {
+            while (in.peek() == ' ' || in.peek() == '\n') {
+                in.get();
+                check_eof(in);
+            }
+        }
+
+        static std::string next_token(std::istream& in) {
+            consume_whitespace(in);
+
+            char peeked = in.peek();
+            switch (peeked) {
+                case '{': return "{";
+                case '}': return "}";
+                case '\"': {
+                    std::string token;
+                    in >> std::quoted(token);
+
+                    return token;
+                }
+
+                default: throw std::runtime_error(__FUNCTION__ ": invalid next token");
+            }
+            
+        }
+
+        static void parse_recursive(object& parent, std::istream& in) {
+            std::string name = next_token(in);
+
+            std::string next;
+            do {
+                next = next_token(in);
+
+                if (next == "{") {
+                    // sub-block
+                    parent.children()[name].name() = name;
+                    parse_recursive(parent.children()[name], in);
+                } else {
+                    // Key-value pair
+                    parent.attributes()[name] = next;
+                }
+            } while (next != "}");
+        }
+
+        object parse(std::istream& in) {
+            if (!in) {
+                throw std::invalid_argument(__FUNCTION__ ": stream not open");
+            }
+
+            object root;
+            parse_recursive(root, in);
+
+            return root;
+        }
+
+        
+
+    }
 }

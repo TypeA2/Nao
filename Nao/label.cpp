@@ -2,7 +2,7 @@
 
 #include "utils.h"
 
-#include <strings.h>
+#include <nao/strings.h>
 
 label::label(ui_element* parent, const std::string& text, label_type type)
     : ui_element(parent, WC_STATICW, win32::style | type) {
@@ -17,7 +17,7 @@ dimensions label::text_extent_point() const {
 
 void label::set_text(const std::string& text) {
     _text = text;
-    SetWindowTextW(handle(), strings::to_utf16(text).c_str());
+    SetWindowTextW(handle(), nao::string { text }.wide().c_str());
 }
 
 const std::string& label::text() const {
