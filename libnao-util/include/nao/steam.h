@@ -23,13 +23,14 @@
 
 #include <nao/error.h>
 #include <nao/string_view.h>
+#include <nao/vector.h>
 
 namespace nao::steam {
     // Steam root path
     NAOUTIL_API expected<string> path();
 
     // A list of all steam install forlders
-    //NAOUTIL_API std::vector<string> install_folders();
+    NAOUTIL_API vector<string> install_folders();
 
     // Retrieve a game's path, if possible
     NAOUTIL_API expected<string> game_path(string_view game);

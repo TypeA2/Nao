@@ -163,9 +163,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="include\internal.h" />
     <ClInclude Include="include\naocore_defs.h" />
     <ClInclude Include="include\nao\concepts.h" />
     <ClInclude Include="include\nao\error.h" />
+    <ClInclude Include="include\nao\vector.h" />
     <ClInclude Include="include\nao\string.h" />
     <ClInclude Include="include\nao\string_view.h" />
   </ItemGroup>
@@ -173,6 +175,7 @@
     <None Include="libnao-core.licenseheader" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="internal.cpp" />
     <ClCompile Include="src\dllmain.cpp" />
     <ClCompile Include="src\string.cpp" />
     <ClCompile Include="src\string_view.cpp" />

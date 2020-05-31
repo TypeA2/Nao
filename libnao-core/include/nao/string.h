@@ -14,7 +14,7 @@
     along with libnao-core.  If not, see <https://www.gnu.org/licenses/>.   */
 #pragma once
 
-#include "naocore_defs.h"
+#include "internal.h"
 #include "nao/string_view.h"
 #include "nao/concepts.h"
 
@@ -26,18 +26,6 @@
 //
 
 namespace nao {
-    // Implementation core functions
-
-    //
-    // Known-length narrow (UTF-8) string to wide (UTF-16). Nullptr on error.
-    // if wide == nullptr, return needed size (excluding null terminator)
-    NAOCORE_IMPL size_t NAOCORE_DECL nc_narrow_to_wide(const char* narrow, size_t len, wchar_t* wide);
-
-    //
-    // Same but for UTF-16 -> UTF-8
-    //
-    NAOCORE_IMPL size_t NAOCORE_DECL nc_wide_to_narrow(const wchar_t* wide, size_t len, char* narrow);
-    
     template <typename CharT>
     class basic_string {
         // For some reason MSVC isn't happy with an equivalent requires clause
@@ -67,7 +55,7 @@ namespace nao {
         public:
 
         ~basic_string() {
-            delete[] _data;
+            _nc_free_aligned(_data);
         }
 
         // Empty
@@ -203,11 +191,11 @@ namespace nao {
                 return *this;
             } else {
                 // UTF-8 -> UTF-16
-                size_t size = nc_narrow_to_wide(_data, _size, nullptr);
+                size_t size = _nc_narrow_to_wide(_data, _size, nullptr);
                 if (size == 0) { return {}; }
 
                 basic_string<wchar_t> conv(size, 0);
-                if (nc_narrow_to_wide(_data, _size, conv.data()) != conv.size()) {
+                if (_nc_narrow_to_wide(_data, _size, conv.data()) != conv.size()) {
                     return {};
                 }
 
@@ -219,11 +207,11 @@ namespace nao {
             if constexpr (std::is_same_v<CharT, char>) {
                 return *this;
             } else {
-                size_t size = nc_wide_to_narrow(_data, _size, nullptr);
+                size_t size = _nc_wide_to_narrow(_data, _size, nullptr);
                 if (size == 0) { return {}; }
 
                 basic_string<char> conv(size, 0);
-                if (nc_wide_to_narrow(_data, _size, conv.data()) != conv.size()) {
+                if (_nc_wide_to_narrow(_data, _size, conv.data()) != conv.size()) {
                     return {};
                 }
 
@@ -241,11 +229,12 @@ namespace nao {
 
                 // Don't need to initialise, zero-terminator is copied
                 // also throw on error, just exit everything
-                pointer temp = new value_type[target];
+                //pointer temp = new value_type[target];
+                pointer temp =  _nc_alloc_aligned<value_type>(target);
 
                 if (_data) {
                     std::copy_n(_data, _size + 1, temp);
-                    delete[] _data;
+                    _nc_free_aligned(_data);
                 }
                 
                 _data = temp;

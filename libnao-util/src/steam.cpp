@@ -19,6 +19,7 @@
 #include "nao/windows_min.h"
 #include "nao/strings.h"
 #include "nao/logging.h"
+#include "nao/vector.h"
 
 #include <stdexcept>
 #include <filesystem>
@@ -80,13 +81,12 @@ namespace nao::steam {
         return str.narrow();
     }
 
-    std::vector<string> install_folders() {
+    vector<string> install_folders() {
         auto p = path() + "\\SteamApps\\libraryfolders.vdf";
         auto vdf_path = std::filesystem::path {
             p.c_str() }.lexically_normal();
 
         std::ifstream in { vdf_path };
-
         tyti::vdf::object root = tyti::vdf::read(in);
 
         //in.seekg(0);
@@ -96,7 +96,7 @@ namespace nao::steam {
         //root1.print(ss);
         //logging::coutln(ss.str());
 
-        std::vector<string> folders { root.attribs.size() - 1 };
+        vector<string> folders { root.attribs.size() - 1 };
 
         folders[0] = path();
 

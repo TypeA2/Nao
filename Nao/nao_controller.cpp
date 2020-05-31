@@ -56,23 +56,25 @@ int nao_controller::pump() {
     while (running) {
         SDL_Event event;
 
-        while (SDL_PollEvent(&event)) {
-            switch (event.type) {
-                case SDL_WINDOWEVENT_CLOSE:
-                    event.type = SDL_QUIT;
-                    SDL_PushEvent(&event);
-                    break;
+        if (SDL_WaitEvent(&event) != 1) {
+            continue;
+        }
 
-                case SDL_USEREVENT:
-                    _handle_message(static_cast<nao_thread_message>(event.user.code), WPARAM(event.user.data1), LPARAM(event.user.data2));
-                    break;
+        switch (event.type) {
+            case SDL_WINDOWEVENT_CLOSE:
+                event.type = SDL_QUIT;
+                SDL_PushEvent(&event);
+                break;
 
-                case SDL_QUIT:
-                    running = false;
-                    break;
-                default:
-                    nao::coutln("SDL event:", event.type);
-            } 
+            case SDL_USEREVENT:
+                _handle_message(static_cast<nao_thread_message>(event.user.code), WPARAM(event.user.data1), LPARAM(event.user.data2));
+                break;
+
+            case SDL_QUIT:
+                running = false;
+                break;
+            default:
+                nao::coutln("SDL event:", event.type);
         }
     }
 

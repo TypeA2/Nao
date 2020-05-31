@@ -30,6 +30,12 @@
     <ClInclude Include="include\nao\concepts.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\nao\vector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\internal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="libnao-core.licenseheader" />
@@ -42,6 +48,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\string_view.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="internal.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
