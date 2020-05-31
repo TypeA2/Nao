@@ -177,7 +177,6 @@
   <ItemGroup>
     <ClCompile Include="internal.cpp" />
     <ClCompile Include="src\dllmain.cpp" />
-    <ClCompile Include="src\string.cpp" />
     <ClCompile Include="src\string_view.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

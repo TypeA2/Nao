@@ -16,11 +16,6 @@
 
 #include "naoutil_defs.h"
 
-#include <string>
-#include <vector>
-#include <memory>
-#include <unordered_map>
-
 #include <nao/error.h>
 #include <nao/string_view.h>
 #include <nao/vector.h>
@@ -34,23 +29,4 @@ namespace nao::steam {
 
     // Retrieve a game's path, if possible
     NAOUTIL_API expected<string> game_path(string_view game);
-
-    // Basic VDF parsing, only supports quoted identifiers
-    namespace vdf {
-        struct NAOUTIL_API object {
-            class opaque;
-            opaque* d;
-
-            object();
-            ~object();
-
-            std::string& name();
-            std::unordered_map<std::string, std::string>& attributes();
-            std::unordered_map<std::string, object>& children();
-
-            void print(std::ostream& os, size_t indent = 0) const;
-        };
-
-        NAOUTIL_API object parse(std::istream& in);
-    }
 }

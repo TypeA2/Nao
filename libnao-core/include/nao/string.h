@@ -269,9 +269,6 @@ namespace nao {
     }
 
     // Common strings
-    NAOCORE_INSTANTIATE basic_string<char>;
-    NAOCORE_INSTANTIATE basic_string<wchar_t>;
-
     using string = basic_string<char>;
     using wstring = basic_string<wchar_t>;
 }

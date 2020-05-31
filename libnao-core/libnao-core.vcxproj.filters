@@ -44,9 +44,6 @@
     <ClCompile Include="src\dllmain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\string.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\string_view.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
