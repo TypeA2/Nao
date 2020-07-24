@@ -1,21 +1,25 @@
-/*  This file is part of libnao-util.
+/*  This file is part of libnao-ui.
 
-    libnao-util is free software: you can redistribute it and/or modify
+    libnao-ui is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    libnao-util is distributed in the hope that it will be useful,
+    libnao-ui is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with libnao-util.  If not, see <https://www.gnu.org/licenses/>.   */
+    along with libnao-ui.  If not, see <https://www.gnu.org/licenses/>.   */
+
 #pragma once
 
-#ifdef LIBNAOUTIL_EXPORTS
-#define NAOUTIL_API __declspec(dllexport)
-#else
-#define NAOUTIL_API __declspec(dllimport)
-#endif
+#include <windows.h>
+#include <nao/string.h>
+
+namespace nao::ui::platform::win32 {
+    const string& default_window_class();
+
+    bool class_is_registered(const string& classname);
+}

@@ -50,6 +50,8 @@ namespace nao {
             _nc_free_aligned(_data);
         }
 
+        vector() = default;
+
         vector(size_type count, const value_type& val = value_type()) { assign(count, val); }
 
         // Copy constructor
@@ -115,6 +117,18 @@ namespace nao {
             new (_data + _size) value_type(std::forward<Args>(args)...);
             _size += 1;
             return _data[_size - 1];
+        }
+
+        void push_back(const_reference value) {
+            _resize(_size + 1);
+            new (_data + _size) value_type(value);
+            _size += 1;
+        }
+
+        void push_back(value_type&& value) {
+            _resize(_size + 1);
+            new (_data + _size) value_type(value);
+            _size += 1;
         }
 
         private:

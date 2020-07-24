@@ -12,8 +12,7 @@
 
     You should have received a copy of the GNU General Public License
     along with libnao-core.  If not, see <https://www.gnu.org/licenses/>.   */
-
-#include "internal.h"
+#include "nao/internal.h"
 
 #include <new>
 

@@ -120,7 +120,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)lib\libogg\include;$(SolutionDir)lib\libvorbis\include;$(SolutionDir)lib\libopus\include;$(SolutionDir)lib\libopusfile\include;$(SolutionDir)lib\libFLAC\include;$(SolutionDir)lib\FFmpeg\include;$(SolutionDir)lib\SDL2\include;$(SolutionDir)libnao-core\include;$(SolutionDir)libnao-util\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)lib\libogg\include;$(SolutionDir)lib\libvorbis\include;$(SolutionDir)lib\libopus\include;$(SolutionDir)lib\libopusfile\include;$(SolutionDir)lib\libFLAC\include;$(SolutionDir)lib\FFmpeg\include;$(SolutionDir)lib\SDL2\include;$(SolutionDir)libnao-core\include;$(SolutionDir)libnao-util\include;$(SolutionDir)libnao-ui\include</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>6388;6387;26712;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -128,8 +128,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LargeAddressAware>true</LargeAddressAware>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>comctl32.lib;uxtheme.lib;comsupp.lib;libogg.lib;libvorbis.lib;Shlwapi.lib;d2d1.lib;dxguid.lib;dxva2.lib;evr.lib;mf.lib;mfplat.lib;mfplay.lib;mfreadwrite.lib;mfuuid.lib;strmiids.lib;avcodec.lib;avformat.lib;avutil.lib;swresample.lib;swscale.lib;SDL2.lib;libnao-core.lib;libnao-util.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)lib\bin\$(Configuration);$(SolutionDir)libnao-core\bin\$(Configuration);$(SolutionDir)libnao-util\bin\$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>comctl32.lib;uxtheme.lib;comsupp.lib;libogg.lib;libvorbis.lib;Shlwapi.lib;d2d1.lib;dxguid.lib;dxva2.lib;evr.lib;mf.lib;mfplat.lib;mfplay.lib;mfreadwrite.lib;mfuuid.lib;strmiids.lib;avcodec.lib;avformat.lib;avutil.lib;swresample.lib;swscale.lib;SDL2.lib;libnao-core.lib;libnao-util.lib;libnao-ui.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)lib\bin\$(Configuration);$(SolutionDir)libnao-core\bin\$(Configuration);$(SolutionDir)libnao-util\bin\$(Configuration);$(SolutionDir)libnao-ui\bin\$(Configuration)</AdditionalLibraryDirectories>
     </Link>
     <ResourceCompile>
       <AdditionalIncludeDirectories>
@@ -168,7 +168,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)lib\libogg\include;$(SolutionDir)lib\libvorbis\include;$(SolutionDir)lib\libopus\include;$(SolutionDir)lib\libopusfile\include;$(SolutionDir)lib\libFLAC\include;$(SolutionDir)lib\FFmpeg\include;$(SolutionDir)lib\SDL2\include;$(SolutionDir)libnao-core\include;$(SolutionDir)libnao-util\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)lib\libogg\include;$(SolutionDir)lib\libvorbis\include;$(SolutionDir)lib\libopus\include;$(SolutionDir)lib\libopusfile\include;$(SolutionDir)lib\libFLAC\include;$(SolutionDir)lib\FFmpeg\include;$(SolutionDir)lib\SDL2\include;$(SolutionDir)libnao-core\include;$(SolutionDir)libnao-util\include;$(SolutionDir)libnao-ui\include</AdditionalIncludeDirectories>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <DisableSpecificWarnings>6388;6387;26712;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -181,8 +181,8 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <LargeAddressAware>true</LargeAddressAware>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>comctl32.lib;uxtheme.lib;comsupp.lib;libogg.lib;libvorbis.lib;Shlwapi.lib;d2d1.lib;dxguid.lib;dxva2.lib;evr.lib;mf.lib;mfplat.lib;mfplay.lib;mfreadwrite.lib;mfuuid.lib;strmiids.lib;avcodec.lib;avformat.lib;avutil.lib;swresample.lib;swscale.lib;SDL2.lib;libnao-core.lib;libnao-util.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)lib\bin\$(Configuration);$(SolutionDir)libnao-core\bin\$(Configuration);$(SolutionDir)libnao-util\bin\$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>comctl32.lib;uxtheme.lib;comsupp.lib;libogg.lib;libvorbis.lib;Shlwapi.lib;d2d1.lib;dxguid.lib;dxva2.lib;evr.lib;mf.lib;mfplat.lib;mfplay.lib;mfreadwrite.lib;mfuuid.lib;strmiids.lib;avcodec.lib;avformat.lib;avutil.lib;swresample.lib;swscale.lib;SDL2.lib;libnao-core.lib;libnao-util.lib;libnao-ui.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)lib\bin\$(Configuration);$(SolutionDir)libnao-core\bin\$(Configuration);$(SolutionDir)libnao-util\bin\$(Configuration);$(SolutionDir)libnao-ui\bin\$(Configuration)</AdditionalLibraryDirectories>
     </Link>
     <ResourceCompile>
       <AdditionalIncludeDirectories>

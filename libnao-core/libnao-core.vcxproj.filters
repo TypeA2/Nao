@@ -33,7 +33,19 @@
     <ClInclude Include="include\nao\vector.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\internal.h">
+    <ClInclude Include="include\nao\internal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\nao\list.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\nao\functional.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\nao\memory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="nao\unordered_set.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -47,7 +59,7 @@
     <ClCompile Include="src\string_view.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="internal.cpp">
+    <ClCompile Include="src\internal.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
