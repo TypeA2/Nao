@@ -1,3 +1,3 @@
 [submodule "libnao-util"]
-	path = libnao-util
+	path = lib/libnao-util
 	url = https://github.com/TypeA2/libnao-util
