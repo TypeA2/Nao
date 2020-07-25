@@ -41,7 +41,7 @@ namespace win32 {
 
 
         dynamic_library::dynamic_library(const std::string& name)
-            : _handle(LoadLibraryW(nao::string(name).wide().c_str())) {
+            : _handle(LoadLibraryW(nao::to_utf16(name).c_str())) {
             ASSERT(_handle);
         }
 

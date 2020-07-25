@@ -17,7 +17,7 @@ dimensions label::text_extent_point() const {
 
 void label::set_text(const std::string& text) {
     _text = text;
-    SetWindowTextW(handle(), nao::string { text }.wide().c_str());
+    SetWindowTextW(handle(), nao::to_utf16(text).c_str());
 }
 
 const std::string& label::text() const {

@@ -431,7 +431,7 @@ namespace mf {
     com_ptr<IUnknown> source_resolver::create_source(binary_stream_imfbytestream& bs, const std::string& path) const {
         com_ptr<IUnknown> unk;
         MF_OBJECT_TYPE type;
-        HRESULT hr = com_object->CreateObjectFromByteStream(&bs, nao::string(path).wide().c_str(),
+        HRESULT hr = com_object->CreateObjectFromByteStream(&bs, nao::to_utf16(path).c_str(),
             MF_RESOLUTION_KEEP_BYTE_STREAM_ALIVE_ON_FAIL | MF_RESOLUTION_MEDIASOURCE,
             nullptr, &type, &unk);
 

@@ -264,7 +264,7 @@ void nao_controller::create_context_menu(item_data* data, POINT pt) {
             menu.push_back({
                 .text = "Show in explorer",
                 .func = [=] {
-                        LPITEMIDLIST idl = ILCreateFromPathW(nao::string(data->path()).wide().c_str());
+                        LPITEMIDLIST idl = ILCreateFromPathW(nao::to_utf16(data->path()).c_str());
                         if (idl) {
                             SHOpenFolderAndSelectItems(idl, 0, nullptr, 0);
                             ILFree(idl);
@@ -292,11 +292,11 @@ void nao_controller::create_context_menu_preview(item_data* data, POINT pt) {
         auto async_func = [this, pt] {
             if (!fs_utils::file_info(model.preview_provider()->get_path()).invalid()) {
 
-                auto func = new std::function<void()>(
+                auto* func = new std::function<void()>(
                     std::bind(&nao_view::execute_context_menu, &view, context_menu { {
                         .text = "Show in explorer",
                         .func = std::bind([](const std::string& path) {
-                            LPITEMIDLIST idl = ILCreateFromPathW(nao::string(path).wide().c_str());
+                            LPITEMIDLIST idl = ILCreateFromPathW(nao::to_utf16(path).c_str());
                             if (idl) {
                                 SHOpenFolderAndSelectItems(idl, 0, nullptr, 0);
                                 ILFree(idl);

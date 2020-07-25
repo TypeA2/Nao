@@ -39,10 +39,10 @@ void list_view::set_columns(const std::vector<std::string>& hdr) const {
     col.fmt = LVCFMT_LEFT;
     int i = 0;
     
-    for (const std::string& header : hdr) {
+    for (std::string_view header : hdr) {
         col.iOrder = i++;
         
-        std::wstring wide = nao::string { header }.wide().c_str();
+        std::wstring wide = nao::to_utf16(header);
         col.pszText = wide.data();
 
         if (col.iOrder == (columns - 1)) {
@@ -90,9 +90,8 @@ int list_view::add_item(const std::vector<std::string>& text, int image, void* e
     ASSERT(!text.empty());
     ASSERT(utils::narrow<int>(text.size()) == column_count());
 
-    std::vector<nao::wstring> utf16;
-    std::transform(text.begin(), text.end(), std::back_inserter(utf16),
-        [](const auto& str) { return nao::string { str }.wide(); });
+    std::vector<std::wstring> utf16;
+    std::transform(text.begin(), text.end(), std::back_inserter(utf16), nao::to_utf16);
 
     LVITEMW item { };
     item.mask = LVIF_TEXT | LVIF_IMAGE | LVIF_PARAM;

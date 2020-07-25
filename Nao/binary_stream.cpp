@@ -30,7 +30,7 @@ binary_istream::binary_istream(binary_istream&& other) noexcept
 }
 
 binary_istream::binary_istream(int resource, const std::string& type) {
-    HRSRC handle = FindResourceW(nullptr, MAKEINTRESOURCEW(resource), nao::string { type }.wide().c_str());
+    HRSRC handle = FindResourceW(nullptr, MAKEINTRESOURCEW(resource), nao::to_utf16(type).c_str());
     HGLOBAL res = LoadResource(nullptr, handle);
     streambuf = std::make_unique<byte_array_streambuf>(static_cast<char*>(LockResource(res)),
         SizeofResource(nullptr, handle));

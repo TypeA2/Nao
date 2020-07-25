@@ -17,8 +17,12 @@ nao_model::nao_model(nao_view& view, nao_controller& controller) : view(view), c
 }
 
 void nao_model::setup() {
-    auto path = nao::steam::game_path("NieRAutomata");
-    move_to(path.good() ? (path + "\\data").c_str() : "\\");
+    try {
+        auto path = nao::steam::game_path("NieRAutomata");
+        move_to(path + "\\data");
+    } catch (const std::runtime_error&) {
+        move_to("\\");
+    }
 }
 
 void nao_model::move_to(std::string path) {

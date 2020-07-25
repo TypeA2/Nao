@@ -71,7 +71,7 @@ win32::device_context ui_element::dc() const {
 }
 
 dimensions ui_element::text_extent_point(const std::string& str) const {
-    std::wstring wide = nao::string(str).wide().c_str();
+    std::wstring wide = nao::to_utf16(str);
     SIZE size;
     ASSERT(GetTextExtentPoint32W(dc(), wide.c_str(), utils::narrow<uint32_t>(wide.size()), &size));
 
@@ -206,7 +206,7 @@ void ui_element::set_window_text(const std::wstring& text) const {
 }
 
 void ui_element::set_text(const std::string& text) const {
-    set_text(nao::string(text).wide().c_str());
+    set_text(nao::to_utf16(text));
 }
 
 void ui_element::set_text(const std::wstring& text) const {

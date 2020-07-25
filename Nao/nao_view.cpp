@@ -138,7 +138,7 @@ void nao_view::button_clicked(view_button_type which) const {
                         if (FAILED(hr)) {
                             nao::coutln("Failed to get path");
                         } else {
-                            controller.move_to(nao::wstring(path).narrow().c_str());
+                            controller.move_to(nao::to_utf8(path));
                         }
                     }
                 }
@@ -272,7 +272,7 @@ void nao_view::execute_context_menu(const context_menu& menu, POINT pt) const {
                 InsertMenuItemW(popup, -1, true, &separator_item);
             }
         } else {
-            auto wide = nao::string(text).wide();
+            auto wide = nao::to_utf16(text);
             item.dwTypeData = wide.data();
             item.dwItemData = reinterpret_cast<UINT_PTR>(&function);
             item.wID = id;

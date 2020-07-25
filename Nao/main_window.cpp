@@ -86,7 +86,7 @@ static INT_PTR _about(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 
                 if (idl) {
                     // I don't even know what the API is doing at this point
-                    ShellExecuteA(hwnd, "open", fs_path.string().c_str(), nullptr, nao::wstring(path).narrow().c_str(), SW_SHOW);
+                    ShellExecuteA(hwnd, "open", fs_path.string().c_str(), nullptr, nao::to_utf8(path).c_str(), SW_SHOW);
                     ILFree(idl);
                 }
             }

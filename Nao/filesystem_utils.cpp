@@ -47,7 +47,7 @@ namespace fs_utils {
 
     inline namespace classes {
         file_info::file_info(const std::string& path) : _path(path) {
-            if (!GetFileAttributesExW(nao::string { path }.wide().c_str(), GetFileExInfoStandard, &_data)) {
+            if (!GetFileAttributesExW(nao::to_utf16(path).c_str(), GetFileExInfoStandard, &_data)) {
                 _data.dwFileAttributes = INVALID_FILE_ATTRIBUTES;
             }
         }
@@ -141,8 +141,8 @@ namespace fs_utils {
                     GetDiskFreeSpaceExW(s, nullptr, &total, &free);
 
                     _drive_info.push_back({
-                        .letter     = nao::wstring { s }.narrow().front(),
-                        .name       = nao::wstring { finfo.szDisplayName }.narrow().c_str(),
+                        .letter     = nao::to_utf8(s).front(),
+                        .name       = nao::to_utf8(finfo.szDisplayName),
                         .icon       = finfo.iIcon,
                         .total_size = static_cast<std::streamsize>(total.QuadPart),
                         .free_size  = static_cast<std::streamsize>(free.QuadPart)
