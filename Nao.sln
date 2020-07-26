@@ -6,6 +6,7 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Nao", "Nao\Nao.vcxproj", "{FAA9B3E5-7D49-41FA-BCCA-5140067810B9}"
 	ProjectSection(ProjectDependencies) = postProject
 		{DB9BAC48-0B6D-49DD-856B-32C124063DC7} = {DB9BAC48-0B6D-49DD-856B-32C124063DC7}
+		{AA28066A-CAD4-4E0C-90F2-5ACDFC765C9F} = {AA28066A-CAD4-4E0C-90F2-5ACDFC765C9F}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "revorb-patch", "revorb-patch\revorb-patch.vcxproj", "{C247EE3C-E7A3-4E4E-821C-92BFD8F37946}"
@@ -13,6 +14,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libnao-util", "lib\libnao-util\libnao-util.vcxproj", "{DB9BAC48-0B6D-49DD-856B-32C124063DC7}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libnao-ui", "lib\libnao-ui\libnao-ui.vcxproj", "{AA28066A-CAD4-4E0C-90F2-5ACDFC765C9F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{DB9BAC48-0B6D-49DD-856B-32C124063DC7} = {DB9BAC48-0B6D-49DD-856B-32C124063DC7}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

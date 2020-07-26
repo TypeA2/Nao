@@ -80,8 +80,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LargeAddressAware>true</LargeAddressAware>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>comctl32.lib;uxtheme.lib;comsupp.lib;libogg.lib;libvorbis.lib;Shlwapi.lib;d2d1.lib;dxguid.lib;dxva2.lib;evr.lib;mf.lib;mfplat.lib;mfplay.lib;mfreadwrite.lib;mfuuid.lib;strmiids.lib;avcodec.lib;avformat.lib;avutil.lib;swresample.lib;swscale.lib;SDL2.lib;libnao-core.lib;libnao-util.lib;libnao-ui.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)lib\bin\$(Configuration);$(SolutionDir)libnao-core\bin\$(Configuration);$(SolutionDir)lib\libnao-util\build\$(Platform)\$(Configuration);$(SolutionDir)libnao-ui\bin\$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>comctl32.lib;uxtheme.lib;comsupp.lib;libogg.lib;libvorbis.lib;Shlwapi.lib;d2d1.lib;dxguid.lib;dxva2.lib;evr.lib;mf.lib;mfplat.lib;mfplay.lib;mfreadwrite.lib;mfuuid.lib;strmiids.lib;avcodec.lib;avformat.lib;avutil.lib;swresample.lib;swscale.lib;SDL2.lib;libnao-util.lib;libnao-ui.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)lib\bin\$(Configuration);$(SolutionDir)lib\libnao-util\build\$(Platform)\$(Configuration);$(SolutionDir)lib\libnao-ui\build\$(Platform)\$(Configuration)</AdditionalLibraryDirectories>
     </Link>
     <ResourceCompile>
       <AdditionalIncludeDirectories>
@@ -114,8 +114,8 @@
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <LargeAddressAware>true</LargeAddressAware>
       <TreatLinkerWarningAsErrors>true</TreatLinkerWarningAsErrors>
-      <AdditionalDependencies>comctl32.lib;uxtheme.lib;comsupp.lib;libogg.lib;libvorbis.lib;Shlwapi.lib;d2d1.lib;dxguid.lib;dxva2.lib;evr.lib;mf.lib;mfplat.lib;mfplay.lib;mfreadwrite.lib;mfuuid.lib;strmiids.lib;avcodec.lib;avformat.lib;avutil.lib;swresample.lib;swscale.lib;SDL2.lib;libnao-core.lib;libnao-util.lib;libnao-ui.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)lib\bin\$(Configuration);$(SolutionDir)libnao-core\bin\$(Configuration);$(SolutionDir)lib\libnao-util\build\$(Platform)\$(Configuration);$(SolutionDir)libnao-ui\bin\$(Configuration)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>comctl32.lib;uxtheme.lib;comsupp.lib;libogg.lib;libvorbis.lib;Shlwapi.lib;d2d1.lib;dxguid.lib;dxva2.lib;evr.lib;mf.lib;mfplat.lib;mfplay.lib;mfreadwrite.lib;mfuuid.lib;strmiids.lib;avcodec.lib;avformat.lib;avutil.lib;swresample.lib;swscale.lib;SDL2.lib;libnao-util.lib;libnao-ui.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)lib\bin\$(Configuration);$(SolutionDir)lib\libnao-util\build\$(Platform)\$(Configuration);$(SolutionDir)lib\libnao-ui\build\$(Platform)\$(Configuration)</AdditionalLibraryDirectories>
     </Link>
     <ResourceCompile>
       <AdditionalIncludeDirectories>
