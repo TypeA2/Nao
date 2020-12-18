@@ -15,6 +15,7 @@
 #include <nao/logging.h>
 #include <nao/strings.h>
 
+#if 0
 static rectangle start_rect() {
     return {
         .x = (GetSystemMetrics(SM_CXSCREEN) - dims::base_window_width) / 2,
@@ -130,3 +131,5 @@ void main_window::wm_command(WORD id, WORD code, HWND target) {
             ui_element::wnd_proc(handle(), WM_COMMAND, MAKEWPARAM(id, code), reinterpret_cast<LPARAM>(target));
     }
 }
+
+#endif

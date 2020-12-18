@@ -5,7 +5,14 @@
 
 #include <memory>
 
+#include <nao/window.h>
 
+class main_window : public nao::ui::window {
+    public:
+    main_window();
+};
+
+#if 0
 class nao_view;
 
 class main_window : public ui_element {
@@ -25,3 +32,4 @@ class main_window : public ui_element {
     void wm_size(int, const dimensions& dims) override;
     void wm_command(WORD id, WORD code, HWND target) override;
 };
+#endif

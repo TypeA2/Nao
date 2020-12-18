@@ -72,7 +72,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)lib\libogg\include;$(SolutionDir)lib\libvorbis\include;$(SolutionDir)lib\libopus\include;$(SolutionDir)lib\libopusfile\include;$(SolutionDir)lib\libFLAC\include;$(SolutionDir)lib\FFmpeg\include;$(SolutionDir)lib\SDL2\include;$(SolutionDir)libnao-core\include;$(SolutionDir)lib\libnao-util\include;$(SolutionDir)libnao-ui\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)lib\libogg\include;$(SolutionDir)lib\libvorbis\include;$(SolutionDir)lib\libopus\include;$(SolutionDir)lib\libopusfile\include;$(SolutionDir)lib\libFLAC\include;$(SolutionDir)lib\FFmpeg\include;$(SolutionDir)lib\SDL2\include;$(SolutionDir)libnao-core\include;$(SolutionDir)lib\libnao-util\include;$(SolutionDir)lib\libnao-ui\include</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>6388;6387;26712;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -101,7 +101,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)lib\libogg\include;$(SolutionDir)lib\libvorbis\include;$(SolutionDir)lib\libopus\include;$(SolutionDir)lib\libopusfile\include;$(SolutionDir)lib\libFLAC\include;$(SolutionDir)lib\FFmpeg\include;$(SolutionDir)lib\SDL2\include;$(SolutionDir)libnao-core\include;$(SolutionDir)lib\libnao-util\include;$(SolutionDir)libnao-ui\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(SolutionDir)lib\libogg\include;$(SolutionDir)lib\libvorbis\include;$(SolutionDir)lib\libopus\include;$(SolutionDir)lib\libopusfile\include;$(SolutionDir)lib\libFLAC\include;$(SolutionDir)lib\FFmpeg\include;$(SolutionDir)lib\SDL2\include;$(SolutionDir)libnao-core\include;$(SolutionDir)lib\libnao-util\include;$(SolutionDir)lib\libnao-ui\include</AdditionalIncludeDirectories>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <DisableSpecificWarnings>6388;6387;26712;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
