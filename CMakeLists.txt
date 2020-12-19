@@ -1,11 +1,17 @@
-﻿# CMakeList.txt : CMake project for Nao, include source and define
-# project specific logic here.
-#
-cmake_minimum_required (VERSION 3.8)
+﻿cmake_minimum_required (VERSION 3.8)
 
-project ("Nao")
+project("Nao")
 
-# Add source to this project's executable.
-add_executable (Nao "Nao.cpp" "Nao.h")
+add_executable(Nao
+	"src/Nao.cpp"
+	"include/Nao.h"
+)
 
-# TODO: Add tests and install targets if needed.
+set_property(TARGET Nao PROPERTY CXX_STANDARD 20)
+
+target_include_directories(Nao PRIVATE "include")
+
+add_subdirectory(libnao-ui)
+target_link_libraries(Nao PRIVATE libnao-ui)
+
+
