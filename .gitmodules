@@ -1,0 +1,3 @@
+[submodule "libnao-ui"]
+	path = libnao-ui
+	url = https://github.com/TypeA2/libnao-ui
