@@ -24,7 +24,7 @@ namespace nao {
         public:
 
         event(const native_event& native);
-        ~event();
+        ~event() = default;
 
         event(const event&) = delete;
         event& operator=(const event&) = delete;

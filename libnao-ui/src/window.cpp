@@ -8,9 +8,6 @@ namespace nao {
     event::event(const native_event& native) : _native{ native } { }
 
 
-    event::~event() = default;
-
-
     event::event(event&& other) noexcept {
         *this = std::forward<event>(other);
     }
@@ -82,6 +79,11 @@ namespace nao {
     event_result window::on_event(event& e) {
 
         const auto& native = e.native();
+
+        if (native.msg == WM_DESTROY) {
+            PostQuitMessage(EXIT_SUCCESS);
+            return event_result::ok;
+        }
 
         DefWindowProcW(native.hwnd, native.msg, native.wparam, native.lparam);
 
