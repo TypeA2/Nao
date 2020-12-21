@@ -1,16 +1,10 @@
-﻿#include <iostream>
-
-#include "window.h"
-
+﻿#include <window.h>
+#include <message_loop.h>
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nShowCmd) {
     nao::window w;
 
-    MSG msg;
-    while (GetMessageW(&msg, nullptr, 0, 0)) {
-        TranslateMessage(&msg);
-        DispatchMessageW(&msg);
-    }
+    nao::message_loop loop;
 
-    return EXIT_SUCCESS;
+    return loop.run();
 }
