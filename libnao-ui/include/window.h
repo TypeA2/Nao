@@ -4,6 +4,8 @@
 
 #include <string>
 
+#include "logging.h"
+
 namespace nao {
     enum class event_result {
         ok
@@ -35,7 +37,9 @@ namespace nao {
         [[nodiscard]] const native_event& native() const;
     };
 
+
     class window {
+        spdlog::logger logger = make_logger("window");
         HWND _handle;
 
         public:

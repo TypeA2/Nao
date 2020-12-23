@@ -1,4 +1,4 @@
-#include "window.h"
+﻿#include "window.h"
 
 #include <stdexcept>
 #include <unordered_set>
@@ -27,6 +27,9 @@ namespace nao {
 
     window::window(const std::wstring& cls) {
         static std::unordered_set<std::wstring> class_registry;
+
+        logger.info("沖田さん 🌸🍡");
+        logger.info("bzzz");
 
         if (!class_registry.contains(cls)) {
             WNDCLASSEXW wc{
