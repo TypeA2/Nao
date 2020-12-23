@@ -11,11 +11,6 @@
 namespace detail {
     template <typename Mutex>
     class msvc_unicode_sink : public spdlog::sinks::base_sink<Mutex> {
-        nao::text_converter _conv{
-            nao::text_encoding::UTF8,
-            nao::text_encoding::UCS2_Internal
-        };
-
         public:
         explicit msvc_unicode_sink() = default;
         ~msvc_unicode_sink() override = default;
@@ -26,7 +21,7 @@ namespace detail {
             spdlog::sinks::base_sink<Mutex>::formatter_->format(msg, formatted);
 
 
-            OutputDebugStringW(_conv.convert<wchar_t>(fmt::to_string(formatted)).c_str());
+            OutputDebugStringW(nao::utf8_to_wide(fmt::to_string(formatted)).c_str());
         }
 
         void flush_() override { }
@@ -41,7 +36,9 @@ namespace nao {
         std::make_shared<detail::msvc_unicode_sink_mt>()
     };
 
+
     spdlog::logger log{ "libnao", sinks.begin(), sinks.end() };
+
 
     spdlog::logger make_logger(std::string_view name) {
         return spdlog::logger{
@@ -50,4 +47,10 @@ namespace nao {
         };
     }
 
+    spdlog::logger make_logger(std::string_view name, spdlog::level::level_enum level) {
+        auto l = make_logger(name);
+        l.set_level(level);
+
+        return l;
+    }
 }

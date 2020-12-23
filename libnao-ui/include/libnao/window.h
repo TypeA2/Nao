@@ -2,8 +2,6 @@
 
 #include <Windows.h>
 
-#include <string>
-
 #include <libnao/logging.h>
 
 namespace nao {
@@ -39,11 +37,12 @@ namespace nao {
 
 
     class window {
-        spdlog::logger logger = make_logger("window");
+        static spdlog::logger& logger();
+
         HWND _handle;
 
         public:
-        window(const std::wstring& cls = L"nao_window");
+        window(std::string_view cls = "nao_window");
         virtual ~window();
 
         window(const window&) = delete;

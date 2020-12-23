@@ -32,10 +32,21 @@ namespace detail {
 
 namespace nao {
     std::string_view text_encoding_name(text_encoding t) {
-
-
-
         return detail::name(t);
+    }
+
+
+    std::wstring utf8_to_wide(std::string_view utf8) {
+        static text_converter conv{ text_encoding::UTF8, text_encoding::UCS2_Internal };
+
+        return conv.convert<std::wstring::value_type>(utf8);
+    }
+
+
+    std::string wide_to_utf8(std::wstring_view wide) {
+        static text_converter conv{ text_encoding::UCS2_Internal, text_encoding::UTF8 };
+
+        return conv.convert<std::string::value_type>(wide);
     }
 
 

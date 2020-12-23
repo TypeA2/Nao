@@ -23,6 +23,10 @@ namespace nao {
 
     std::string_view text_encoding_name(text_encoding t);
 
+    // Common conversions
+    std::wstring utf8_to_wide(std::string_view utf8);
+    std::string wide_to_utf8(std::wstring_view wide);
+
     class text_converter {
         text_encoding _from;
         text_encoding _to;
@@ -41,8 +45,9 @@ namespace nao {
         ~text_converter();
 
         template <typename To, typename From>
-        std::basic_string<To> convert(std::basic_string<From> data) const {
-            char* inbuf = reinterpret_cast<char*>(data.data());
+        std::basic_string<To> convert(std::basic_string_view<From> data) const {
+            // Never modified, only read, but need non-const pointer
+            char* inbuf = reinterpret_cast<char*>(const_cast<From*>(data.data()));
             size_t insize = data.size() * sizeof(From);
 
             std::vector<To> buf(data.size() + 1, To{});

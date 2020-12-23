@@ -26,35 +26,48 @@ namespace nao {
         return _native;
     }
 
+    spdlog::logger& window::logger() {
+        static spdlog::logger logger = make_logger("window",
+#ifndef NDEBUG
+            spdlog::level::debug
+#else
+            spdlog::level::info
+#endif
+        );
 
-    window::window(const std::wstring& cls) {
+        return logger;
+    }
+
+
+    window::window(std::string_view cls) {
         static std::unordered_set<std::wstring> class_registry;
 
-        logger.info("沖田さん 🌸🍡");
-        logger.info("bzzz");
-        logger.info(text_encoding_name(text_encoding::ASCII));
+        std::wstring cls_wide = utf8_to_wide(cls);
 
-        if (!class_registry.contains(cls)) {
+        if (!class_registry.contains(cls_wide)) {
+            logger().info("Registering class \"{}\" for first-time use", cls);
+
             WNDCLASSEXW wc{
                 .cbSize = sizeof(wc),
                 .lpfnWndProc = &window::wnd_proc_fwd,
                 .hInstance = GetModuleHandleW(nullptr),
                 .hCursor = LoadCursorW(nullptr, IDC_ARROW),
                 .hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1),
-                .lpszClassName = cls.c_str()
+                .lpszClassName = cls_wide.c_str()
             };
 
             if (RegisterClassExW(&wc) == 0) {
+                logger().critical("Failed to register class \"{}\"", cls);
                 throw std::runtime_error("failed to register class");
             }
 
-            class_registry.insert(cls);
+            class_registry.insert(cls_wide);
         }
 
 
         _handle = CreateWindowExW(
             0,
-            cls.c_str(),
+            cls_wide.c_str(),
             L"",
             WS_VISIBLE | WS_OVERLAPPEDWINDOW,
             CW_USEDEFAULT, CW_USEDEFAULT,
@@ -116,6 +129,8 @@ namespace nao {
             auto* cs = reinterpret_cast<CREATESTRUCTW*>(lparam);
 
             if (auto* param = static_cast<window*>(cs->lpCreateParams)) {
+                logger().debug("Attaching callback for {}", fmt::ptr(param));
+
                 param->_handle = hwnd;
                 SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(param));
 
