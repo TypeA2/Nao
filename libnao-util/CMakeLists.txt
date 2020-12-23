@@ -2,11 +2,12 @@ cmake_minimum_required(VERSION 3.8)
 
 add_library(libnao-util STATIC
 	"src/logging.cpp"
-	"include/logging.h" "include/encoding.h")
+	"include/libnao/logging.h" "include/libnao/encoding.h" "src/encoding.cpp")
 
 set_property(TARGET libnao-util PROPERTY CXX_STANDARD 20)
 
 target_include_directories(libnao-util PUBLIC "include")
+target_include_directories(libnao-util PRIVATE "include/libnao")
 target_compile_definitions(libnao-util PUBLIC UNICODE _UNICODE)
 
 find_package(spdlog CONFIG REQUIRED)

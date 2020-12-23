@@ -4,7 +4,7 @@
 
 #include <string>
 
-#include "logging.h"
+#include <libnao/logging.h>
 
 namespace nao {
     enum class event_result {

@@ -4,6 +4,8 @@
 #include <unordered_set>
 #include <utility>
 
+#include <libnao/encoding.h>
+
 namespace nao {
     event::event(const native_event& native) : _native{ native } { }
 
@@ -30,6 +32,7 @@ namespace nao {
 
         logger.info("沖田さん 🌸🍡");
         logger.info("bzzz");
+        logger.info(text_encoding_name(text_encoding::ASCII));
 
         if (!class_registry.contains(cls)) {
             WNDCLASSEXW wc{

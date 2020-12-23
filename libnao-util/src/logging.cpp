@@ -2,37 +2,31 @@
 
 #include <array>
 
-#include <spdlog/sinks/msvc_sink.h>
+#include <Windows.h>
 
-#include <iconv.h>
+#include <spdlog/sinks/base_sink.h>
+
+#include <encoding.h>
 
 namespace detail {
     template <typename Mutex>
     class msvc_unicode_sink : public spdlog::sinks::base_sink<Mutex> {
+        nao::text_converter _conv{
+            nao::text_encoding::UTF8,
+            nao::text_encoding::UCS2_Internal
+        };
+
         public:
-        explicit msvc_unicode_sink() { }
+        explicit msvc_unicode_sink() = default;
+        ~msvc_unicode_sink() override = default;
 
         protected:
         void sink_it_(const spdlog::details::log_msg& msg) override {
             spdlog::memory_buf_t formatted;
             spdlog::sinks::base_sink<Mutex>::formatter_->format(msg, formatted);
 
-            auto str = fmt::to_string(formatted);
-            auto* indata = str.data();
-            auto insize = str.size();
 
-            iconv_t conv = iconv_open("UCS-2-INTERNAL", "UTF-8");
-
-            std::vector<wchar_t> result(str.size() + 1, '\0');
-            auto* data = result.data();
-            auto size = result.size() * sizeof(wchar_t);
-            iconv(conv, &indata, &insize,
-                reinterpret_cast<char**>(&data), &size);
-
-
-            OutputDebugStringW(result.data());
-
-            iconv_close(conv);
+            OutputDebugStringW(_conv.convert<wchar_t>(fmt::to_string(formatted)).c_str());
         }
 
         void flush_() override { }
@@ -44,7 +38,6 @@ namespace detail {
 
 namespace nao {
     static std::array sinks{
-        //std::make_shared<spdlog::sinks::msvc_sink_mt>()
         std::make_shared<detail::msvc_unicode_sink_mt>()
     };
 
