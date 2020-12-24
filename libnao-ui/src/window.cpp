@@ -39,13 +39,14 @@ namespace nao {
     }
 
 
-    window::window(std::string_view cls) {
+
+    window::window(const window_descriptor& w) {
         static std::unordered_set<std::wstring> class_registry;
 
-        std::wstring cls_wide = utf8_to_wide(cls);
+        std::wstring cls_wide = utf8_to_wide(w.cls);
 
-        if (!class_registry.contains(cls_wide)) {
-            logger().info("Registering class \"{}\" for first-time use", cls);
+        if (!w.builtin && !class_registry.contains(cls_wide)) {
+            logger().info("Registering class \"{}\" for first-time use", w.cls);
 
             WNDCLASSEXW wc{
                 .cbSize = sizeof(wc),
@@ -57,7 +58,7 @@ namespace nao {
             };
 
             if (RegisterClassExW(&wc) == 0) {
-                logger().critical("Failed to register class \"{}\"", cls);
+                logger().critical("Failed to register class \"{}\"", w.cls);
                 throw std::runtime_error("failed to register class");
             }
 
@@ -68,11 +69,11 @@ namespace nao {
         _handle = CreateWindowExW(
             0,
             cls_wide.c_str(),
-            L"",
-            WS_VISIBLE | WS_OVERLAPPEDWINDOW,
-            CW_USEDEFAULT, CW_USEDEFAULT,
-            CW_USEDEFAULT, CW_USEDEFAULT,
-            nullptr, nullptr,
+            utf8_to_wide(w.name).c_str(),
+            w.style,
+            w.pos.x, w.pos.y,
+            w.dims.w, w.dims.h,
+            w.parent ? w.parent->_handle : nullptr, nullptr,
             GetModuleHandleW(nullptr),
             this
         );
@@ -110,6 +111,11 @@ namespace nao {
     }
 
 
+    HWND window::handle() const {
+        return _handle;
+    }
+
+
     LRESULT window::wnd_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
         auto* _this = reinterpret_cast<window*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
 
@@ -119,7 +125,7 @@ namespace nao {
 
             switch (_this->on_event(e)) {
                 case event_result::ok:
-                    return 0;
+                    return 1;
             }
 
             return 0;
@@ -136,6 +142,8 @@ namespace nao {
 
                 return 0;
             }
+
+            logger().debug("Created without this pointer.");
         }
 
         return DefWindowProcW(hwnd, msg, wparam, lparam);
