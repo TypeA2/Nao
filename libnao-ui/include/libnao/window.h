@@ -40,13 +40,13 @@ namespace nao {
         int x, y;
     };
 
-    struct dims {
+    struct size {
         int w, h;
     };
 
 
     class window {
-        static spdlog::logger& logger();
+        NAO_LOGGER(window)
 
         protected:
         HWND _handle;
@@ -68,13 +68,12 @@ namespace nao {
             pos pos = { .x = CW_USEDEFAULT, .y = CW_USEDEFAULT };
 
             // Starting dimensions
-            dims dims = { .w = CW_USEDEFAULT, .h = CW_USEDEFAULT };
+            size size = { .w = CW_USEDEFAULT, .h = CW_USEDEFAULT };
 
             // Parent window
             window* parent = nullptr;
         };
 
-        // For built-in classess
         window(const window_descriptor& w);
 
         public:
@@ -89,9 +88,13 @@ namespace nao {
 
         [[nodiscard]] virtual event_result on_event(event& e);
 
-        HWND handle() const;
+        [[nodiscard]] HWND handle() const;
+
+        [[nodiscard]] size size() const;
 
         private:
+        void _create_window(const window_descriptor& w);
+
         static LRESULT wnd_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
     };
 }

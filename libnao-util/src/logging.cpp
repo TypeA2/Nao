@@ -37,7 +37,7 @@ namespace nao {
     };
 
 
-    spdlog::logger log{ "libnao", sinks.begin(), sinks.end() };
+    spdlog::logger log = make_logger("libnao", default_logging_level);
 
 
     spdlog::logger make_logger(std::string_view name) {

@@ -1,4 +1,4 @@
-#include "libnao-ui.h"
+#include "libnao_ui.h"
 
 #include <Windows.h>
 #include <CommCtrl.h>
@@ -7,6 +7,10 @@
 
 namespace nao::libnao_ui {
     bool init() {
+        if (!libnao_util::init()) {
+            return false;
+        }
+
         INITCOMMONCONTROLSEX picce{
             .dwSize = sizeof(picce),
             .dwICC = ICC_ANIMATE_CLASS | ICC_BAR_CLASSES | ICC_COOL_CLASSES |
@@ -23,10 +27,4 @@ namespace nao::libnao_ui {
 
         return true;
     }
-}
-
-extern int main(int argc, char** argv);
-
-int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nShowCmd) {
-    LPWSTR* argv = CommandLineToArgvW(lpCmdLine);
 }

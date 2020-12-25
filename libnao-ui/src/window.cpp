@@ -26,57 +26,9 @@ namespace nao {
         return _native;
     }
 
-    spdlog::logger& window::logger() {
-        static spdlog::logger logger = make_logger("window",
-#ifndef NDEBUG
-            spdlog::level::debug
-#else
-            spdlog::level::info
-#endif
-        );
-
-        return logger;
-    }
-
-
 
     window::window(const window_descriptor& w) {
-        static std::unordered_set<std::wstring> class_registry;
-
-        std::wstring cls_wide = utf8_to_wide(w.cls);
-
-        if (!w.builtin && !class_registry.contains(cls_wide)) {
-            logger().info("Registering class \"{}\" for first-time use", w.cls);
-
-            WNDCLASSEXW wc{
-                .cbSize = sizeof(wc),
-                .lpfnWndProc = &window::wnd_proc_fwd,
-                .hInstance = GetModuleHandleW(nullptr),
-                .hCursor = LoadCursorW(nullptr, IDC_ARROW),
-                .hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1),
-                .lpszClassName = cls_wide.c_str()
-            };
-
-            if (RegisterClassExW(&wc) == 0) {
-                logger().critical("Failed to register class \"{}\"", w.cls);
-                throw std::runtime_error("failed to register class");
-            }
-
-            class_registry.insert(cls_wide);
-        }
-
-
-        _handle = CreateWindowExW(
-            0,
-            cls_wide.c_str(),
-            utf8_to_wide(w.name).c_str(),
-            w.style,
-            w.pos.x, w.pos.y,
-            w.dims.w, w.dims.h,
-            w.parent ? w.parent->_handle : nullptr, nullptr,
-            GetModuleHandleW(nullptr),
-            this
-        );
+        _create_window(w);
     }
 
 
@@ -113,6 +65,57 @@ namespace nao {
 
     HWND window::handle() const {
         return _handle;
+    }
+
+
+    size window::size() const {
+        RECT rect;
+        GetWindowRect(_handle, &rect);
+        return { rect.right, rect.bottom };
+    }
+
+
+    void window::_create_window(const window_descriptor& w) {
+        static std::unordered_set<std::wstring> class_registry;
+
+        std::wstring cls_wide = utf8_to_wide(w.cls);
+
+        if (!w.builtin && !class_registry.contains(cls_wide)) {
+            logger().info("Registering class \"{}\" for first-time use", w.cls);
+
+            WNDCLASSEXW wc{
+                .cbSize = sizeof(wc),
+                .lpfnWndProc = &window::wnd_proc_fwd,
+                .hInstance = GetModuleHandleW(nullptr),
+                .hCursor = LoadCursorW(nullptr, IDC_ARROW),
+                .hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1),
+                .lpszClassName = cls_wide.c_str()
+            };
+
+            if (RegisterClassExW(&wc) == 0) {
+                logger().critical("Failed to register class \"{}\"", w.cls);
+                throw std::runtime_error("failed to register class");
+            }
+
+            class_registry.insert(cls_wide);
+        }
+
+
+        _handle = CreateWindowExW(
+            0,
+            cls_wide.c_str(),
+            utf8_to_wide(w.name).c_str(),
+            w.style,
+            w.pos.x, w.pos.y,
+            w.size.w, w.size.h,
+            w.parent ? w.parent->_handle : nullptr, nullptr,
+            GetModuleHandleW(nullptr),
+            this
+        );
+
+        if (!_handle) {
+            logger().critical("Handle is null: {}", w.cls, w.name);
+        }
     }
 
 

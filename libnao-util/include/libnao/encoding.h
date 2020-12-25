@@ -64,9 +64,9 @@ namespace nao {
                     // Need more space
                     size_t bytes_used = outbuf - reinterpret_cast<char*>(buf.data());
 
-                    buf.resize(buf.size() * 2);
+                    buf.resize(buf.size() * 2, To{});
                     outbuf = reinterpret_cast<char*>(buf.data()) + bytes_used;
-                    outbytes_left = (buf.size() * sizeof(To)) - bytes_used;
+                    outbytes_left = ((buf.size() - 1) * sizeof(To)) - bytes_used;
                 }
             } while (insize > 0);
 

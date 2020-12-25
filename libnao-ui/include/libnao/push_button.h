@@ -3,8 +3,10 @@
 #include "window.h"
 
 namespace nao {
+    class layout;
+
     class push_button : public window {
         public:
-        push_button(window* parent, std::string_view text);
+        push_button(std::string_view text, layout& parent);
     };
 }
