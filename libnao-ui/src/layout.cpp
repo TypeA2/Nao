@@ -21,7 +21,7 @@ namespace nao {
 
         auto target_size = w.size();
         SetWindowPos(_handle, nullptr,
-            0, 0, target_size.w, target_size.h, 0);
+            5, 5, target_size.w - 10, target_size.h - 10, 0);
     }
 
 

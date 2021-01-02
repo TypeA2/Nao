@@ -12,6 +12,20 @@
       "ctestCommandArgs": "",
       "cmakeToolchain": "",
       "variables": []
+    },
+    {
+      "name": "x64-Debug-ASan",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "inheritEnvironments": [ "msvc_x64_x64" ],
+      "buildRoot": "${projectDir}\\out\\build\\${name}",
+      "installRoot": "${projectDir}\\out\\install\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "cmakeToolchain": "",
+      "addressSanitizerEnabled": true,
+      "variables": []
     }
   ]
 }

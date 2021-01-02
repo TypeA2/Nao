@@ -1,5 +1,7 @@
 #include "main_window.h"
 
+
+#include <bitset>
 #include <libnao/encoding.h>
 
 #include "layout.h"
@@ -9,9 +11,8 @@ namespace nao {
         {
             .cls = "nao_main_window",
             .style = WS_VISIBLE | WS_OVERLAPPEDWINDOW,
-            .name = title
+            .name = title,
         } } {
-
     }
 
 

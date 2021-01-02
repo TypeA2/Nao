@@ -11,9 +11,9 @@
 #include <algorithm>
 #include <span>
 
-int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
+int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPWSTR lpCmdLine, _In_ int) {
     int argc;
-    LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+    LPWSTR* argv = CommandLineToArgvW(lpCmdLine, &argc);
 
     // Construct all UTF-8 strings
     std::vector<std::string> argv_vec(argc);

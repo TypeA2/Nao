@@ -9,33 +9,6 @@ namespace nao {
         ok
     };
 
-    class event {
-        public:
-        struct native_event {
-            HWND hwnd;
-            UINT msg;
-            WPARAM wparam;
-            LPARAM lparam;
-        };
-
-        private:
-        native_event _native;
-
-        public:
-
-        event(const native_event& native);
-        ~event() = default;
-
-        event(const event&) = delete;
-        event& operator=(const event&) = delete;
-
-        event(event&& other) noexcept;
-        event& operator=(event&& other) noexcept;
-
-        [[nodiscard]] const native_event& native() const;
-    };
-
-
     struct pos {
         int x, y;
     };
@@ -44,9 +17,47 @@ namespace nao {
         int w, h;
     };
 
+    class event {
+        public:
+        struct native_event {
+            HWND hwnd;
+            UINT msg;
+            WPARAM wparam;
+            LPARAM lparam;
+
+            LRESULT call_default() const;
+        };
+
+        protected:
+        native_event _native;
+
+        public:
+        event(const native_event& native);
+        virtual ~event() = default;
+
+        event(const event&) = delete;
+        event& operator=(const event&) = delete;
+
+        event(event&& other) noexcept;
+        event& operator=(event&& other) noexcept;
+
+        [[nodiscard]] explicit operator native_event() const;
+
+        [[nodiscard]] const native_event& native() const;
+    };
+
+    class resize_event : public event {
+        public:
+        using event::event;
+
+        size new_size() const;
+    };
+
 
     class window {
-        NAO_LOGGER(window)
+        NAO_LOGGER(window);
+
+        LRESULT _last_msg_result{};
 
         protected:
         HWND _handle;
@@ -59,7 +70,10 @@ namespace nao {
             std::string_view cls;
 
             // All styles applied on creation
-            DWORD style;
+            DWORD style = 0;
+
+            // Extra styles
+            DWORD ex_style = 0;
 
             // UTF-8 window name
             std::string_view name;
@@ -73,8 +87,12 @@ namespace nao {
             // Parent window
             window* parent = nullptr;
         };
-
+        
         window(const window_descriptor& w);
+
+        [[nodiscard]] virtual event_result on_event(event& e);
+        [[nodiscard]] virtual event_result on_resize(resize_event& e);
+
 
         public:
         window() = delete;
@@ -85,8 +103,6 @@ namespace nao {
 
         window(window&& other) noexcept;
         window& operator=(window&& other) noexcept;
-
-        [[nodiscard]] virtual event_result on_event(event& e);
 
         [[nodiscard]] HWND handle() const;
 

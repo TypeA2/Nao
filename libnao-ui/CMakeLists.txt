@@ -8,6 +8,7 @@ add_library(libnao-ui STATIC
 	"include/libnao/libnao_ui.h" "src/libnao_ui.cpp" "include/libnao/layout.h" "src/layout.cpp" "include/libnao/horizontal_layout.h" "src/horizontal_layout.cpp")
 
 set_property(TARGET libnao-ui PROPERTY CXX_STANDARD 20)
+set_property(TARGET libnao-ui PROPERTY MSVC_RUNTIME_LIBRARY MultiThreadedDebug)
 
 target_include_directories(libnao-ui PUBLIC "include")
 target_include_directories(libnao-ui PRIVATE "include/libnao")

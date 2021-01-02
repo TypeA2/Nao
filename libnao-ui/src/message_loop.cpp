@@ -6,7 +6,7 @@ namespace nao {
     int message_loop::run() {
         (void)this;
 
-        MSG msg;
+        MSG msg{};
 
         while (GetMessageW(&msg, nullptr, 0, 0)) {
             TranslateMessage(&msg);
