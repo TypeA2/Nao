@@ -5,7 +5,7 @@ add_library(libnao-ui STATIC
 	"include/libnao/message_loop.h" "src/message_loop.cpp"
 	"include/libnao/main_window.h" "src/main_window.cpp"
 	"include/libnao/push_button.h" "src/push_button.cpp"
-	"include/libnao/libnao_ui.h" "src/libnao_ui.cpp" "include/libnao/layout.h" "src/layout.cpp" "include/libnao/horizontal_layout.h" "src/horizontal_layout.cpp")
+	"include/libnao/libnao_ui.h" "src/libnao_ui.cpp" "include/libnao/layout.h" "src/layout.cpp" "include/libnao/horizontal_layout.h" "src/horizontal_layout.cpp" "include/libnao/event.h" "src/event.cpp"  )
 
 set_property(TARGET libnao-ui PROPERTY CXX_STANDARD 20)
 set_property(TARGET libnao-ui PROPERTY MSVC_RUNTIME_LIBRARY MultiThreadedDebug)

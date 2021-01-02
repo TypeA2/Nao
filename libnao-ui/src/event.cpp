@@ -15,35 +15,45 @@
  *  along with libnao-ui.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "main_window.h"
+#include "event.h"
 
-#include <libnao/encoding.h>
-
-#include "layout.h"
+#include <type_traits>
 
 namespace nao {
-    main_window::main_window(std::string_view title) : window{
-        {
-            .cls = "nao_main_window",
-            .style = WS_VISIBLE | WS_OVERLAPPEDWINDOW,
-            .name = title,
-        } } {
+    LRESULT event::native_event::call_default() const {
+        return DefWindowProcW(hwnd, msg, wparam, lparam);
     }
 
 
-    void main_window::set_title(std::string_view title) const {
-        logger().trace("Setting window title to {}", title);
+    event::event(const native_event& native) : _native{ native } {}
 
-        SetWindowTextW(_handle, utf8_to_wide(title).c_str());
+
+    event::event(event&& other) noexcept {
+        *this = std::forward<event>(other);
     }
 
 
-    void main_window::add_layout(layout& l) {
-        logger().debug("Adding layout {}", fmt::ptr(&l));
+    event& event::operator=(event&& other) noexcept {
+        _native = other._native;
 
-        l._set_parent(*this);
-
-        _layouts.push_back(&l);
+        return *this;
     }
 
+
+    event::operator native_event() const {
+        return _native;
+    }
+
+
+    const event::native_event& event::native() const {
+        return _native;
+    }
+
+
+    size resize_event::new_size() const {
+        return {
+            .w = LOWORD(_native.lparam),
+            .h = HIWORD(_native.lparam)
+        };
+    }
 }
