@@ -27,7 +27,7 @@ namespace nao {
             .pos = { 0, 0 },
             .parent = &w
         } } {
-        w.add_layout(*this);
+        w.set_layout(*this);
     }
 
 

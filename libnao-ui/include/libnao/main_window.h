@@ -25,13 +25,16 @@ namespace nao {
     class main_window : public window {
         NAO_LOGGER(main_window)
 
-        std::vector<layout*> _layouts;
+        layout* _layout{};
 
         public:
         main_window(std::string_view title = "");
 
         void set_title(std::string_view title) const;
 
-        void add_layout(layout& l);
+        void set_layout(layout& l);
+
+        protected:
+        event_result on_resize(resize_event& e) override;
     };
 }

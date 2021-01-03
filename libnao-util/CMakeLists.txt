@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.8)
 add_library(libnao-util STATIC
 	"include/libnao/logging.h" "src/logging.cpp"
 	"include/libnao/encoding.h" "src/encoding.cpp"
-	"include/libnao/libnao_util.h" "src/libnao_util.cpp" )
+	"include/libnao/libnao_util.h" "src/libnao_util.cpp"  "include/libnao/ranges.h")
 
 set_property(TARGET libnao-util PROPERTY CXX_STANDARD 20)
 set_property(TARGET libnao-util PROPERTY MSVC_RUNTIME_LIBRARY MultiThreadedDebug)

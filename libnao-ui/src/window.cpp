@@ -55,6 +55,10 @@ namespace nao {
                 break;
 
             case WM_SIZE: {
+                if (auto* ev = dynamic_cast<resize_event*>(&e)) {
+                    return on_resize(*ev);
+                }
+
                 resize_event ev{ native };
                 return on_resize(ev);
             }
@@ -92,8 +96,6 @@ namespace nao {
 
         std::wstring cls_wide = utf8_to_wide(w.cls);
 
-        log.debug("Window: {}", fmt::ptr(GetModuleHandleW(nullptr)));
-
         if (!w.builtin && !class_registry.contains(cls_wide)) {
             logger().info("Registering class \"{}\" for first-time use", w.cls);
 
@@ -111,6 +113,7 @@ namespace nao {
 
             class_registry.insert(cls_wide);
         }
+
         logger().debug("Creating instance of {} for {}", w.cls, fmt::ptr(this));
   
         _handle = CreateWindowExW(

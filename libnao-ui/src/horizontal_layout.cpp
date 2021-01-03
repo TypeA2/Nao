@@ -17,6 +17,8 @@
 
 #include "horizontal_layout.h"
 
+#include <libnao/ranges.h>
+
 namespace nao {
     void horizontal_layout::add_element(window& element) {
         logger().debug("Adding child {}", fmt::ptr(&element));
@@ -25,9 +27,39 @@ namespace nao {
             SetParent(element.handle(), _handle);
         }
 
-        SetWindowPos(element.handle(), nullptr, 50, 50, 50, 50, 0);
-
+        SetWindowPos(element.handle(), nullptr, 
+            static_cast<int>(_children.size()) * 50, 50, 50, 50, 0);
         _children.push_back(&element);
+        _reposition();
     }
 
+
+    event_result horizontal_layout::on_resize(resize_event& e) {
+        _reposition();
+        return event_result::ok;
+    }
+
+
+    void horizontal_layout::_reposition() {
+        logger().trace("Repositioning {} children", _children.size());
+
+        HDWP dwp = BeginDeferWindowPos(static_cast<int>(_children.size()));
+
+
+        int i = 0;
+        auto transformer = [](window* w) {
+            return w->handle();
+        };
+
+        auto func = [&](HWND w) {
+            dwp = DeferWindowPos(dwp, w, nullptr,i * 50, 50, 50, 50, 0);
+            ++i;
+        };
+
+        std::ranges::for_each(_children | my_transform(transformer), func);
+
+        if (!EndDeferWindowPos(dwp)) {
+            logger().critical("Failed to reposition {} children", _children.size());
+        }
+    }
 }

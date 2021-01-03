@@ -40,7 +40,7 @@ namespace nao {
             WPARAM wparam;
             LPARAM lparam;
 
-            LRESULT call_default() const;
+            [[maybe_unused]] LRESULT call_default() const;
         };
 
         protected:

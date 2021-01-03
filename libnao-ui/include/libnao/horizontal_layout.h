@@ -30,5 +30,11 @@ namespace nao {
         using layout::layout;
 
         void add_element(window& element) override;
+
+        protected:
+        event_result on_resize(resize_event& e) override;
+
+        private:
+        void _reposition();
     };
 }

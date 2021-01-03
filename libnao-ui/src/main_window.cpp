@@ -38,12 +38,25 @@ namespace nao {
     }
 
 
-    void main_window::add_layout(layout& l) {
-        logger().debug("Adding layout {}", fmt::ptr(&l));
+    void main_window::set_layout(layout& l) {
+        if (_layout) {
+            logger().warn("Overwriting layout {} with {}", fmt::ptr(_layout), fmt::ptr(&l));
+        } else {
+            logger().debug("Setting layout to {}", fmt::ptr(&l));
+        }
 
         l._set_parent(*this);
 
-        _layouts.push_back(&l);
+        _layout = &l;
+    }
+
+
+    event_result main_window::on_resize(resize_event& e) {
+        if (_layout) {
+            return _layout->on_event(e);
+        }
+
+        return window::on_resize(e);
     }
 
 }

@@ -25,7 +25,7 @@
 
 namespace nao {
     class window {
-        NAO_LOGGER(window);
+        NAO_LOGGER(window)
 
         LRESULT _last_msg_result{};
 
