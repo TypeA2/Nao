@@ -6,7 +6,6 @@
 
 namespace nao {
     namespace impl {
-        //
         template <bool Const, std::ranges::input_range R, member_function_pointer Fn>
         class member_iterator {
             public:
@@ -20,15 +19,14 @@ namespace nao {
 
             private:
             base_iterator _it{};
-            Fn _fun;
+            Fn _fun{};
+
             public:
             constexpr member_iterator() = default;
             constexpr member_iterator(base_iterator pos, Fn fun) : _it{ pos }, _fun{ fun } { }
 
-
-            constexpr member_iterator(member_iterator&& other) noexcept {
-                *this = std::forward<member_iterator>(other);
-            }
+            constexpr member_iterator(member_iterator&& other) noexcept
+                : _it{ std::move(other._it) }, _fun{ std::move(other._fun) } { }
 
             constexpr member_iterator& operator=(member_iterator&& other) noexcept {
                 _it = std::move(other._it);
@@ -46,17 +44,19 @@ namespace nao {
                 return *this;
             }
 
+            /**
+             * Dereferences the iterator, calling the member function
+             */
             constexpr decltype(auto) operator*() const {
                 return std::invoke(_fun, *_it);
             }
 
 
+            // Basic bidirectional iterator
             constexpr decltype(auto) operator++() {
                 ++_it;
-
                 return *this;
             }
-
 
             constexpr decltype(auto) operator++(int) {
                 auto tmp = *this;
@@ -64,13 +64,11 @@ namespace nao {
                 return tmp;
             }
 
-
             constexpr decltype(auto) operator--() {
                 --_it;
 
                 return *this;
             }
-
 
             constexpr decltype(auto) operator--(int) {
                 auto tmp = *this;
@@ -78,7 +76,7 @@ namespace nao {
                 return tmp;
             }
 
-
+            // Ordering
             [[nodiscard]] friend constexpr std::strong_ordering operator<=>(
                 const member_iterator& l, const member_iterator& r) {
 
@@ -91,6 +89,96 @@ namespace nao {
                 return left._it == right._it;
             }
         };
+
+
+        /**
+         * Dereferences to a struct containing the value and the index, which increments and
+         * decrements with the iterator itself.
+         */
+        template <bool Const, std::ranges::viewable_range R>
+        class with_index_iterator {
+            public:
+            using base_iterator = std::ranges::iterator_t<std::conditional_t<Const, const R, R>>;
+            using iterator_concept = typename base_iterator::iterator_concept;
+            using iterator_category = typename base_iterator::iterator_category;
+            using size_type = size_t;
+            using value_type = std::pair<typename base_iterator::value_type, size_type>;
+            using difference_type = typename base_iterator::difference_type;
+            using pointer = value_type*;
+            using reference = value_type&;
+
+            private:
+            base_iterator _it{};
+            size_type _i{};
+
+            public:
+            constexpr with_index_iterator() = default;
+            constexpr with_index_iterator(base_iterator it, size_type i)
+                : _it { std::move(it) }, _i { i } { }
+
+            constexpr with_index_iterator(with_index_iterator&& other) noexcept
+                : _it { std::move(other._it) }, _i { other._i } { }
+
+            constexpr with_index_iterator& operator=(with_index_iterator&& other) noexcept {
+                _it = std::move(other._it);
+                _i = other._i;
+                return *this;
+            }
+
+
+            constexpr with_index_iterator(const with_index_iterator& other)
+                : _it { other._it }, _i { other._i } { }
+
+            constexpr with_index_iterator& operator=(const with_index_iterator& other) {
+                _it = other._it;
+                _i = other._i;
+                return *this;
+            }
+
+            
+            constexpr decltype(auto) operator*() {
+                return value_type{ *_it, _i };
+            }
+
+
+            constexpr decltype(auto) operator++() {
+                ++_it;
+                ++_i;
+                return *this;
+            }
+
+            constexpr decltype(auto) operator++(int) {
+                auto tmp = *this;
+                ++(*this);
+                return tmp;
+            }
+
+            constexpr decltype(auto) operator--() {
+                --_it;
+                --_i;
+                return *this;
+            }
+
+            constexpr decltype(auto) operator--(int) {
+                auto tmp = *this;
+                --(*this);
+                return tmp;
+            }
+
+
+            // Ordering
+            [[nodiscard]] friend constexpr std::strong_ordering operator<=>(
+                const with_index_iterator& l, const with_index_iterator& r) {
+
+                return l._it <=> r._it;
+            }
+
+            [[nodiscard]] friend constexpr bool operator==(
+                const with_index_iterator& left, const with_index_iterator& right) {
+
+                return left._it == right._it && left._i == right._i;
+            }
+        };
     }
 
     /**
@@ -98,7 +186,7 @@ namespace nao {
      */
     template <std::ranges::input_range R, member_function_pointer Fn>
     class member_transform_view : public std::ranges::view_interface<member_transform_view<R, Fn>> {
-        R _range{};
+        R _range;
         Fn _fun;
         public:
         constexpr member_transform_view(R range, Fn fun)
@@ -126,8 +214,13 @@ namespace nao {
         }
 
 
-        
+        constexpr auto size() const requires
+            requires { std::ranges::size(_range); }
+        {
+            return std::ranges::size(_range);
+        }
     };
+
 
     class member_transform_fun {
         // Used for pipe operator support
@@ -164,6 +257,57 @@ namespace nao {
 
     // Range view that calls a specific member function on all objects
     inline constexpr member_transform_fun member_transform;
+
+    template <std::ranges::viewable_range R>
+    class with_index_view : public std::ranges::view_interface<with_index_view<R>> {
+        R _range;
+        public:
+        constexpr with_index_view(R range) : _range { std::move(range) } { }
+
+
+        constexpr auto begin() {
+            return impl::with_index_iterator<false, R>{ std::ranges::begin(_range), 0 };
+        }
+
+        constexpr auto end() {
+            return impl::with_index_iterator<false, R>{
+                std::ranges::end(_range), std::ranges::size(_range) };
+        }
+
+
+        constexpr auto begin() const requires std::ranges::range<const R> {
+            return impl::with_index_iterator<true, R>{ std::ranges::begin(_range), 0 };
+        }
+
+        constexpr auto end() const requires std::ranges::range<const R> {
+            return impl::with_index_iterator<true, R>{
+                std::ranges::end(_range), std::ranges::size(_range) };
+        }
+
+
+        constexpr auto size() const requires
+            requires { std::ranges::size(_range); }
+        {
+            return std::ranges::size(_range);
+        }
+    };
+
+    // Implements a callable and a direct pipe operator
+    class with_index_fun {
+        public:
+        template <std::ranges::viewable_range R>
+        [[nodiscard]] constexpr auto operator()(R&& range) const {
+            return with_index_view{ std::forward<R>(range) };
+        }
+
+        template <std::ranges::viewable_range R>
+        [[nodiscard]] friend constexpr auto operator|(R&& range, const with_index_fun&) {
+            return with_index_view{ std::forward<R>(range) };
+        }
+    };
+
+    // Range view that returns a pair, which contains the dereferenced value and the index
+    inline constexpr with_index_fun with_index;
 }
 
 namespace std {
@@ -178,8 +322,22 @@ namespace std {
         using iterator_category = typename iterator::iterator_category;
     };
 
+    template <bool Const, ranges::input_range R>
+    struct iterator_traits<nao::impl::with_index_iterator<Const, R>> {
+        using iterator = nao::impl::with_index_iterator<Const, R>;
+
+        using difference_type = typename iterator::difference_type;
+        using value_type = typename iterator::value_type;
+        using pointer = typename iterator::pointer;
+        using reference = typename iterator::reference;
+        using iterator_category = typename iterator::iterator_category;
+    };
+
     namespace ranges {
         template <input_range R, nao::member_function_pointer Fn>
         inline constexpr bool enable_borrowed_range<nao::member_transform_view<R, Fn>> = true;
+
+        template <input_range R>
+        inline constexpr bool enable_borrowed_range<nao::with_index_view<R>> = true;
     }
 }

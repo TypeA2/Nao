@@ -46,14 +46,10 @@ namespace nao {
         HDWP dwp = BeginDeferWindowPos(static_cast<int>(_children.size()));
 
 
-        int i = 0;
-        auto transformer = [](window* w) {
-            return w->handle();
-        };
-
-        for (HWND w : _children | member_transform(&window::handle)) {
-            dwp = DeferWindowPos(dwp, w, nullptr,i * 50, 50, 50, 50, 0);
-            ++i;
+        for (auto [w, i]
+                : _children | member_transform(&window::handle) | with_index) {
+            dwp = DeferWindowPos(dwp, w, nullptr,
+                i * 50, 50, 50, 50, 0);
         }
 
         if (!EndDeferWindowPos(dwp)) {
