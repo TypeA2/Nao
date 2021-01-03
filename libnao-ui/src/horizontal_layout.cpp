@@ -51,12 +51,10 @@ namespace nao {
             return w->handle();
         };
 
-        auto func = [&](HWND w) {
+        for (HWND w : _children | member_transform(&window::handle)) {
             dwp = DeferWindowPos(dwp, w, nullptr,i * 50, 50, 50, 50, 0);
             ++i;
-        };
-
-        std::ranges::for_each(_children | my_transform(transformer), func);
+        }
 
         if (!EndDeferWindowPos(dwp)) {
             logger().critical("Failed to reposition {} children", _children.size());
