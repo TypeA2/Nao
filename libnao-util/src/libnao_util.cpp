@@ -29,8 +29,11 @@
 #include <span>
 
 int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPWSTR lpCmdLine, _In_ int) {
+    // lpCmdLine is quirky:
+    // https://stackoverflow.com/a/55544461/8662472
+    (void)lpCmdLine;
     int argc;
-    LPWSTR* argv = CommandLineToArgvW(lpCmdLine, &argc);
+    LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
 
     // Construct all UTF-8 strings
     std::vector<std::string> argv_vec(argc);
@@ -43,9 +46,14 @@ int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPWSTR lpCmdLine, _
     std::ranges::transform(argv_vec, argv_ptrs.begin(),
         [](std::string& v) { return v.data(); });
 
-    nao::log.debug("Calling libnao_main (at {}) as:", reinterpret_cast<void*>(libnao_main));
-    nao::log.debug(format("    {}", fmt::join(argv_vec, " ")));
+    nao::log.debug("Calling libnao_main (at {}) with {} arguments:",
+                   reinterpret_cast<void*>(libnao_main), argc);
 
+    const size_t width = static_cast<size_t>(std::log10(argc)) + 1;
+    for (size_t i = 0; std::string_view arg : argv_ptrs) {
+        nao::log.debug(fmt::format("    [{{:0{}}}] = {{}}", width), i++, arg);
+    }
+    
     return libnao_main(argc, argv_ptrs.data());
 }
 

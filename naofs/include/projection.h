@@ -20,8 +20,10 @@
 
 #include <filesystem>
 
+#include <Windows.h>
+
 class projection {
-    NAO_LOGGER(projection_instance);
+    NAO_LOGGER(projection);
 
     public:
     using path = std::filesystem::path;
@@ -31,6 +33,8 @@ class projection {
     private:
     path _src;
     path _root;
+
+    GUID _instance;
 
     public:
     projection(const path& source, const path& root);

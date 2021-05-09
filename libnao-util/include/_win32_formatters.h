@@ -14,29 +14,28 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with libnao-util.  If not, see <https://www.gnu.org/licenses/>.
  */
-
 #pragma once
 
-#include <spdlog/spdlog.h>
+#include <fmt/format.h>
 
-#include "_win32_formatters.h"
+#include <Windows.h>
 
-#define NAO_LOGGER(name) \
-    static spdlog::logger& logger() { \
-        static spdlog::logger logger = ::nao::make_logger(#name, ::nao::default_logging_level); \
-        return logger; \
+template <>
+struct fmt::formatter<GUID> {
+    constexpr auto parse(format_parse_context& ctx) {
+        // Nothing to parse
+        if (ctx.begin() != ctx.end()) {
+            throw format_error("invalid GUID format");
+        }
+
+        return ctx.end();
     }
 
-namespace nao {
-    extern spdlog::logger log;
-
-    inline constexpr spdlog::level::level_enum default_logging_level =
-#ifndef NDEBUG
-        spdlog::level::debug;
-#else
-        spdlog::level::info;
-#endif
-
-    spdlog::logger make_logger(std::string_view name);
-    spdlog::logger make_logger(std::string_view name, spdlog::level::level_enum level);
-}
+    template <typename FormatContext>
+    constexpr auto format(const GUID& g, FormatContext& ctx) {
+        return format_to(ctx.out(),
+                         "{{{:08X}-{:04X}-{:04X}-{:02X}{:02X}-{:02X}}}",
+                         g.Data1, g.Data2, g.Data3, g.Data4[0], g.Data4[1],
+                         join(g.Data4 + 2, g.Data4 + 8, ""));
+    }
+};

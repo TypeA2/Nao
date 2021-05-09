@@ -23,20 +23,12 @@
 #include <comutil.h>
 
 projection::projection(const path& source, const path& root)
-    : _src{ canonical(source) }, _root{ canonical(root) } {
+    : _src{ canonical(source) }, _root{ weakly_canonical(root) } {
     _prepare_root();
 }
 
 
 void projection::_prepare_root() {
-    
-    if (!is_directory(_src)) {
-        throw std::filesystem::filesystem_error{
-            "source directory does not exist", _src,
-            std::make_error_code(std::errc::no_such_file_or_directory)
-        };
-    }
-
     if (!is_directory(_root)) {
         // Root dir does not exist, create it
         if (std::error_code err; !create_directories(_root, err)) {
@@ -48,13 +40,13 @@ void projection::_prepare_root() {
 
     // Both directories now exist
 
-    GUID instance;
+    // Extract existing or create new instance GUID
     if (auto instance_path = _root / instance_file; exists(instance_path)) {
         // Instance file exists, read data
         std::ifstream inst{ instance_path, std::ios::binary };
-        inst.read(reinterpret_cast<char*>(&instance), sizeof(instance));
+        inst.read(reinterpret_cast<char*>(&_instance), sizeof(_instance));
 
-        if (inst.gcount() != sizeof(instance)) {
+        if (inst.gcount() != sizeof(_instance)) {
             // Failed to read entire GUID, abort
             throw std::filesystem::filesystem_error{
                 "failed to read instance id from instance file", instance_path,
@@ -62,16 +54,18 @@ void projection::_prepare_root() {
             };
         }
 
+        logger().info("Found existing session {}", _instance);
+
         // Success
     } else {
         // New session ID required
-        if (CoCreateGuid(&instance) != S_OK) {
+        if (CoCreateGuid(&_instance) != S_OK) {
             throw std::runtime_error{ "failed to create session guid" };
         }
 
         // Write it to the file
         std::ofstream inst{ instance_path, std::ios::binary };
-        inst.write(reinterpret_cast<char*>(&instance), sizeof(instance));
+        inst.write(reinterpret_cast<char*>(&_instance), sizeof(_instance));
 
         if (!inst) {
             throw std::filesystem::filesystem_error{
@@ -82,6 +76,4 @@ void projection::_prepare_root() {
 
         // Done!
     }
-
-    
 }
