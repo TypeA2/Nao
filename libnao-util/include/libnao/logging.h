@@ -21,7 +21,7 @@
 
 #define NAO_LOGGER(name) \
     static spdlog::logger& logger() { \
-        static spdlog::logger logger = make_logger(#name, default_logging_level); \
+        static spdlog::logger logger = ::nao::make_logger(#name, ::nao::default_logging_level); \
         return logger; \
     }
 

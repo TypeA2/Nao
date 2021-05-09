@@ -22,6 +22,7 @@
 #include <Windows.h>
 
 #include <spdlog/sinks/base_sink.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
 
 #include <encoding.h>
 
@@ -49,9 +50,14 @@ namespace detail {
 }
 
 namespace nao {
-    static std::array sinks{
-        std::make_shared<detail::msvc_unicode_sink_mt>()
-    };
+    static auto& sinks() {
+        static std::array<std::shared_ptr<spdlog::sinks::sink>, 2> sinks{
+            std::make_shared<detail::msvc_unicode_sink_mt>(),
+            std::make_shared<spdlog::sinks::stderr_color_sink_mt>(),
+        };
+
+        return sinks;
+    }
 
 
     spdlog::logger log = make_logger("libnao", default_logging_level);
@@ -60,7 +66,7 @@ namespace nao {
     spdlog::logger make_logger(std::string_view name) {
         return spdlog::logger{
             std::string{ name },
-            sinks.begin(), sinks.end()
+            sinks().begin(), sinks().end()
         };
     }
 
