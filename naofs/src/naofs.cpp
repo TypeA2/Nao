@@ -42,8 +42,6 @@ int main(int argc, char** argv) {
     try {
         projection p{ argv[1], argv[2] };
 
-    } catch (const std::filesystem::filesystem_error& e) {
-        logger.error("Filesystem error: {}", e.what());
     } catch (const std::exception& e) {
         logger.error("Exception caught: {}", e.what());
     }

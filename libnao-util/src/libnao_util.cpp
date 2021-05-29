@@ -46,8 +46,8 @@ int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPWSTR lpCmdLine, _
     std::ranges::transform(argv_vec, argv_ptrs.begin(),
         [](std::string& v) { return v.data(); });
 
-    nao::log.debug("Calling libnao_main (at {}) with {} arguments:",
-                   reinterpret_cast<void*>(libnao_main), argc);
+    nao::log.debug("Calling libnao_main (at {}) with {} argument{}:",
+                   reinterpret_cast<void*>(libnao_main), argc, (argc == 1) ? "" : "s");
 
     const size_t width = static_cast<size_t>(std::log10(argc)) + 1;
     for (size_t i = 0; std::string_view arg : argv_ptrs) {

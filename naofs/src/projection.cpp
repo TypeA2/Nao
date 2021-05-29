@@ -19,12 +19,12 @@
 
 #include <fstream>
 
-#include <Windows.h>
-#include <comutil.h>
+#include <projectedfslib.h>
 
 projection::projection(const path& source, const path& root)
     : _src{ canonical(source) }, _root{ weakly_canonical(root) } {
     _prepare_root();
+    _start();
 }
 
 
@@ -54,7 +54,7 @@ void projection::_prepare_root() {
             };
         }
 
-        logger().info("Found existing session {}", _instance);
+        logger().info("Found existing session: {}", _instance);
 
         // Success
     } else {
@@ -75,5 +75,18 @@ void projection::_prepare_root() {
         }
 
         // Done!
+        logger().info("Created new session: {}", _instance);
     }
+}
+
+
+void projection::_start() {
+    // We don't want to receive any notifications
+    PRJ_STARTVIRTUALIZING_OPTIONS opts {
+        .NotificationMappingsCount = 0,
+    };
+
+    PRJ_CALLBACKS callbacks = {
+        
+    };
 }

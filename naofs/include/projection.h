@@ -17,10 +17,10 @@
 #pragma once
 
 #include <libnao/logging.h>
+#include <libnao/win32_compat.h>
 
 #include <filesystem>
-
-#include <Windows.h>
+#include <unordered_map>
 
 class projection {
     NAO_LOGGER(projection);
@@ -36,6 +36,8 @@ class projection {
 
     GUID _instance;
 
+    std::unordered_map<GUID, bool> _active_enums;
+
     public:
     projection(const path& source, const path& root);
     projection(const projection&) = delete;
@@ -45,4 +47,5 @@ class projection {
 
     private:
     void _prepare_root();
+    void _start();
 };

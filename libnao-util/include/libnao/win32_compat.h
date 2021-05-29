@@ -16,26 +16,22 @@
  */
 #pragma once
 
-#include <fmt/format.h>
+#include "_win32_formatters.h"
 
-#include <Windows.h>
+static_assert(sizeof(void*) == 8, "Must be on a 64-bit platform");
+static_assert(sizeof(GUID) == 16, "GUID type must have no padding");
 
-template <>
-struct fmt::formatter<GUID> {
-    static constexpr auto parse(format_parse_context& ctx) {
-        // Nothing to parse
-        if (ctx.begin() != ctx.end()) {
-            throw format_error("invalid GUID format");
+namespace std {
+    template <>
+    struct hash<GUID> {
+        size_t operator()(const GUID& g) const noexcept {
+            const auto* data = reinterpret_cast<const uint64_t*>(&g);
+
+            return data[0] ^ data[1];
         }
+    };
+}
 
-        return ctx.end();
-    }
-
-    template <typename FormatContext>
-    constexpr auto format(const GUID& g, FormatContext& ctx) {
-        return format_to(ctx.out(),
-                         "{{{:08X}-{:04X}-{:04X}-{:02X}{:02X}-{:02X}}}",
-                         g.Data1, g.Data2, g.Data3, g.Data4[0], g.Data4[1],
-                         join(g.Data4 + 2, g.Data4 + 8, ""));
-    }
-};
+namespace nao::win32 {
+    struct guid_compare;
+}

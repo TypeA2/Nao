@@ -49,7 +49,7 @@ namespace nao {
         for (auto [w, i]
                 : _children | member_transform(&window::handle) | with_index) {
             dwp = DeferWindowPos(dwp, w, nullptr,
-                i * 50, 50, 50, 50, 0);
+                static_cast<int>(i) * 50, 50, 50, 50, 0);
         }
 
         if (!EndDeferWindowPos(dwp)) {
