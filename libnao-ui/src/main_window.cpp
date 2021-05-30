@@ -53,7 +53,11 @@ namespace nao {
 
     event_result main_window::on_resize(resize_event& e) {
         if (_layout) {
-            return _layout->on_event(e);
+            event_result res = _layout->on_event(e);
+
+            RedrawWindow(_layout->handle(), nullptr, nullptr, RDW_ALLCHILDREN);
+
+            return res;
         }
 
         return window::on_resize(e);

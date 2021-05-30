@@ -27,33 +27,39 @@ namespace nao {
             SetParent(element.handle(), _handle);
         }
 
-        SetWindowPos(element.handle(), nullptr, 
-            static_cast<int>(_children.size()) * 50, 50, 50, 50, 0);
         _children.push_back(&element);
         _reposition();
     }
 
 
     event_result horizontal_layout::on_resize(resize_event& e) {
+        event_result res = layout::on_resize(e);
+
         _reposition();
-        return event_result::ok;
+        return res;
     }
 
 
     void horizontal_layout::_reposition() {
-        logger().trace("Repositioning {} children", _children.size());
+        int count = static_cast<int>(_children.size());
+        auto [w, h] = dims();
 
-        HDWP dwp = BeginDeferWindowPos(static_cast<int>(_children.size()));
+        logger().debug("Repositioning {} children to fit in {}", count, dims());
 
+        HDWP dwp = BeginDeferWindowPos(count);
 
-        for (auto [w, i]
-                : _children | member_transform(&window::handle) | with_index) {
-            dwp = DeferWindowPos(dwp, w, nullptr,
-                static_cast<int>(i) * 50, 50, 50, 50, 0);
+        
+        for (int pos_x = 0;
+             auto [hwnd, i] : _children | member_transform(&window::handle) | with_index) {
+            int this_width = w / count;
+
+            dwp = DeferWindowPos(dwp, hwnd, nullptr, pos_x, 0, this_width, h, 0);
+
+            pos_x += this_width;
         }
 
         if (!EndDeferWindowPos(dwp)) {
-            logger().critical("Failed to reposition {} children", _children.size());
+            logger().critical("Failed to reposition {} children", count);
         }
     }
 }

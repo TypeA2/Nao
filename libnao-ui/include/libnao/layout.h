@@ -28,12 +28,18 @@ namespace nao {
         NAO_LOGGER(layout)
 
         public:
-        layout(main_window& w);
+        explicit layout(main_window& w);
 
         virtual void add_element(window& element) = 0;
 
+        protected:
+        /**
+         * @note Should be called at the start of overriding implementations
+         */
+        [[nodiscard]] event_result on_resize(resize_event& e) override;
+
         private:
         friend class main_window;
-        void _set_parent(main_window& w) const;
+        void _set_parent(main_window& win) const;
     };
 }

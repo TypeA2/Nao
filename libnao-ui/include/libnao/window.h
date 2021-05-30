@@ -49,16 +49,16 @@ namespace nao {
             std::string_view name;
 
             // Starting position
-            pos pos = { .x = CW_USEDEFAULT, .y = CW_USEDEFAULT };
+            position pos = { .x = CW_USEDEFAULT, .y = CW_USEDEFAULT };
 
             // Starting dimensions
-            size size = { .w = CW_USEDEFAULT, .h = CW_USEDEFAULT };
+            dimensions size = { .w = CW_USEDEFAULT, .h = CW_USEDEFAULT };
 
             // Parent window
             window* parent = nullptr;
         };
         
-        window(const window_descriptor& w);
+        explicit window(const window_descriptor& w);
 
         [[nodiscard]] virtual event_result on_event(event& e);
         [[nodiscard]] virtual event_result on_resize(resize_event& e);
@@ -76,7 +76,8 @@ namespace nao {
 
         [[nodiscard]] HWND handle() const;
 
-        [[nodiscard]] size size() const;
+        [[nodiscard]] dimensions dims() const;
+        [[nodiscard]] position pos() const;
 
         private:
         void _create_window(const window_descriptor& w);

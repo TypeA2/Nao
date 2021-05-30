@@ -31,15 +31,22 @@ namespace nao {
     }
 
 
-    void layout::_set_parent(main_window& w) const {
-        logger().debug("Attaching to {}", fmt::ptr(&w));
+    event_result layout::on_resize(resize_event& e) {
+        auto [x, y] = pos();
+        auto [w, h] = e.new_dimensions();
 
-        SetParent(_handle, w.handle());
-
-        auto target_size = w.size();
-        SetWindowPos(_handle, nullptr,
-            5, 5, target_size.w - 10, target_size.h - 10, 0);
+        return (MoveWindow(_handle, x, y, w, h, false) != 0) ? event_result::ok : event_result::err;
     }
 
 
+    void layout::_set_parent(main_window& win) const {
+        logger().debug("Attaching to {}", fmt::ptr(&win));
+
+        SetParent(_handle, win.handle());
+
+        auto [w, h] = win.dims();
+        SetWindowPos(_handle, nullptr, 0, 0, w, h, 0);
+    }
+
+     
 }

@@ -19,16 +19,22 @@
 
 #include <Windows.h>
 
+#include <fmt/format.h>
+
 namespace nao {
     enum class event_result {
-        ok
+        /* OK status */
+        ok,
+
+        /* Generic error */
+        err,
     };
 
-    struct pos {
+    struct position {
         int x, y;
     };
 
-    struct size {
+    struct dimensions {
         int w, h;
     };
 
@@ -65,6 +71,39 @@ namespace nao {
         public:
         using event::event;
 
-        size new_size() const;
+        [[nodiscard]] dimensions new_dimensions() const;
     };
 }
+
+/* fmt formatters */
+template <>
+struct fmt::formatter<nao::position> {
+    static constexpr auto parse(format_parse_context& ctx) {
+        if (ctx.begin() != ctx.end()) {
+            throw format_error("invalid nao::position format");
+        }
+
+        return ctx.end();
+    }
+
+    template <typename FormatContext>
+    constexpr auto format(const nao::position& pos, FormatContext& ctx) {
+        return format_to(ctx.out(), "({}, {})", pos.x, pos.y);
+    }
+};
+
+template <>
+struct fmt::formatter<nao::dimensions> {
+    static constexpr auto parse(format_parse_context& ctx) {
+        if (ctx.begin() != ctx.end()) {
+            throw format_error("invalid nao::dimensions format");
+        }
+
+        return ctx.end();
+    }
+
+    template <typename FormatContext>
+    constexpr auto format(const nao::dimensions& dims, FormatContext& ctx) {
+        return format_to(ctx.out(), "{}x{}", dims.w, dims.h);
+    }
+};

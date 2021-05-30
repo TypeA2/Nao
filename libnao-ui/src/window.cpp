@@ -32,7 +32,6 @@ namespace nao {
         DestroyWindow(_handle);
     }
 
-
     window::window(window&& other) noexcept {
         *this = std::forward<window>( other);
     }
@@ -84,10 +83,19 @@ namespace nao {
     }
 
 
-    size window::size() const {
+    dimensions window::dims() const {
         RECT rect;
-        GetWindowRect(_handle, &rect);
-        return { rect.right, rect.bottom };
+        GetClientRect(_handle, &rect);
+        return { rect.right - rect.left, rect.bottom - rect.top };
+    }
+
+    position window::pos() const {
+        RECT rect;
+        GetClientRect(_handle, &rect);
+
+        // Coordinates relative to parent
+        MapWindowPoints(_handle, GetParent(_handle), reinterpret_cast<POINT*>(&rect), 2);
+        return { rect.left, rect.top };
     }
 
 
