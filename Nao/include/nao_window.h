@@ -1,9 +1,9 @@
 #pragma once
 
-#include <libnao/main_window.h>
+#include <libnao/ui/main_window.h>
 
-#include <libnao/horizontal_layout.h>
-#include <libnao/push_button.h>
+#include <libnao/ui/horizontal_layout.h>
+#include <libnao/ui/push_button.h>
 
 class nao_window : public nao::main_window {
     NAO_LOGGER(nao_window);

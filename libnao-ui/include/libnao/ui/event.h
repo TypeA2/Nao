@@ -17,9 +17,9 @@
 
 #pragma once
 
-#include <Windows.h>
+#include "defs.h"
 
-#include <fmt/format.h>
+#include <Windows.h>
 
 namespace nao {
     enum class event_result {
@@ -28,14 +28,6 @@ namespace nao {
 
         /* Generic error */
         err,
-    };
-
-    struct position {
-        long x, y;
-    };
-
-    struct size {
-        long w, h;
     };
 
     class event {
@@ -74,36 +66,3 @@ namespace nao {
         [[nodiscard]] size new_size() const;
     };
 }
-
-/* fmt formatters */
-template <>
-struct fmt::formatter<nao::position> {
-    static constexpr auto parse(format_parse_context& ctx) {
-        if (ctx.begin() != ctx.end()) {
-            throw format_error("invalid nao::position format");
-        }
-
-        return ctx.end();
-    }
-
-    template <typename FormatContext>
-    constexpr auto format(const nao::position& pos, FormatContext& ctx) {
-        return format_to(ctx.out(), "({}, {})", pos.x, pos.y);
-    }
-};
-
-template <>
-struct fmt::formatter<nao::size> {
-    static constexpr auto parse(format_parse_context& ctx) {
-        if (ctx.begin() != ctx.end()) {
-            throw format_error("invalid nao::size format");
-        }
-
-        return ctx.end();
-    }
-
-    template <typename FormatContext>
-    constexpr auto format(const nao::size& s, FormatContext& ctx) {
-        return format_to(ctx.out(), "{}x{}", s.w, s.h);
-    }
-};

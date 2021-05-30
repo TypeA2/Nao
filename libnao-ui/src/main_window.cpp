@@ -17,7 +17,7 @@
 
 #include "main_window.h"
 
-#include <libnao/encoding.h>
+#include <libnao/util/encoding.h>
 
 #include "layout.h"
 

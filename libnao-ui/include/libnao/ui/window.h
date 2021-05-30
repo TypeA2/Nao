@@ -17,11 +17,11 @@
 
 #pragma once
 
+#include "event.h"
+
 #include <Windows.h>
 
-#include <libnao/logging.h>
-
-#include "event.h"
+#include <libnao/util/logging.h>
 
 namespace nao {
     class window {

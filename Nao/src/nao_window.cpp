@@ -7,5 +7,5 @@ nao_window::nao_window()
     , _button2{ "bar", _layout } {
 
     set_minimum_size(480, 320);
-
+    _layout.set_content_margins(5, 5, 5, 5);
 }

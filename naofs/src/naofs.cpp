@@ -16,7 +16,7 @@
  */
 
 #include <libnao/libnao_util.h>
-#include <libnao/logging.h>
+#include <libnao/util/logging.h>
 
 #include "projection.h"
 

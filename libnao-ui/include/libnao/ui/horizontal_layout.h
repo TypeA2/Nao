@@ -33,8 +33,6 @@ namespace nao {
 
         protected:
         event_result on_resize(resize_event& e) override;
-
-        private:
-        void _reposition();
+        void reposition() override;
     };
 }

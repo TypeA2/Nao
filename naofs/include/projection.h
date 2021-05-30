@@ -16,8 +16,8 @@
  */
 #pragma once
 
-#include <libnao/logging.h>
-#include <libnao/win32_compat.h>
+#include <libnao/util/logging.h>
+#include <libnao/util/win32_compat.h>
 
 #include <filesystem>
 #include <unordered_map>

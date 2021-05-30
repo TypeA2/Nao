@@ -19,27 +19,39 @@
 
 #include "window.h"
 
-#include <libnao/logging.h>
+#include <libnao/util/logging.h>
 
 namespace nao {
     class main_window;
-
-    class layout : public window {
-        NAO_LOGGER(layout)
-
-        public:
-        explicit layout(main_window& w);
-
-        virtual void add_element(window& element) = 0;
-
-        protected:
-        /**
-         * @note Should be called at the start of overriding implementations
-         */
-        [[nodiscard]] event_result on_resize(resize_event& e) override;
-
-        private:
-        friend class main_window;
-        void _set_parent(main_window& win) const;
-    };
+    class layout;
 }
+
+class nao::layout : public window {
+    NAO_LOGGER(layout);
+
+    margins _content_margins{};
+
+    public:
+    explicit layout(main_window& w);
+
+    virtual void add_element(window& element) = 0;
+
+    void set_content_margins(const margins& margins);
+    void set_content_margins(long top, long right, long bot, long left);
+    [[nodiscard]] margins content_margins() const;
+
+    protected:
+    /**
+     * @note Should be called at the start of overriding implementations
+     */
+    [[nodiscard]] event_result on_resize(resize_event& e) override;
+
+    /**
+     * Re-calculates child positions
+     */
+    virtual void reposition();
+
+    private:
+    friend class main_window;
+    void _set_parent(main_window& win) const;
+};

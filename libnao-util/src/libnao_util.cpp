@@ -18,8 +18,7 @@
 #include "libnao_util.h"
 
 #include "logging.h"
-
-#include <libnao/encoding.h>
+#include "encoding.h"
 
 #include <Windows.h>
 

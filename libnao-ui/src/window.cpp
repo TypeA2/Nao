@@ -20,7 +20,7 @@
 #include <unordered_set>
 #include <utility>
 
-#include <libnao/encoding.h>
+#include <libnao/util/encoding.h>
 
 nao::window::window(const window_descriptor& w) {
     _create_window(w);

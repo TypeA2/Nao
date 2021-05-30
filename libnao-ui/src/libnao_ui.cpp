@@ -20,7 +20,7 @@
 #include <Windows.h>
 #include <CommCtrl.h>
 
-#include <libnao/logging.h>
+#include <libnao/util/logging.h>
 
 namespace nao::libnao_ui {
     bool init() {

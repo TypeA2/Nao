@@ -1,19 +1,20 @@
 cmake_minimum_required(VERSION 3.8)
 
 add_library(libnao-util STATIC
-	"include/libnao/logging.h" "src/logging.cpp"
-	"include/libnao/encoding.h" "src/encoding.cpp"
-	"include/libnao/libnao_util.h" "src/libnao_util.cpp"
-	"include/libnao/ranges.h"
-	"include/libnao/traits.h"
-	"include/_win32_formatters.h"
-	"include/libnao/win32_compat.h")
+	"include/libnao/libnao_util.h"   "src/libnao_util.cpp"
+	"include/libnao/util/logging.h"  "src/logging.cpp"
+	"include/libnao/util/encoding.h" "src/encoding.cpp"
+	"include/libnao/util/ranges.h"
+	"include/libnao/util/traits.h"
+	"include/libnao/util/_win32_formatters.h" 
+	"include/libnao/util/win32_compat.h")
 
 set_property(TARGET libnao-util PROPERTY CXX_STANDARD 20)
 set_property(TARGET libnao-util PROPERTY MSVC_RUNTIME_LIBRARY MultiThreadedDebug)
 
 target_include_directories(libnao-util PUBLIC "include")
 target_include_directories(libnao-util PRIVATE "include/libnao")
+target_include_directories(libnao-util PRIVATE "include/libnao/util")
 target_compile_definitions(libnao-util PUBLIC UNICODE _UNICODE)
 
 find_package(spdlog CONFIG REQUIRED)
