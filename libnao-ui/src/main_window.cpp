@@ -62,5 +62,4 @@ namespace nao {
 
         return window::on_resize(e);
     }
-
 }

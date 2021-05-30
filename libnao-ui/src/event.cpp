@@ -50,7 +50,7 @@ namespace nao {
     }
 
 
-    dimensions resize_event::new_dimensions() const {
+    size resize_event::new_size() const {
         return {
             .w = LOWORD(_native.lparam),
             .h = HIWORD(_native.lparam)

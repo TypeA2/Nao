@@ -11,6 +11,7 @@ int main(int, char**) {
     }
 
     nao::main_window w{ "Nao" };
+    w.set_minimum_size(480, 320);
     nao::horizontal_layout layout{ w };
     nao::push_button button{ "wooo", layout };
     nao::push_button button2{ "yeet", layout };

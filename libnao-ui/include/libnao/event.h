@@ -31,11 +31,11 @@ namespace nao {
     };
 
     struct position {
-        int x, y;
+        long x, y;
     };
 
-    struct dimensions {
-        int w, h;
+    struct size {
+        long w, h;
     };
 
     class event {
@@ -53,7 +53,7 @@ namespace nao {
         native_event _native;
 
         public:
-        event(const native_event& native);
+        explicit event(const native_event& native);
         virtual ~event() = default;
 
         event(const event&) = delete;
@@ -71,7 +71,7 @@ namespace nao {
         public:
         using event::event;
 
-        [[nodiscard]] dimensions new_dimensions() const;
+        [[nodiscard]] size new_size() const;
     };
 }
 
@@ -93,17 +93,17 @@ struct fmt::formatter<nao::position> {
 };
 
 template <>
-struct fmt::formatter<nao::dimensions> {
+struct fmt::formatter<nao::size> {
     static constexpr auto parse(format_parse_context& ctx) {
         if (ctx.begin() != ctx.end()) {
-            throw format_error("invalid nao::dimensions format");
+            throw format_error("invalid nao::size format");
         }
 
         return ctx.end();
     }
 
     template <typename FormatContext>
-    constexpr auto format(const nao::dimensions& dims, FormatContext& ctx) {
-        return format_to(ctx.out(), "{}x{}", dims.w, dims.h);
+    constexpr auto format(const nao::size& s, FormatContext& ctx) {
+        return format_to(ctx.out(), "{}x{}", s.w, s.h);
     }
 };

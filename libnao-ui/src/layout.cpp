@@ -32,8 +32,8 @@ namespace nao {
 
 
     event_result layout::on_resize(resize_event& e) {
-        auto [x, y] = pos();
-        auto [w, h] = e.new_dimensions();
+        auto [x, y] = client_pos();
+        auto [w, h] = e.new_size();
 
         return (MoveWindow(_handle, x, y, w, h, false) != 0) ? event_result::ok : event_result::err;
     }
@@ -44,7 +44,7 @@ namespace nao {
 
         SetParent(_handle, win.handle());
 
-        auto [w, h] = win.dims();
+        auto [w, h] = win.client_size();
         SetWindowPos(_handle, nullptr, 0, 0, w, h, 0);
     }
 

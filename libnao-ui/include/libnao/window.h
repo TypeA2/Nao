@@ -28,9 +28,10 @@ namespace nao {
         NAO_LOGGER(window)
 
         LRESULT _last_msg_result{};
+        size _min_size{};
 
         protected:
-        HWND _handle;
+        HWND _handle{};
 
         struct window_descriptor {
             // Builtin classes aren't registered
@@ -52,7 +53,7 @@ namespace nao {
             position pos = { .x = CW_USEDEFAULT, .y = CW_USEDEFAULT };
 
             // Starting dimensions
-            dimensions size = { .w = CW_USEDEFAULT, .h = CW_USEDEFAULT };
+            size size = { .w = CW_USEDEFAULT, .h = CW_USEDEFAULT };
 
             // Parent window
             window* parent = nullptr;
@@ -76,8 +77,13 @@ namespace nao {
 
         [[nodiscard]] HWND handle() const;
 
-        [[nodiscard]] dimensions dims() const;
-        [[nodiscard]] position pos() const;
+        /* Size and position relative to parent */
+        [[nodiscard]] size client_size() const;
+        [[nodiscard]] position client_pos() const;
+
+        void set_minimum_size(const size& size);
+        void set_minimum_size(long w, long h);
+        size minimum_size() const;
 
         private:
         void _create_window(const window_descriptor& w);

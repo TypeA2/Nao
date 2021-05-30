@@ -26,9 +26,10 @@ namespace nao {
         NAO_LOGGER(main_window)
 
         layout* _layout{};
+        size _min_size{};
 
         public:
-        main_window(std::string_view title = "");
+        explicit main_window(std::string_view title = "");
 
         void set_title(std::string_view title) const;
 

@@ -42,9 +42,9 @@ namespace nao {
 
     void horizontal_layout::_reposition() {
         int count = static_cast<int>(_children.size());
-        auto [w, h] = dims();
+        auto [w, h] = client_size();
 
-        logger().debug("Repositioning {} children to fit in {}", count, dims());
+        logger().debug("Repositioning {} children to fit in {}", count, client_size());
 
         HDWP dwp = BeginDeferWindowPos(count);
 
