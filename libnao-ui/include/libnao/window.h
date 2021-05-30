@@ -83,7 +83,7 @@ namespace nao {
 
         void set_minimum_size(const size& size);
         void set_minimum_size(long w, long h);
-        size minimum_size() const;
+        [[nodiscard]] size minimum_size() const;
 
         private:
         void _create_window(const window_descriptor& w);

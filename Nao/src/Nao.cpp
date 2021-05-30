@@ -5,17 +5,14 @@
 #include <libnao/push_button.h>
 #include <libnao/horizontal_layout.h>
 
+#include "nao_window.h"
+
 int main(int, char**) {
     if (!nao::libnao_ui::init()) {
         return EXIT_FAILURE;
     }
 
-    nao::main_window w{ "Nao" };
-    w.set_minimum_size(480, 320);
-    nao::horizontal_layout layout{ w };
-    nao::push_button button{ "wooo", layout };
-    nao::push_button button2{ "yeet", layout };
-    nao::push_button button3{ "button3", layout };
+    nao_window w;
 
     nao::message_loop loop;
 
