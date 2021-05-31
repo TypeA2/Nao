@@ -22,7 +22,9 @@
 
 #include <libnao/util/encoding.h>
 
-nao::window::window(const window_descriptor& w) {
+nao::window::window(const window_descriptor& w)
+    : _min_size{ GetSystemMetrics(SM_CXMINTRACK), GetSystemMetrics(SM_CYMINTRACK) }
+    , _max_size{ GetSystemMetrics(SM_CXMAXTRACK), GetSystemMetrics(SM_CYMAXTRACK) } {
     _create_window(w);
 }
 
@@ -66,6 +68,8 @@ nao::event_result nao::window::on_event(event& e) {
             auto info = reinterpret_cast<MINMAXINFO*>(native.lparam);
             info->ptMinTrackSize.x = _min_size.w;
             info->ptMinTrackSize.y = _min_size.h;
+            info->ptMaxTrackSize.x = _max_size.w;
+            info->ptMaxTrackSize.y = _max_size.h;
             _last_msg_result = 0;
             break;
         }
@@ -109,19 +113,69 @@ nao::position nao::window::client_pos() const {
 
 
 void nao::window::set_minimum_size(const size& size) {
-    assert(size.w > 0 && size.h > 0);
     _min_size = size;
+
+    if (_min_size.w < 0) {
+        // Reset to default
+        _min_size.w = GetSystemMetrics(SM_CXMINTRACK);
+    }
+
+    if (_min_size.h < 0) {
+        _min_size.h = GetSystemMetrics(SM_CYMINTRACK);
+    }
+
+
+    // Adjust max sizes to make sense
+    if (_min_size.w > _max_size.w) {
+        _max_size.w = _min_size.w;
+    }
+
+    if (_min_size.h > _max_size.h) {
+        _max_size.h = _min_size.h;
+    }
 }
 
 
 void nao::window::set_minimum_size(long w, long h) {
-    assert(w > 0 && h > 0);
-    _min_size = { w, h };
+    set_minimum_size({ w, h });
 }
 
 
 nao::size nao::window::minimum_size() const {
     return _min_size;
+}
+
+
+void nao::window::set_maximum_size(const size& size) {
+    _max_size = size;
+
+    if (_max_size.w < 0) {
+        // Reset to default
+        _max_size.w = GetSystemMetrics(SM_CXMAXTRACK);
+    }
+
+    if (_max_size.h < 0) {
+        _max_size.h = GetSystemMetrics(SM_CYMAXTRACK);
+    }
+
+    // Adjust max sizes to make sense
+    if (_max_size.w < _min_size.w) {
+        _min_size.w = _max_size.w;
+    }
+
+    if (_max_size.h < _min_size.h) {
+        _min_size.h = _max_size.h;
+    }
+}
+
+
+void nao::window::set_maximum_size(long w, long h) {
+    set_maximum_size({ w, h });
+}
+
+
+nao::size nao::window::maximum_size() const {
+    return _max_size;
 }
 
 

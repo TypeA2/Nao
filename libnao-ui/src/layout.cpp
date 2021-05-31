@@ -47,16 +47,24 @@ nao::margins nao::layout::content_margins() const {
 }
 
 
+void nao::layout::set_content_spacing(long spacing) {
+    assert(spacing >= 0);
+    _content_spacing = spacing;
+    reposition();
+}
+
+
+long nao::layout::content_spacing() const {
+    return _content_spacing;
+}
+
+
 nao::event_result nao::layout::on_resize(resize_event& e) {
     auto [x, y] = client_pos();
     auto [w, h] = e.new_size();
 
-    return (MoveWindow(_handle, x, y, w, h, false) != 0) ? event_result::ok : event_result::err;
-}
-
-
-void nao::layout::reposition() {
-    // no-op
+    return (SetWindowPos(_handle, nullptr, x, y, w, h, 0) != 0)
+        ? event_result::ok : event_result::err;
 }
 
 

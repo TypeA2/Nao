@@ -41,25 +41,37 @@ nao::event_result nao::horizontal_layout::on_resize(resize_event& e) {
 
 void nao::horizontal_layout::reposition() {
     int count = static_cast<int>(_children.size());
-    logger().debug("Repositioning {} children to fit in {}", count, client_size());
-    logger().debug("Margins: {}", content_margins());
+    logger().trace("Repositioning {} children to fit in {}", count, client_size());
 
     auto [w, h] = client_size();
     auto [top, right, bot, left] = content_margins();
+    long spacing = content_spacing();
 
     // Remove all margins from the width/height
-    w = std::max<long>(0, w - right - left);
+    w = std::max<long>(0, w - right - left - ((count - 1) * spacing));
     h = std::max<long>(0, h - top - bot);
 
     HDWP dwp = BeginDeferWindowPos(count);
 
-    for (long pos_x = left;
-         auto [hwnd, i] : _children | member_transform(&window::handle) | with_index) {
-        int this_width = w / count;
+    // TODO stretch when there's space left because of minimums
+    for (long pos_x = left; auto [win, i] : _children | with_index) {
+        HWND hwnd = win->handle();
 
-        dwp = DeferWindowPos(dwp, hwnd, nullptr, pos_x, top, this_width, h, 0);
+        size proposed{
+            .w = w / count,
+            .h = h,
+        };
 
-        pos_x += this_width;
+        size min = win->minimum_size();
+        size max = win->maximum_size();
+
+        // Deal with minimums and maximums, this can be done better right?
+        proposed.w = std::max<long>(std::min<long>(proposed.w, max.w), min.w);
+        proposed.h = std::max<long>(std::min<long>(proposed.h, max.h), min.h);
+
+        dwp = DeferWindowPos(dwp, hwnd, nullptr, pos_x, top, proposed.w, proposed.h, 0);
+
+        pos_x += proposed.w + spacing;
     }
 
     if (!EndDeferWindowPos(dwp)) {

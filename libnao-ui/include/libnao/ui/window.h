@@ -28,7 +28,8 @@ namespace nao {
         NAO_LOGGER(window)
 
         LRESULT _last_msg_result{};
-        size _min_size{};
+        size _min_size;
+        size _max_size;
 
         protected:
         HWND _handle{};
@@ -64,7 +65,6 @@ namespace nao {
         [[nodiscard]] virtual event_result on_event(event& e);
         [[nodiscard]] virtual event_result on_resize(resize_event& e);
 
-
         public:
         window() = delete;
         virtual ~window();
@@ -81,9 +81,17 @@ namespace nao {
         [[nodiscard]] size client_size() const;
         [[nodiscard]] position client_pos() const;
 
+        /**
+         * Set minimum and maximum dimensions.
+         * Negative values reset axis to default.
+         */
         void set_minimum_size(const size& size);
         void set_minimum_size(long w, long h);
         [[nodiscard]] size minimum_size() const;
+
+        void set_maximum_size(const size& size);
+        void set_maximum_size(long w, long h);
+        [[nodiscard]] size maximum_size() const;
 
         private:
         void _create_window(const window_descriptor& w);

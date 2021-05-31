@@ -30,15 +30,25 @@ class nao::layout : public window {
     NAO_LOGGER(layout);
 
     margins _content_margins{};
+    long _content_spacing{};
 
     public:
     explicit layout(main_window& w);
 
     virtual void add_element(window& element) = 0;
 
+    /**
+     * Determines the margins at the edge of the layout.
+     */
     void set_content_margins(const margins& margins);
     void set_content_margins(long top, long right, long bot, long left);
     [[nodiscard]] margins content_margins() const;
+
+    /**
+     * Determines the spacing between elements of the layout
+     */
+    void set_content_spacing(long spacing);
+    [[nodiscard]] long content_spacing() const;
 
     protected:
     /**
@@ -49,7 +59,7 @@ class nao::layout : public window {
     /**
      * Re-calculates child positions
      */
-    virtual void reposition();
+    virtual void reposition() = 0;
 
     private:
     friend class main_window;

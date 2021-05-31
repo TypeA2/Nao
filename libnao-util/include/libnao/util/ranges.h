@@ -95,7 +95,7 @@ namespace nao {
          * Dereferences to a struct containing the value and the index, which increments and
          * decrements with the iterator itself.
          */
-        template <bool Const, std::ranges::viewable_range R>
+        template <bool Const, std::ranges::input_range R>
         class with_index_iterator {
             public:
             using base_iterator = std::ranges::iterator_t<std::conditional_t<Const, const R, R>>;
@@ -258,7 +258,7 @@ namespace nao {
     // Range view that calls a specific member function on all objects
     inline constexpr member_transform_fun member_transform;
 
-    template <std::ranges::viewable_range R>
+    template <std::ranges::input_range R>
     class with_index_view : public std::ranges::view_interface<with_index_view<R>> {
         R _range;
         public:
@@ -295,12 +295,12 @@ namespace nao {
     // Implements a callable and a direct pipe operator
     class with_index_fun {
         public:
-        template <std::ranges::viewable_range R>
+        template <std::ranges::input_range R>
         [[nodiscard]] constexpr auto operator()(R&& range) const {
             return with_index_view{ std::forward<R>(range) };
         }
 
-        template <std::ranges::viewable_range R>
+        template <std::ranges::input_range R>
         [[nodiscard]] friend constexpr auto operator|(R&& range, const with_index_fun&) {
             return with_index_view{ std::forward<R>(range) };
         }
