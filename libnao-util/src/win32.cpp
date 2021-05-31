@@ -14,24 +14,26 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with libnao-util.  If not, see <https://www.gnu.org/licenses/>.
  */
-#pragma once
+#include "win32.h"
 
-#include "_win32_formatters.h"
+nao::win32::gdi_object::gdi_object(HGDIOBJ obj) : _obj { obj } { }
 
-static_assert(sizeof(void*) == 8, "Must be on a 64-bit platform");
-static_assert(sizeof(GUID) == 16, "GUID type must have no padding");
-
-namespace std {
-    template <>
-    struct hash<GUID> {
-        size_t operator()(const GUID& g) const noexcept {
-            const auto* data = reinterpret_cast<const uint64_t*>(&g);
-
-            return data[0] ^ data[1];
-        }
-    };
+nao::win32::gdi_object::~gdi_object() {
+    if (_obj) {
+        DeleteObject(_obj);
+    }
 }
 
-namespace nao::win32 {
-    struct guid_compare;
+nao::win32::gdi_object::gdi_object(gdi_object&& other) noexcept {
+    _obj = std::exchange(other._obj, nullptr);
+}
+
+nao::win32::gdi_object& nao::win32::gdi_object::operator=(gdi_object&& other) noexcept {
+    _obj = std::exchange(other._obj, nullptr);
+
+    return *this;
+}
+
+HGDIOBJ nao::win32::gdi_object::handle() const {
+    return _obj;
 }

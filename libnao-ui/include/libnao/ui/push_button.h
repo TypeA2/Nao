@@ -19,10 +19,14 @@
 
 #include "window.h"
 
+#include <libnao/util/win32.h>
+
 namespace nao {
     class layout;
 
     class push_button : public window {
+        win32::gdi_object _font;
+
         public:
         push_button(std::string_view text, layout& parent);
     };

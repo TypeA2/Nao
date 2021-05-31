@@ -7,7 +7,7 @@ add_library(libnao-util STATIC
 	"include/libnao/util/ranges.h"
 	"include/libnao/util/traits.h"
 	"include/libnao/util/_win32_formatters.h" 
-	"include/libnao/util/win32_compat.h")
+	"include/libnao/util/win32.h"    "src/win32.cpp")
 
 set_property(TARGET libnao-util PROPERTY CXX_STANDARD 20)
 set_property(TARGET libnao-util PROPERTY MSVC_RUNTIME_LIBRARY MultiThreadedDebug)

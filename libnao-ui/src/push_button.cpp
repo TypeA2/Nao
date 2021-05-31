@@ -17,19 +17,31 @@
 
 #include "push_button.h"
 
+#include <CommCtrl.h>
+
 #include "layout.h"
 
 namespace nao {
     push_button::push_button(std::string_view text, layout& parent) : window{
         {
             .builtin = true,
-            .cls = "BUTTON",
-            .style = WS_VISIBLE | WS_CHILD | BS_DEFPUSHBUTTON,
+            .cls = WC_BUTTONA,
+            .style = WS_VISIBLE | WS_CHILD | WS_TABSTOP,
             .name = text,
-            .pos = { 50, 50 },
+            .pos = { 0, 0 },
             .size = { 50, 50 },
             .parent = &parent,
         }} {
+
+        // Unset font is weird, fix it
+        NONCLIENTMETRICS metrics{
+            .cbSize = sizeof(metrics),
+        };
+        BOOL res = SystemParametersInfoW(SPI_GETNONCLIENTMETRICS, metrics.cbSize, &metrics, 0);
+        assert(res);
+
+        _font = CreateFontIndirectW(&metrics.lfCaptionFont);
+        SendMessageW(_handle, WM_SETFONT, reinterpret_cast<WPARAM>(_font.handle()), 0);
 
         parent.add_element(*this);
     }

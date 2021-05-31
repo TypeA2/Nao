@@ -53,12 +53,14 @@ void nao::horizontal_layout::reposition() {
 
     HDWP dwp = BeginDeferWindowPos(count);
 
+    long remaining_pixels = w;
+
     // TODO stretch when there's space left because of minimums
     for (long pos_x = left; auto [win, i] : _children | with_index) {
         HWND hwnd = win->handle();
 
         size proposed{
-            .w = w / count,
+            .w = remaining_pixels / (count - static_cast<long>(i)),
             .h = h,
         };
 
@@ -72,6 +74,7 @@ void nao::horizontal_layout::reposition() {
         dwp = DeferWindowPos(dwp, hwnd, nullptr, pos_x, top, proposed.w, proposed.h, 0);
 
         pos_x += proposed.w + spacing;
+        remaining_pixels -= proposed.w;
     }
 
     if (!EndDeferWindowPos(dwp)) {
