@@ -14,26 +14,25 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with libnao-ui.  If not, see <https://www.gnu.org/licenses/>.
  */
-
 #pragma once
-
-#include "window.h"
-
-#include "icon.h"
 
 #include <libnao/util/win32.h>
 
 namespace nao {
-    class layout;
-
-    class push_button : public window {
-        win32::gdi_object _font;
-
-        icon _icon;
+    class icon {
+        win32::gdi_object _obj;
 
         public:
-        push_button(std::string_view text, layout& parent);
+        icon() = default;
+        explicit(false) icon(win32::gdi_object obj);
+        ~icon() = default;
 
-        void set_icon(icon icon);
+        icon(icon&& other) noexcept = default;
+        icon& operator=(icon&& other) noexcept = default;
+
+        icon(const icon&) = delete;
+        icon& operator=(const icon&) = delete;
+
+        [[nodiscard]] HICON handle() const;
     };
 }

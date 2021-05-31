@@ -17,6 +17,7 @@
 #pragma once
 
 #include "_win32_formatters.h"
+#include "concepts.h"
 
 static_assert(sizeof(void*) == 8, "Must be on a 64-bit platform");
 static_assert(sizeof(GUID) == 16, "GUID type must have no padding");
@@ -54,7 +55,7 @@ namespace nao::win32 {
 
         [[nodiscard]] HGDIOBJ handle() const;
 
-        template<typename T> requires std::convertible_to<HGDIOBJ, T>
+        template<typename T> requires explicitly_convertible_to<HGDIOBJ, T>
         [[nodiscard]] T handle() const {
             return static_cast<T>(handle());
         }
