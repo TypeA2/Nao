@@ -26,6 +26,15 @@ namespace nao {
 
     struct size {
         long w, h;
+
+        static constexpr size max() {
+            return size{
+                 .w = std::numeric_limits<long>::max(),
+                 .h = std::numeric_limits<long>::max(),
+            };
+        }
+
+        [[nodiscard]] size fit_in(size other) const;
     };
 
     struct margins {

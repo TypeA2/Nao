@@ -30,6 +30,18 @@ nao::window::window(const window_descriptor& w)
     _create_window(w);
 }
 
+nao::window::window(window& w) : window{
+    {
+        .builtin = false,
+        .cls = "libnao_generic_window",
+        .style = WS_VISIBLE | WS_CHILD,
+        .pos = { 0, 0 },
+        .size = w.client_size(),
+        .parent = &w,
+
+    } } {
+    w.set_window(*this);
+}
 
 nao::window::~window() {
     DestroyWindow(_handle);
@@ -40,12 +52,10 @@ nao::window::window(window&& other) noexcept {
     *this = std::forward<window>(other);
 }
 
-
 nao::window& nao::window::operator=(window&& other) noexcept {
     _handle = std::exchange(other._handle, nullptr);
     return *this;
 }
-
 
 nao::event_result nao::window::on_event(event& e) {
     const auto& native = e.native();
@@ -84,10 +94,12 @@ nao::event_result nao::window::on_event(event& e) {
     return event_result::ok;
 }
 
-
 nao::event_result nao::window::on_resize(resize_event& e) {
-    if (_layout) {
-        return _layout->on_resize(e);
+    if (_child) {
+        auto [x, y] = _child->constrain_size(e.new_size());
+        SetWindowPos(_child->handle(), nullptr, 0, 0, x, y, 0);
+        
+        return event_result::ok;
     }
 
     _last_msg_result = e.native().call_default();
@@ -95,18 +107,19 @@ nao::event_result nao::window::on_resize(resize_event& e) {
     return event_result::ok;
 }
 
-
 HWND nao::window::handle() const {
     return _handle;
 }
 
+nao::window* nao::window::parent() const {
+    return _parent;
+}
 
 nao::size nao::window::client_size() const {
     RECT rect;
     GetClientRect(_handle, &rect);
     return { rect.right - rect.left, rect.bottom - rect.top };
 }
-
 
 nao::position nao::window::client_pos() const {
     RECT rect;
@@ -117,6 +130,13 @@ nao::position nao::window::client_pos() const {
     return { rect.left, rect.top };
 }
 
+nao::size nao::window::constrain_size(size s) const {
+    // Also constrain to parent
+    return {
+        .w = std::max<long>(std::min<long>(s.w, _max_size.w), _min_size.w),
+        .h = std::max<long>(std::min<long>(s.h, _max_size.h), _min_size.h),
+    };
+}
 
 void nao::window::set_minimum_size(const size& size) {
     _min_size = size;
@@ -132,6 +152,8 @@ void nao::window::set_minimum_size(const size& size) {
 
 
     // Adjust max sizes to make sense
+    _max_size.w = std::max<long>(_min_size.w, _max_size.w);
+    _max_size.h = std::max<long>(_min_size.h, _max_size.h);
     if (_min_size.w > _max_size.w) {
         _max_size.w = _min_size.w;
     }
@@ -141,16 +163,13 @@ void nao::window::set_minimum_size(const size& size) {
     }
 }
 
-
 void nao::window::set_minimum_size(long w, long h) {
     set_minimum_size({ w, h });
 }
 
-
 nao::size nao::window::minimum_size() const {
     return _min_size;
 }
-
 
 void nao::window::set_maximum_size(const size& size) {
     _max_size = size;
@@ -165,15 +184,9 @@ void nao::window::set_maximum_size(const size& size) {
     }
 
     // Adjust max sizes to make sense
-    if (_max_size.w < _min_size.w) {
-        _min_size.w = _max_size.w;
-    }
-
-    if (_max_size.h < _min_size.h) {
-        _min_size.h = _max_size.h;
-    }
+    _min_size.w = std::min<long>(_min_size.w, _max_size.w);
+    _min_size.h = std::min<long>(_min_size.h, _max_size.h);
 }
-
 
 void nao::window::set_maximum_size(long w, long h) {
     set_maximum_size({ w, h });
@@ -184,11 +197,20 @@ nao::size nao::window::maximum_size() const {
     return _max_size;
 }
 
-void nao::window::_set_layout(layout& l) {
-    l._set_parent(*this);
-    _layout = &l;
+void nao::window::set_window(window& w) {
+    w.set_parent(*this);
+    _child = &w;
 }
 
+void nao::window::set_parent(window& win) {
+    logger().debug("Attaching to {}", fmt::ptr(&win));
+
+    _parent = &win;
+    SetParent(_handle, _parent->handle());
+
+    auto [w, h] = _parent->client_size();
+    SetWindowPos(_handle, nullptr, 0, 0, w, h, 0);
+}
 
 void nao::window::_create_window(const window_descriptor& w) {
     static std::unordered_set<std::wstring> class_registry;

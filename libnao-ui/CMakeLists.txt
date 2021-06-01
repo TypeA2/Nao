@@ -2,7 +2,7 @@
 
 add_library(libnao-ui STATIC
 	"include/libnao/libnao_ui.h"             "src/libnao_ui.cpp"
-	"include/libnao/ui/defs.h"
+	"include/libnao/ui/defs.h"               "src/defs.cpp"
 	"include/libnao/ui/window.h"             "src/window.cpp"
 	"include/libnao/ui/message_loop.h"       "src/message_loop.cpp"
 	"include/libnao/ui/main_window.h"        "src/main_window.cpp"
@@ -18,7 +18,7 @@ set_property(TARGET libnao-ui PROPERTY MSVC_RUNTIME_LIBRARY MultiThreadedDebug)
 target_include_directories(libnao-ui PUBLIC "include")
 target_include_directories(libnao-ui PRIVATE "include/libnao")
 target_include_directories(libnao-ui PRIVATE "include/libnao/ui")
-target_compile_definitions(libnao-ui PUBLIC UNICODE _UNICODE)
+target_compile_definitions(libnao-ui PUBLIC UNICODE _UNICODE NOMINMAX)
 target_compile_options(libnao-ui PUBLIC /utf-8)
 
 target_link_libraries(libnao-ui PUBLIC libnao-util)

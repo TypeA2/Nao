@@ -21,7 +21,7 @@
 
 #include "layout.h"
 
-nao::push_button::push_button(layout& parent, std::string_view text) : window{
+nao::push_button::push_button(window& parent, std::string_view text) : window{
         {
             .builtin = true,
             .cls = WC_BUTTONA,
@@ -42,7 +42,7 @@ nao::push_button::push_button(layout& parent, std::string_view text) : window{
     _font = CreateFontIndirectW(&metrics.lfCaptionFont);
     SendMessageW(_handle, WM_SETFONT, reinterpret_cast<WPARAM>(_font.handle()), 0);
 
-    parent.add_element(*this);
+    parent.set_window(*this);
 }
 
 void nao::push_button::set_icon(icon icon) {

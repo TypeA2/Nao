@@ -35,6 +35,7 @@ class nao::layout : public window {
     public:
     explicit layout(window& w);
 
+    /* Base implementation must be called too */
     virtual void add_element(window& element) = 0;
 
     /**
@@ -50,6 +51,8 @@ class nao::layout : public window {
     void set_content_spacing(long spacing);
     [[nodiscard]] long content_spacing() const;
 
+    void set_window(window& w) override;
+
     protected:
     /**
      * @note Should be called at the start of overriding implementations
@@ -59,9 +62,7 @@ class nao::layout : public window {
     /**
      * Re-calculates child positions
      */
-    virtual void reposition() = 0;
+    virtual void reposition();
 
-    private:
-    friend class window;
-    void _set_parent(window& win) const;
+    
 };

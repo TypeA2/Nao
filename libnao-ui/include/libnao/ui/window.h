@@ -17,7 +17,10 @@
 
 #pragma once
 
+
 #include "event.h"
+
+#include <variant>
 
 #include <Windows.h>
 
@@ -33,8 +36,11 @@ namespace nao {
         size _min_size{};
         size _max_size{};
 
-        // Contained layout, if applicable
-        layout* _layout{};
+        // Parent window, if set
+        window* _parent{};
+
+        // Contained layout or widget, whichever applies
+        window* _child{};
 
         protected:
         HWND _handle{};
@@ -66,11 +72,13 @@ namespace nao {
         };
         
         explicit window(const window_descriptor& w);
+        
 
         [[nodiscard]] virtual event_result on_event(event& e);
         [[nodiscard]] virtual event_result on_resize(resize_event& e);
 
         public:
+        explicit window(window& w);
         window() = delete;
         virtual ~window();
 
@@ -81,10 +89,14 @@ namespace nao {
         window& operator=(window&& other) noexcept;
 
         [[nodiscard]] HWND handle() const;
+        [[nodiscard]] window* parent() const;
 
         /* Size and position relative to parent */
         [[nodiscard]] size client_size() const;
         [[nodiscard]] position client_pos() const;
+
+        /* Calculate actual size based on target and min/max */
+        [[nodiscard]] size constrain_size(size s) const;
 
         /**
          * Set minimum and maximum dimensions.
@@ -98,9 +110,11 @@ namespace nao {
         void set_maximum_size(long w, long h);
         [[nodiscard]] size maximum_size() const;
 
-        protected:
-        friend class layout;
-        void _set_layout(layout& l);
+        /* Set the contained window */
+        virtual void set_window(window& w);
+
+        /* Set the window's parent */
+        void set_parent(window& win);
 
         private:
         void _create_window(const window_descriptor& w);

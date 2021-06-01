@@ -28,23 +28,11 @@ nao::directional_layout::directional_layout(window& parent, layout_direction dir
 
 void nao::directional_layout::add_element(window& element) {
     logger().debug("Adding child {}", fmt::ptr(&element));
-
-    if (GetParent(element.handle()) != _handle) {
-        SetParent(element.handle(), _handle);
-    }
+    layout::add_element(element);
 
     _children.push_back(&element);
     reposition();
 }
-
-
-nao::event_result nao::directional_layout::on_resize(resize_event& e) {
-    event_result res = layout::on_resize(e);
-
-    reposition();
-    return res;
-}
-
 
 void nao::directional_layout::reposition() {
     switch (_direction) {
@@ -77,22 +65,15 @@ void nao::directional_layout::_reposition_horizontal() {
     for (long pos_x = left; auto [win, i] : _children | with_index) {
         HWND hwnd = win->handle();
 
-        size proposed{
+        size target = win->constrain_size({
             .w = remaining_pixels / (count - static_cast<long>(i)),
             .h = h,
-        };
+        }).fit_in(win->parent() ? win->parent()->client_size() : size::max());
 
-        size min = win->minimum_size();
-        size max = win->maximum_size();
+        dwp = DeferWindowPos(dwp, hwnd, nullptr, pos_x, top, target.w, target.h, 0);
 
-        // Deal with minimums and maximums, this can be done better right?
-        proposed.w = std::max<long>(std::min<long>(proposed.w, max.w), min.w);
-        proposed.h = std::max<long>(std::min<long>(proposed.h, max.h), min.h);
-
-        dwp = DeferWindowPos(dwp, hwnd, nullptr, pos_x, top, proposed.w, proposed.h, 0);
-
-        pos_x += proposed.w + spacing;
-        remaining_pixels -= proposed.w;
+        pos_x += target.w + spacing;
+        remaining_pixels -= target.w;
     }
 
     if (!EndDeferWindowPos(dwp)) {
@@ -119,21 +100,16 @@ void nao::directional_layout::_reposition_vertical() {
     for (long pos_y = top; auto [win, i] : _children | with_index) {
         HWND hwnd = win->handle();
 
-        size proposed{
+
+        size target = win->constrain_size({
             .w = w,
             .h = remaining_pixels / (count - static_cast<long>(i)),
-        };
+        }).fit_in(win->parent() ? win->parent()->client_size() : size::max());
+        
+        dwp = DeferWindowPos(dwp, hwnd, nullptr, left, pos_y, target.w, target.h, 0);
 
-        size min = win->minimum_size();
-        size max = win->maximum_size();
-
-        proposed.w = std::max<long>(std::min<long>(proposed.w, max.w), min.w);
-        proposed.h = std::max<long>(std::min<long>(proposed.h, max.h), min.h);
-
-        dwp = DeferWindowPos(dwp, hwnd, nullptr, left, pos_y, proposed.w, proposed.h, 0);
-
-        pos_y += proposed.h + spacing;
-        remaining_pixels -= proposed.h;
+        pos_y += target.h + spacing;
+        remaining_pixels -= target.h;
     }
 
     if (!EndDeferWindowPos(dwp)) {

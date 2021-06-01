@@ -19,8 +19,7 @@
 
 #include <spdlog/spdlog.h>
 
-#include "_win32_formatters.h"
-
+// TODO something so this can be followed by a semicolon
 #define NAO_LOGGER(name) \
     static spdlog::logger& logger() { \
         static spdlog::logger logger = ::nao::make_logger(#name, ::nao::default_logging_level); \

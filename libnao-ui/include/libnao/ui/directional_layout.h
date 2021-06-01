@@ -28,7 +28,7 @@ namespace nao {
     };
 
     class directional_layout : public layout {
-        NAO_LOGGER(horizontal_layout);
+        NAO_LOGGER(horizontal_layout)
 
         std::vector<window*> _children;
         layout_direction _direction;
@@ -39,7 +39,6 @@ namespace nao {
         void add_element(window& element) override;
 
         protected:
-        event_result on_resize(resize_event& e) override;
         void reposition() override;
 
         private:

@@ -26,16 +26,18 @@ nao::layout::layout(window& w) : window{
             .pos = { 0, 0 },
             .parent = &w
         } } {
-    w._set_layout(*this);
+    w.set_window(*this);
 }
 
+void nao::layout::add_element(window& element) {
+    element.set_parent(*this);
+}
 
 void nao::layout::set_content_margins(const margins& margins) {
     assert(margins.top >= 0 && margins.right >= 0 && margins.bot >= 0 && margins.left >= 0);
     _content_margins = margins;
     reposition();
 }
-
 
 void nao::layout::set_content_margins(long top, long right, long bot, long left) {
     set_content_margins({ top, right, bot, left });
@@ -46,33 +48,25 @@ nao::margins nao::layout::content_margins() const {
     return _content_margins;
 }
 
-
 void nao::layout::set_content_spacing(long spacing) {
     assert(spacing >= 0);
     _content_spacing = spacing;
     reposition();
 }
 
-
 long nao::layout::content_spacing() const {
     return _content_spacing;
 }
 
-
-nao::event_result nao::layout::on_resize(resize_event& e) {
-    auto [x, y] = client_pos();
-    auto [w, h] = e.new_size();
-
-    return (SetWindowPos(_handle, nullptr, x, y, w, h, 0) != 0)
-        ? event_result::ok : event_result::err;
+void nao::layout::set_window(window& w) {
+    add_element(w);
 }
 
+nao::event_result nao::layout::on_resize(resize_event& e) {
+    reposition();
+    return event_result::ok;
+}
 
-void nao::layout::_set_parent(window& win) const {
-    logger().debug("Attaching to {}", fmt::ptr(&win));
-
-    SetParent(_handle, win.handle());
-
-    auto [w, h] = win.client_size();
-    SetWindowPos(_handle, nullptr, 0, 0, w, h, 0);
+void nao::layout::reposition() {
+    // Need an empty implementation for when a resize event is received during construction
 }
