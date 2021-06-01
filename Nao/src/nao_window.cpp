@@ -7,9 +7,9 @@
 nao_window::nao_window()
     : main_window{ "Nao" }
     , _layout { *this }
-    , _button1{ "Browse", _layout }
-    , _button2{ "bar", _layout }
-    , _button3{ "baz", _layout } {
+    , _button1{ _layout, "Browse" }
+    , _button2{ _layout, "bar" }
+    , _button3{ _layout, "baz" } {
 
     set_minimum_size(480, 320);
     _button1.set_maximum_size(73, 23);

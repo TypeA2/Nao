@@ -25,17 +25,9 @@ namespace nao {
     class main_window : public window {
         NAO_LOGGER(main_window)
 
-        layout* _layout{};
-        size _min_size{};
-
         public:
         explicit main_window(std::string_view title = "");
 
         void set_title(std::string_view title) const;
-
-        void set_layout(layout& l);
-
-        protected:
-        event_result on_resize(resize_event& e) override;
     };
 }

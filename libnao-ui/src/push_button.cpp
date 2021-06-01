@@ -21,7 +21,7 @@
 
 #include "layout.h"
 
-nao::push_button::push_button(std::string_view text, layout& parent) : window{
+nao::push_button::push_button(layout& parent, std::string_view text) : window{
         {
             .builtin = true,
             .cls = WC_BUTTONA,

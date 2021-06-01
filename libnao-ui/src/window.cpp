@@ -22,6 +22,8 @@
 
 #include <libnao/util/encoding.h>
 
+#include "layout.h"
+
 nao::window::window(const window_descriptor& w)
     : _min_size{ GetSystemMetrics(SM_CXMINTRACK), GetSystemMetrics(SM_CYMINTRACK) }
     , _max_size{ GetSystemMetrics(SM_CXMAXTRACK), GetSystemMetrics(SM_CYMAXTRACK) } {
@@ -84,6 +86,10 @@ nao::event_result nao::window::on_event(event& e) {
 
 
 nao::event_result nao::window::on_resize(resize_event& e) {
+    if (_layout) {
+        return _layout->on_resize(e);
+    }
+
     _last_msg_result = e.native().call_default();
 
     return event_result::ok;
@@ -176,6 +182,11 @@ void nao::window::set_maximum_size(long w, long h) {
 
 nao::size nao::window::maximum_size() const {
     return _max_size;
+}
+
+void nao::window::_set_layout(layout& l) {
+    l._set_parent(*this);
+    _layout = &l;
 }
 
 

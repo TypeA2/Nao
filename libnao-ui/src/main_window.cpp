@@ -36,30 +36,4 @@ namespace nao {
 
         SetWindowTextW(_handle, utf8_to_wide(title).c_str());
     }
-
-
-    void main_window::set_layout(layout& l) {
-        if (_layout) {
-            logger().warn("Overwriting layout {} with {}", fmt::ptr(_layout), fmt::ptr(&l));
-        } else {
-            logger().debug("Setting layout to {}", fmt::ptr(&l));
-        }
-
-        l._set_parent(*this);
-
-        _layout = &l;
-    }
-
-
-    event_result main_window::on_resize(resize_event& e) {
-        if (_layout) {
-            event_result res = _layout->on_event(e);
-
-            RedrawWindow(_layout->handle(), nullptr, nullptr, RDW_ALLCHILDREN);
-
-            return res;
-        }
-
-        return window::on_resize(e);
-    }
 }

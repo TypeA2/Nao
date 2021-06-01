@@ -22,17 +22,38 @@
 #include <vector>
 
 namespace nao {
-    class horizontal_layout : public layout {
-        NAO_LOGGER(horizontal_layout)
+    enum class layout_direction {
+        horizontal,
+        vertical,
+    };
+
+    class directional_layout : public layout {
+        NAO_LOGGER(horizontal_layout);
 
         std::vector<window*> _children;
+        layout_direction _direction;
+
         public:
-        using layout::layout;
+        directional_layout(window& parent, layout_direction dir);
 
         void add_element(window& element) override;
 
         protected:
         event_result on_resize(resize_event& e) override;
         void reposition() override;
+
+        private:
+        void _reposition_horizontal();
+        void _reposition_vertical();
+    };
+
+    class horizontal_layout : public directional_layout {
+        public:
+        explicit horizontal_layout(window& parent);
+    };
+
+    class vertical_layout : public directional_layout {
+        public:
+        explicit vertical_layout(window& parent);
     };
 }

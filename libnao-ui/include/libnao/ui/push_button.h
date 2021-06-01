@@ -32,7 +32,7 @@ namespace nao {
         icon _icon;
 
         public:
-        push_button(std::string_view text, layout& parent);
+        push_button(layout& parent, std::string_view text);
 
         void set_icon(icon icon);
     };

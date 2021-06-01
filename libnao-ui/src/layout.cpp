@@ -19,14 +19,14 @@
 
 #include "main_window.h"
 
-nao::layout::layout(main_window& w) : window{
+nao::layout::layout(window& w) : window{
         {
             .cls = "nao_layout",
             .style = WS_VISIBLE | WS_CHILD,
             .pos = { 0, 0 },
             .parent = &w
         } } {
-    w.set_layout(*this);
+    w._set_layout(*this);
 }
 
 
@@ -68,7 +68,7 @@ nao::event_result nao::layout::on_resize(resize_event& e) {
 }
 
 
-void nao::layout::_set_parent(main_window& win) const {
+void nao::layout::_set_parent(window& win) const {
     logger().debug("Attaching to {}", fmt::ptr(&win));
 
     SetParent(_handle, win.handle());

@@ -33,7 +33,7 @@ class nao::layout : public window {
     long _content_spacing{};
 
     public:
-    explicit layout(main_window& w);
+    explicit layout(window& w);
 
     virtual void add_element(window& element) = 0;
 
@@ -62,6 +62,6 @@ class nao::layout : public window {
     virtual void reposition() = 0;
 
     private:
-    friend class main_window;
-    void _set_parent(main_window& win) const;
+    friend class window;
+    void _set_parent(window& win) const;
 };

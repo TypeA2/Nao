@@ -24,12 +24,17 @@
 #include <libnao/util/logging.h>
 
 namespace nao {
+    class layout;
+
     class window {
         NAO_LOGGER(window)
 
         LRESULT _last_msg_result{};
-        size _min_size;
-        size _max_size;
+        size _min_size{};
+        size _max_size{};
+
+        // Contained layout, if applicable
+        layout* _layout{};
 
         protected:
         HWND _handle{};
@@ -92,6 +97,10 @@ namespace nao {
         void set_maximum_size(const size& size);
         void set_maximum_size(long w, long h);
         [[nodiscard]] size maximum_size() const;
+
+        protected:
+        friend class layout;
+        void _set_layout(layout& l);
 
         private:
         void _create_window(const window_descriptor& w);
