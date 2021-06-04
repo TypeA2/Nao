@@ -25,15 +25,6 @@ nao::directional_layout::directional_layout(window& parent, layout_direction dir
     
 }
 
-
-void nao::directional_layout::add_element(window& element) {
-    logger().debug("Adding child {}", fmt::ptr(&element));
-    layout::add_element(element);
-
-    _children.push_back(&element);
-    reposition();
-}
-
 void nao::directional_layout::reposition() {
     switch (_direction) {
         case layout_direction::horizontal:
@@ -47,7 +38,7 @@ void nao::directional_layout::reposition() {
 }
 
 void nao::directional_layout::_reposition_horizontal() {
-    int count = static_cast<int>(_children.size());
+    int count = static_cast<int>(children.size());
     logger().trace("Repositioning {} children horizontall to fit in {}", count, client_size());
 
     auto [w, h] = client_size();
@@ -62,15 +53,22 @@ void nao::directional_layout::_reposition_horizontal() {
 
     long remaining_pixels = w;
 
-    for (long pos_x = left; auto [win, i] : _children | with_index) {
-        HWND hwnd = win->handle();
+    for (long pos_x = left; auto [item, i] : children | with_index) {
+        window& win = item->item();
+        HWND hwnd = win.handle();
 
-        size target = win->constrain_size({
+        size target = win.constrain_size({
             .w = remaining_pixels / (count - static_cast<long>(i)),
             .h = h,
-        }).fit_in(win->parent() ? win->parent()->client_size() : size::max());
+        }).fit_in(win.parent() ? win.parent()->client_size() : size::max());
 
-        dwp = DeferWindowPos(dwp, hwnd, nullptr, pos_x, top, target.w, target.h, 0);
+        margins padding = win.padding();
+
+        dwp = DeferWindowPos(dwp, hwnd, nullptr,
+                             pos_x + padding.left,
+                             top + padding.top,
+                             target.w - padding.left - padding.right,
+                             target.h - padding.top - padding.bot, 0);
 
         pos_x += target.w + spacing;
         remaining_pixels -= target.w;
@@ -82,7 +80,7 @@ void nao::directional_layout::_reposition_horizontal() {
 }
 
 void nao::directional_layout::_reposition_vertical() {
-    int count = static_cast<int>(_children.size());
+    int count = static_cast<int>(children.size());
     logger().trace("Repositioning {} children vertically to fit in {}", count, client_size());
     
     auto [w, h] = client_size();
@@ -97,16 +95,22 @@ void nao::directional_layout::_reposition_vertical() {
 
     long remaining_pixels = h;
 
-    for (long pos_y = top; auto [win, i] : _children | with_index) {
-        HWND hwnd = win->handle();
+    for (long pos_y = top; auto [item, i] : children | with_index) {
+        window& win = item->item();
+        HWND hwnd = win.handle();
 
-
-        size target = win->constrain_size({
+        size target = win.constrain_size({
             .w = w,
             .h = remaining_pixels / (count - static_cast<long>(i)),
-        }).fit_in(win->parent() ? win->parent()->client_size() : size::max());
+        }).fit_in(win.parent() ? win.parent()->client_size() : size::max());
+
+        margins padding = win.padding();
         
-        dwp = DeferWindowPos(dwp, hwnd, nullptr, left, pos_y, target.w, target.h, 0);
+        dwp = DeferWindowPos(dwp, hwnd, nullptr,
+                             left + padding.left,
+                             pos_y + padding.top,
+                             target.w - padding.left - padding.right,
+                             target.h - padding.top - padding.bot, 0);
 
         pos_y += target.h + spacing;
         remaining_pixels -= target.h;

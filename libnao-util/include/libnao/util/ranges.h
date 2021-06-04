@@ -14,7 +14,7 @@ namespace nao {
             using iterator_category = typename base_iterator::iterator_category;
             using value_type = decltype(std::invoke(Fn{}, *base_iterator{}));
             using difference_type = typename base_iterator::difference_type;
-            using pointer = value_type*;
+            using pointer = std::remove_reference_t<value_type>*;
             using reference = value_type&;
 
             private:
@@ -102,7 +102,7 @@ namespace nao {
             using iterator_concept = typename base_iterator::iterator_concept;
             using iterator_category = typename base_iterator::iterator_category;
             using size_type = size_t;
-            using value_type = std::pair<typename base_iterator::value_type, size_type>;
+            using value_type = std::pair<typename base_iterator::value_type&, size_type>;
             using difference_type = typename base_iterator::difference_type;
             using pointer = value_type*;
             using reference = value_type&;
@@ -260,9 +260,9 @@ namespace nao {
 
     template <std::ranges::input_range R>
     class with_index_view : public std::ranges::view_interface<with_index_view<R>> {
-        R _range;
+        R _range{};
         public:
-        constexpr with_index_view(R range) : _range { std::move(range) } { }
+        constexpr explicit with_index_view(R range) : _range{ std::move(range) } { }
 
 
         constexpr auto begin() {
@@ -275,19 +275,17 @@ namespace nao {
         }
 
 
-        constexpr auto begin() const requires std::ranges::range<const R> {
+        [[nodiscard]] constexpr auto begin() const requires std::ranges::range<const R> {
             return impl::with_index_iterator<true, R>{ std::ranges::begin(_range), 0 };
         }
 
-        constexpr auto end() const requires std::ranges::range<const R> {
+        [[nodiscard]] constexpr auto end() const requires std::ranges::range<const R> {
             return impl::with_index_iterator<true, R>{
                 std::ranges::end(_range), std::ranges::size(_range) };
         }
 
 
-        constexpr auto size() const requires
-            requires { std::ranges::size(_range); }
-        {
+        [[nodiscard]] constexpr auto size() const requires requires { std::ranges::size(_range); } {
             return std::ranges::size(_range);
         }
     };
@@ -295,14 +293,14 @@ namespace nao {
     // Implements a callable and a direct pipe operator
     class with_index_fun {
         public:
-        template <std::ranges::input_range R>
+        template <std::ranges::viewable_range R>
         [[nodiscard]] constexpr auto operator()(R&& range) const {
-            return with_index_view{ std::forward<R>(range) };
+            return with_index_view{ std::views::all(std::forward<R>(range)) };
         }
 
-        template <std::ranges::input_range R>
-        [[nodiscard]] friend constexpr auto operator|(R&& range, const with_index_fun&) {
-            return with_index_view{ std::forward<R>(range) };
+        template <typename R>
+        [[nodiscard]] friend constexpr auto operator|(R&& range, const with_index_fun& fun) {
+            return fun(std::forward<R>(range));
         }
     };
 

@@ -60,4 +60,7 @@ namespace nao::win32 {
             return static_cast<T>(handle());
         }
     };
+
+    /* Set or unset a specific style for the given window */
+    void set_style(HWND hwnd, DWORD style, bool enable);
 }

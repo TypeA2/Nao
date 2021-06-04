@@ -35,6 +35,10 @@ namespace nao {
         LRESULT _last_msg_result{};
         size _min_size{};
         size _max_size{};
+        margins _padding{};
+
+        /* Optionally, this objec'ts name */
+        std::string _name;
 
         // Parent window, if set
         window* _parent{};
@@ -77,6 +81,11 @@ namespace nao {
         [[nodiscard]] virtual event_result on_event(event& e);
         [[nodiscard]] virtual event_result on_resize(resize_event& e);
 
+        /**
+         * Send the given event to the requested instance.
+         */
+        [[nodiscard]] static event_result send_event(window& win, event& e);
+
         public:
         explicit window(window& w);
         window() = delete;
@@ -99,7 +108,7 @@ namespace nao {
         [[nodiscard]] size constrain_size(size s) const;
 
         /**
-         * Set minimum and maximum dimensions.
+         * Set minimum and maximum dimensions, including padding.
          * Negative values reset axis to default.
          */
         void set_minimum_size(const size& size);
@@ -110,7 +119,19 @@ namespace nao {
         void set_maximum_size(long w, long h);
         [[nodiscard]] size maximum_size() const;
 
-        /* Set the contained window */
+        void set_padding(const margins& padding);
+        void set_padding(long top, long right, long bot, long left);
+        [[nodiscard]] margins padding() const;
+
+        /* Window name */
+        void set_name(std::string_view name);
+        [[nodiscard]] std::string_view name() const;
+
+        /**
+         * Set the contained window.
+         * @note Derived classes should call this on the parent in the constructor to ensure
+         *          that the vfptr is setup correctly.
+         */
         virtual void set_window(window& w);
 
         /* Set the window's parent */

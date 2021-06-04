@@ -19,6 +19,14 @@
 
 #include "main_window.h"
 
+nao::layout_item::layout_item(window& win) : _child{ win } {
+    
+}
+
+nao::window& nao::layout_item::item() const {
+    return _child;
+}
+
 nao::layout::layout(window& w) : window{
         {
             .cls = "nao_layout",
@@ -30,6 +38,7 @@ nao::layout::layout(window& w) : window{
 }
 
 void nao::layout::add_element(window& element) {
+    children.emplace_back(make_item(element));
     element.set_parent(*this);
 }
 
@@ -62,6 +71,27 @@ void nao::layout::set_window(window& w) {
     add_element(w);
 }
 
+nao::event_result nao::layout::on_event(event& e) {
+    const event::native_event& native = e.native();
+
+    // Command sent to child of this window
+    if (auto child = reinterpret_cast<HWND>(native.lparam);
+        native.msg == WM_COMMAND
+        && GetParent(child) == _handle) {
+        
+        auto it = std::ranges::find_if(children, [&](auto& item) {
+            return item->item().handle() == child;
+        });
+
+        if (it != children.end()) {
+            return send_event((*it)->item(), e);
+        }
+    }
+
+    return window::on_event(e);
+}
+
+
 nao::event_result nao::layout::on_resize(resize_event& e) {
     reposition();
     return event_result::ok;
@@ -69,4 +99,8 @@ nao::event_result nao::layout::on_resize(resize_event& e) {
 
 void nao::layout::reposition() {
     // Need an empty implementation for when a resize event is received during construction
+}
+
+std::unique_ptr<nao::layout_item> nao::layout::make_item(window& element) {
+    return std::make_unique<layout_item>(element);
 }

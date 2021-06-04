@@ -86,6 +86,14 @@ nao::event_result nao::window::on_event(event& e) {
             break;
         }
 
+        case WM_COMMAND: {
+            // Forward to child
+            if (_child && _child->handle() == reinterpret_cast<HWND>(native.lparam)) {
+                return _child->on_event(e);
+            }
+            break;
+        }
+
         default:
             _last_msg_result = native.call_default();
     }
@@ -105,6 +113,10 @@ nao::event_result nao::window::on_resize(resize_event& e) {
     _last_msg_result = e.native().call_default();
 
     return event_result::ok;
+}
+
+nao::event_result nao::window::send_event(window& win, event& e) {
+    return win.on_event(e);
 }
 
 HWND nao::window::handle() const {
@@ -197,6 +209,26 @@ nao::size nao::window::maximum_size() const {
     return _max_size;
 }
 
+void nao::window::set_padding(const margins& padding) {
+    _padding = padding;
+}
+
+void nao::window::set_padding(long top, long right, long bot, long left) {
+    _padding = { top, right, bot, left };
+}
+
+nao::margins nao::window::padding() const {
+    return _padding;
+}
+
+void nao::window::set_name(std::string_view name) {
+    _name = name;
+}
+
+std::string_view nao::window::name() const {
+    return _name;
+}
+
 void nao::window::set_window(window& w) {
     w.set_parent(*this);
     _child = &w;
@@ -240,7 +272,7 @@ void nao::window::_create_window(const window_descriptor& w) {
     _handle = CreateWindowExW(
         w.ex_style,
         cls_wide.c_str(),
-        utf8_to_wide(w.name).c_str(),
+        w.name.empty() ? nullptr : utf8_to_wide(w.name).c_str(),
         w.style,
         w.pos.x, w.pos.y, w.size.w, w.size.h,
         w.parent ? w.parent->_handle : nullptr, nullptr,
@@ -258,7 +290,8 @@ LRESULT nao::window::wnd_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
 
     // May need to be set
     if (_this) {
-        logger().trace("Handling message: msg={:<#8x} wparam={:<#16x} lparam={:<#16x}", msg, wparam, lparam);
+        logger().trace("Handling message: msg={:<#8x} wparam={:<#16x} lparam={:<#16x}",
+                       msg, wparam, lparam);
 
         event e { { hwnd, msg, wparam, lparam } };
         (void)_this->on_event(e);

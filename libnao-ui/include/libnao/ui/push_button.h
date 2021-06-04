@@ -28,10 +28,13 @@ namespace nao {
         win32::gdi_object _font;
 
         icon _icon;
+        std::string _text;
 
         public:
+        explicit push_button(window& parent);
         push_button(window& parent, std::string_view text);
 
         void set_icon(icon icon);
+        void set_text(std::string_view text);
     };
 }

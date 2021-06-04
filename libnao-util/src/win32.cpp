@@ -37,3 +37,15 @@ nao::win32::gdi_object& nao::win32::gdi_object::operator=(gdi_object&& other) no
 HGDIOBJ nao::win32::gdi_object::handle() const {
     return _obj;
 }
+
+void nao::win32::set_style(HWND hwnd, DWORD style, bool enable) {
+    auto old_style = static_cast<DWORD>(GetWindowLongPtrW(hwnd, GWL_STYLE));
+
+    // Don't re-apply style
+    if (enable && !(old_style & style)) {
+        SetWindowLongPtrW(hwnd, GWL_STYLE, old_style | style);
+    } else if (!enable && (old_style & style)) {
+        SetWindowLongPtrW(hwnd, GWL_STYLE, old_style & ~style);
+    }
+}
+

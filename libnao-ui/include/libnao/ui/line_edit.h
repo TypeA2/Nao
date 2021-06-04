@@ -14,40 +14,27 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with libnao-ui.  If not, see <https://www.gnu.org/licenses/>.
  */
-
 #pragma once
 
-#include "layout.h"
+#include "window.h"
+
+#include <libnao/util/win32.h>
 
 namespace nao {
-    enum class layout_direction {
-        horizontal,
-        vertical,
-    };
+    class line_edit : public window {
+        NAO_LOGGER(line_edit)
 
-    class directional_layout : public layout {
-        NAO_LOGGER(horizontal_layout)
-
-        layout_direction _direction;
+        win32::gdi_object _font;
+        std::string _text;
 
         public:
-        directional_layout(window& parent, layout_direction dir);
+        explicit line_edit(window& parent);
+        line_edit(window& parent, std::string_view text);
+
+        void set_text(std::string_view text);
+        [[nodiscard]] std::string_view text() const;
 
         protected:
-        void reposition() override;
-
-        private:
-        void _reposition_horizontal();
-        void _reposition_vertical();
-    };
-
-    class horizontal_layout : public directional_layout {
-        public:
-        explicit horizontal_layout(window& parent);
-    };
-
-    class vertical_layout : public directional_layout {
-        public:
-        explicit vertical_layout(window& parent);
+        [[nodiscard]] event_result on_event(event& e) override;
     };
 }

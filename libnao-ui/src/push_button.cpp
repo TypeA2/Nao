@@ -20,17 +20,18 @@
 #include <CommCtrl.h>
 
 #include "layout.h"
+#include <libnao/util/encoding.h>
 
-nao::push_button::push_button(window& parent, std::string_view text) : window{
-        {
-            .builtin = true,
-            .cls = WC_BUTTONA,
-            .style = WS_VISIBLE | WS_CHILD | WS_TABSTOP,
-            .name = text,
-            .pos = { 0, 0 },
-            .size = { 50, 50 },
-            .parent = &parent,
-        } } {
+
+nao::push_button::push_button(window& parent) : window{
+    {
+        .builtin = true,
+        .cls = WC_BUTTONA,
+        .style = WS_VISIBLE | WS_CHILD | WS_TABSTOP,
+        .pos = { 0, 0 },
+        .size = { 50, 50 },
+        .parent = &parent,
+    } } {
 
     // Unset font is weird, fix it
     NONCLIENTMETRICS metrics{
@@ -45,8 +46,26 @@ nao::push_button::push_button(window& parent, std::string_view text) : window{
     parent.set_window(*this);
 }
 
+nao::push_button::push_button(window& parent, std::string_view text) : push_button{ parent } {
+    set_text(text);
+}
+
 void nao::push_button::set_icon(icon icon) {
+    // Fix styles
+    // If there is no text, show icon only, else show both
+    win32::set_style(_handle, BS_ICON, _text.empty());
+    
     _icon = std::move(icon);
 
     SendMessageW(_handle, BM_SETIMAGE, IMAGE_ICON, reinterpret_cast<LPARAM>(_icon.handle()));
+}
+
+void nao::push_button::set_text(std::string_view text) {
+    // Disable icon if only icon is set
+    win32::set_style(_handle, BS_ICON, _icon.handle());
+
+    _text = text;
+    
+    auto wide = utf8_to_wide(_text);
+    SendMessageW(_handle, WM_SETTEXT, 0, reinterpret_cast<LPARAM>(wide.c_str()));
 }
