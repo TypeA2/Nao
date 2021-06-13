@@ -306,6 +306,26 @@ namespace nao {
 
     // Range view that returns a pair, which contains the dereferenced value and the index
     inline constexpr with_index_fun with_index;
+
+
+    class to_vector_fun {
+        public:
+        // See: https://stackoverflow.com/a/63116423/8662472
+        template <std::ranges::range R>
+        [[nodiscard]] constexpr auto operator()(R&& range) const {
+            auto common = range | std::views::common;
+            return std::vector(std::ranges::begin(common), std::ranges::end(common));
+        }
+
+        // Support pipe
+        template <std::ranges::range R>
+        [[nodiscard]] friend constexpr auto operator|(R&& range, const to_vector_fun& fun) {
+            return fun(std::forward<R>(range));
+        }
+    };
+
+    // A fake view which just turns the input range into a vector
+    inline constexpr to_vector_fun to_vector;
 }
 
 namespace std {

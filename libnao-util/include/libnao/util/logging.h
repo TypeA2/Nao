@@ -19,12 +19,12 @@
 
 #include <spdlog/spdlog.h>
 
-// TODO something so this can be followed by a semicolon
 #define NAO_LOGGER(name) \
     static spdlog::logger& logger() { \
         static spdlog::logger logger = ::nao::make_logger(#name, ::nao::default_logging_level); \
         return logger; \
-    }
+    } \
+    static_assert(true, "semicolon required")
 
 namespace nao {
     extern spdlog::logger log;

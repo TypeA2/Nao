@@ -7,8 +7,12 @@
 #include <libnao/ui/directional_layout.h>
 #include <libnao/ui/push_button.h>
 
+class nao_presenter;
+
 class nao_window : public nao::main_window {
-    NAO_LOGGER(nao_window)
+    NAO_LOGGER(nao_window);
+
+    nao_presenter& _presenter;
 
     nao::horizontal_layout _layout;
 
@@ -16,5 +20,5 @@ class nao_window : public nao::main_window {
     nao::push_button _right;
 
     public:
-    explicit nao_window();
+    explicit nao_window(nao_presenter& presenter);
 };

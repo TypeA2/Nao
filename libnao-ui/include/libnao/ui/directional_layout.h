@@ -26,7 +26,7 @@ namespace nao {
     };
 
     class directional_layout : public layout {
-        NAO_LOGGER(horizontal_layout)
+        NAO_LOGGER(horizontal_layout);
 
         layout_direction _direction;
 

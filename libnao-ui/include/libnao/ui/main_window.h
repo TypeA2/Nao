@@ -23,7 +23,7 @@ namespace nao {
     class layout;
 
     class main_window : public window {
-        NAO_LOGGER(main_window)
+        NAO_LOGGER(main_window);
 
         public:
         explicit main_window(std::string_view title = "");

@@ -41,45 +41,76 @@ void nao::directional_layout::_reposition_horizontal() {
     int count = static_cast<int>(children.size());
     logger().trace("Repositioning {} children horizontall to fit in {}", count, client_size());
 
+    if (count == 0) {
+        return;
+    }
+
     auto [w, h] = client_size();
     auto [top, right, bot, left] = content_margins();
     long spacing = content_spacing();
 
-    // Remove all margins from the width/height
-    w = std::max<long>(0, w - left - right - ((count - 1) * spacing));
-    h = std::max<long>(0, h - top - bot);
-
     HDWP dwp = BeginDeferWindowPos(count);
 
-    long remaining_pixels = w;
+    // Disregard margins
+    long remaining_pixels = std::max<long>(0, w - left - right - ((count - 1) * spacing));
 
-    for (long pos_x = left; auto [item, i] : children | with_index) {
-        window& win = item->item();
-        HWND hwnd = win.handle();
+    struct layout_helper {
+        window& win;
+        size max;
+        long width;
+    };
 
-        size target = win.constrain_size({
-            .w = remaining_pixels / (count - static_cast<long>(i)),
-            .h = h,
-        }).fit_in(win.parent() ? win.parent()->client_size() : size::max());
+    auto converter = [&](std::unique_ptr<layout_item>& ptr) {
+        window& win = ptr->item();
+        return layout_helper{
+            .win = win,
+            .max = win.maximum_size().fit_in(
+                win.parent() ? win.parent()->client_size() : size::max()),
+            .width = 0,
+        };
+    };
 
+    std::vector<layout_helper> sizes = children | std::views::transform(converter) | to_vector;
+
+    // Increase each element's size by 1 pixel until the control is at it's max size,
+    // or there is no more space left. This should provide working fill-to-fit,
+    // and the performance was benchmarked to not be signficantly slower than the actual
+    // DeferWindowPos step (~0.7ms vs 3.5ms).
+    auto it = sizes.begin();
+    while (remaining_pixels > 0) {
+        auto& [win, max, width] = *it++;
+
+        if (width < max.w) {
+            width += 1;
+            remaining_pixels -= 1;
+        }
+
+        if (it == sizes.end()) {
+            it = sizes.begin();
+        }
+    }
+
+
+    for (long pos_x = left;  const auto & [win, max, width] : sizes) {
         margins padding = win.padding();
 
-        dwp = DeferWindowPos(dwp, hwnd, nullptr,
-                             pos_x + padding.left,
-                             top + padding.top,
-                             target.w - padding.left - padding.right,
-                             target.h - padding.top - padding.bot, 0);
+        dwp = DeferWindowPos(dwp, win.handle(), nullptr,
+            pos_x + padding.left,
+            top + padding.top,
+            width - padding.left - padding.right,
+            max.h - padding.top - padding.bot, 0);
 
-        pos_x += target.w + spacing;
-        remaining_pixels -= target.w;
+        pos_x += width + spacing;
     }
 
     if (!EndDeferWindowPos(dwp)) {
         logger().critical("Failed to reposition {} children", count);
     }
+
 }
 
 void nao::directional_layout::_reposition_vertical() {
+    // TODO apply horizontal layout algorithm
     int count = static_cast<int>(children.size());
     logger().trace("Repositioning {} children vertically to fit in {}", count, client_size());
     

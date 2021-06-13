@@ -47,7 +47,7 @@ class nao::layout_item {
 };
 
 class nao::layout : public window {
-    NAO_LOGGER(layout)
+    NAO_LOGGER(layout);
 
     margins _content_margins{};
     long _content_spacing{};

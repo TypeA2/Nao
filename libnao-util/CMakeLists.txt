@@ -9,7 +9,8 @@ add_library(libnao-util STATIC
 	"include/libnao/util/concepts.h"
 	"include/libnao/util/_win32_formatters.h" 
 	"include/libnao/util/win32.h"          "src/win32.cpp"
-	"include/libnao/util/shared_library.h" "src/shared_library.cpp")
+	"include/libnao/util/shared_library.h" "src/shared_library.cpp"
+	"include/libnao/util/event_handler.h")
 
 set_property(TARGET libnao-util PROPERTY CXX_STANDARD 20)
 set_property(TARGET libnao-util PROPERTY MSVC_RUNTIME_LIBRARY MultiThreadedDebug)

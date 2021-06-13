@@ -2,8 +2,10 @@
 
 add_executable(Nao WIN32
 	"src/Nao.cpp"
-	"include/nao_window.h"  "src/nao_window.cpp"
-	"include/left_window.h" "src/left_window.cpp"
+	"include/nao_presenter.h" "src/nao_presenter.cpp"
+	"include/nao_model.h"     "src/nao_model.cpp"
+	"include/nao_window.h"    "src/nao_window.cpp"
+	"include/left_window.h"   "src/left_window.cpp"
 )
 
 set_property(TARGET Nao PROPERTY CXX_STANDARD 20)

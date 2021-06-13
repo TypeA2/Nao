@@ -6,6 +6,8 @@
 #include <libnao/ui/directional_layout.h>
 
 class left_window : public nao::window {
+    NAO_LOGGER(left_window);
+
     nao::vertical_layout _layout;
 
     nao::horizontal_layout _controls_layout;

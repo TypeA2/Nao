@@ -40,4 +40,6 @@ left_window::left_window(window& parent)
     assert(res == S_OK);
 
     _browse.set_icon({ browse_icon });
+
+    _refresh.on_click.add([] { logger().debug("Refreshing!"); });
 }

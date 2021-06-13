@@ -91,6 +91,7 @@ nao::event_result nao::window::on_event(event& e) {
             if (_child && _child->handle() == reinterpret_cast<HWND>(native.lparam)) {
                 return _child->on_event(e);
             }
+
             break;
         }
 

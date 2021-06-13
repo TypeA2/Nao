@@ -14,7 +14,6 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with libnao-ui.  If not, see <https://www.gnu.org/licenses/>.
  */
-
 #pragma once
 
 #include "window.h"
@@ -22,9 +21,11 @@
 #include "icon.h"
 
 #include <libnao/util/win32.h>
+#include <libnao/util/event_handler.h>
 
 namespace nao {
     class push_button : public window {
+        NAO_LOGGER(push_button);
         win32::gdi_object _font;
 
         icon _icon;
@@ -36,5 +37,10 @@ namespace nao {
 
         void set_icon(icon icon);
         void set_text(std::string_view text);
+
+        event_handler<> on_click;
+
+        protected:
+        [[nodiscard]] event_result on_event(event& e);
     };
 }

@@ -27,7 +27,7 @@ nao::push_button::push_button(window& parent) : window{
     {
         .builtin = true,
         .cls = WC_BUTTONA,
-        .style = WS_VISIBLE | WS_CHILD | WS_TABSTOP,
+        .style = WS_VISIBLE | WS_CHILD,
         .pos = { 0, 0 },
         .size = { 50, 50 },
         .parent = &parent,
@@ -68,4 +68,18 @@ void nao::push_button::set_text(std::string_view text) {
     
     auto wide = utf8_to_wide(_text);
     SendMessageW(_handle, WM_SETTEXT, 0, reinterpret_cast<LPARAM>(wide.c_str()));
+}
+
+nao::event_result nao::push_button::on_event(event& e) {
+    const auto& native = e.native();
+
+    if (native.msg == WM_COMMAND && _handle == reinterpret_cast<HWND>(native.lparam)) {
+        if (HIWORD(native.wparam) == BN_CLICKED) {
+            on_click.call();
+        }
+        
+        return event_result::ok;
+    }
+
+    return window::on_event(e);
 }

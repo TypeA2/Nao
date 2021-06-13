@@ -30,7 +30,7 @@ namespace nao {
     class layout;
 
     class window {
-        NAO_LOGGER(window)
+        NAO_LOGGER(window);
 
         LRESULT _last_msg_result{};
         size _min_size{};

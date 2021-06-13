@@ -22,7 +22,7 @@
 
 namespace nao {
     class line_edit : public window {
-        NAO_LOGGER(line_edit)
+        NAO_LOGGER(line_edit);
 
         win32::gdi_object _font;
         std::string _text;
