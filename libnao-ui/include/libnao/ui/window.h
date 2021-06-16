@@ -127,6 +127,10 @@ namespace nao {
         void set_name(std::string_view name);
         [[nodiscard]] std::string_view name() const;
 
+        /* Disabling/enabling */
+        void set_enabled(bool enabled);
+        [[nodiscard]] bool enabled() const;
+
         /**
          * Set the contained window.
          * @note Derived classes should call this on the parent in the constructor to ensure

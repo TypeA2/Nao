@@ -20,6 +20,8 @@
 
 #include <Windows.h>
 
+#include <filesystem>
+
 template <>
 struct fmt::formatter<GUID> {
     static constexpr auto parse(format_parse_context& ctx) {
@@ -37,5 +39,21 @@ struct fmt::formatter<GUID> {
                          "{{{:08X}-{:04X}-{:04X}-{:02X}{:02X}-{:02X}}}",
                          g.Data1, g.Data2, g.Data3, g.Data4[0], g.Data4[1],
                          join(g.Data4 + 2, g.Data4 + 8, ""));
+    }
+};
+template <>
+struct fmt::formatter<std::filesystem::path> {
+    static constexpr auto parse(format_parse_context& ctx) {
+        // Nothing to parse
+        if (ctx.begin() != ctx.end()) {
+            throw format_error("invalid GUID format");
+        }
+
+        return ctx.end();
+    }
+
+    template <typename FormatContext>
+    constexpr auto format(const std::filesystem::path& p, FormatContext& ctx) {
+        return format_to(ctx.out(), "{}", p.string());
     }
 };

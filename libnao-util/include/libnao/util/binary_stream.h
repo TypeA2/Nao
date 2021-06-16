@@ -14,28 +14,30 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with libnao-util.  If not, see <https://www.gnu.org/licenses/>.
  */
-
 #pragma once
 
-#include <spdlog/spdlog.h>
+#include "logging.h"
 
-#define NAO_LOGGER(name) \
-    static ::spdlog::logger& logger() { \
-        static ::spdlog::logger logger = ::nao::make_logger(#name, ::nao::default_logging_level); \
-        return logger; \
-    } \
-    static_assert(true, "semicolon required")
+#include <istream>
+#include <filesystem>
 
 namespace nao {
-    extern spdlog::logger log;
+    class binary_istream : public std::istream {
+        NAO_LOGGER(binary_istream);
 
-    inline constexpr spdlog::level::level_enum default_logging_level =
-#ifndef NDEBUG
-        spdlog::level::debug;
-#else
-        spdlog::level::info;
-#endif
+        std::unique_ptr<std::streambuf> _rdbuf;
 
-    spdlog::logger make_logger(std::string_view name);
-    spdlog::logger make_logger(std::string_view name, spdlog::level::level_enum level);
+        public:
+        /* Use the specified streambuf */
+        explicit binary_istream(std::unique_ptr<std::streambuf> rdbuf);
+
+        /* Open a file */
+        explicit binary_istream(const std::filesystem::path& path);
+
+        binary_istream(const binary_istream&) = delete;
+        binary_istream& operator=(const binary_istream&) = delete;
+
+        binary_istream(binary_istream&& other) noexcept;
+        binary_istream& operator=(binary_istream&& other) noexcept;
+    };
 }

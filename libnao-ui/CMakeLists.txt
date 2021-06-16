@@ -21,7 +21,6 @@ target_include_directories(libnao-ui PUBLIC "include")
 target_include_directories(libnao-ui PRIVATE
 	"include/libnao"
 	"include/libnao/ui"
-	"include/libnao/ui/widgets"
 )
 
 target_compile_definitions(libnao-ui PUBLIC UNICODE _UNICODE NOMINMAX)

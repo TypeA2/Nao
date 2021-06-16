@@ -5,8 +5,12 @@
 #include <libnao/ui/line_edit.h>
 #include <libnao/ui/directional_layout.h>
 
+class nao_presenter;
+
 class left_window : public nao::window {
     NAO_LOGGER(left_window);
+
+    nao_presenter& _presenter;
 
     nao::vertical_layout _layout;
 
@@ -19,5 +23,5 @@ class left_window : public nao::window {
     nao::push_button _filler2;
 
     public:
-    explicit left_window(window& parent);
+    explicit left_window(nao_presenter& presenter, window& parent);
 };

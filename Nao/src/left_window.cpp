@@ -1,12 +1,14 @@
 #include "left_window.h"
 
+#include "nao_presenter.h"
+
 #include <CommCtrl.h>
 
 #include <libnao/util/shared_library.h>
 
-
-left_window::left_window(window& parent)
+left_window::left_window(nao_presenter& presenter, window& parent)
     : window{ parent }
+    , _presenter{ presenter }
     , _layout{ *this }
     , _controls_layout{ _layout }
     , _up{ _controls_layout }
@@ -41,5 +43,6 @@ left_window::left_window(window& parent)
 
     _browse.set_icon({ browse_icon });
 
-    _refresh.on_click.add([] { logger().debug("Refreshing!"); });
+    _up.on_click.add(&nao_presenter::up, _presenter);
+    _refresh.on_click.add(&nao_presenter::refresh, _presenter);
 }

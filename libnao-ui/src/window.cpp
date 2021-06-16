@@ -230,13 +230,22 @@ std::string_view nao::window::name() const {
     return _name;
 }
 
+void nao::window::set_enabled(bool enabled) {
+    (void)this;
+    EnableWindow(_handle, enabled);
+}
+
+bool nao::window::enabled() const {
+    return IsWindowEnabled(_handle);
+}
+
 void nao::window::set_window(window& w) {
     w.set_parent(*this);
     _child = &w;
 }
 
 void nao::window::set_parent(window& win) {
-    logger().debug("Attaching to {}", fmt::ptr(&win));
+    logger().trace("Attaching to {}", fmt::ptr(&win));
 
     _parent = &win;
     SetParent(_handle, _parent->handle());
@@ -268,7 +277,7 @@ void nao::window::_create_window(const window_descriptor& w) {
         class_registry.insert(cls_wide);
     }
 
-    logger().debug("Creating instance of {} for {}", w.cls, fmt::ptr(this));
+    logger().trace("Creating instance of {} for {}", w.cls, fmt::ptr(this));
 
     _handle = CreateWindowExW(
         w.ex_style,
@@ -304,7 +313,7 @@ LRESULT nao::window::wnd_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpa
         auto* cs = reinterpret_cast<CREATESTRUCTW*>(lparam);
 
         if (auto* param = static_cast<window*>(cs->lpCreateParams)) {
-            logger().debug("Attaching callback for {}", fmt::ptr(hwnd));
+            logger().trace("Attaching callback for {}", fmt::ptr(hwnd));
 
             SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(param));
 

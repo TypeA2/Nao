@@ -4,7 +4,7 @@ nao_window::nao_window(nao_presenter& presenter)
     : main_window{ "Nao" }
     , _presenter{ presenter }
     , _layout { *this }
-    , _left{ _layout }
+    , _left{ _presenter, _layout }
     , _right{ _layout, "baz" }{
 
     set_minimum_size(480, 320);

@@ -40,8 +40,19 @@ namespace nao {
         event_handler& operator=(event_handler&&) noexcept = delete;
 
         template <std::invocable<Args...> Func>
-        void add(Func fptr, Args&&... args) {
-            _callbacks.emplace_back([&] { fptr(std::forward<Args>(args)...); });
+        void add(Func fptr) {
+            _callbacks.emplace_back([fptr](Args&&... args) {
+                fptr(std::forward<Args>(args)...);
+            });
+        }
+
+        template <typename Func, typename Inst>
+        void add(Func fptr, Inst& instance)
+                requires std::invocable<Func, Inst&, Args...> {
+
+            _callbacks.emplace_back([fptr, &instance](Args&&... args) {
+                std::invoke(fptr, instance, std::forward<Args>(args)...);
+            });
         }
 
         void call(Args&&... args) {

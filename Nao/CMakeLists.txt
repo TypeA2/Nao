@@ -12,5 +12,5 @@ set_property(TARGET Nao PROPERTY CXX_STANDARD 20)
 set_property(TARGET Nao PROPERTY MSVC_RUNTIME_LIBRARY MultiThreadedDebug)
 
 target_include_directories(Nao PRIVATE "include")
-target_link_libraries(Nao PRIVATE libnao-ui)
+target_link_libraries(Nao PRIVATE libnao-ui libnao-game)
 

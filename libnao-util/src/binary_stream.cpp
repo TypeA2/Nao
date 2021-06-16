@@ -14,28 +14,28 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with libnao-util.  If not, see <https://www.gnu.org/licenses/>.
  */
+#include "binary_stream.h"
 
-#pragma once
+#include <fstream>
+#include <format>
 
-#include <spdlog/spdlog.h>
+nao::binary_istream::binary_istream(std::unique_ptr<std::streambuf> rdbuf)
+    // Pointer should remain the same here
+    : std::istream{ rdbuf.get() }
+    , _rdbuf{ std::move(rdbuf) }{
+}
 
-#define NAO_LOGGER(name) \
-    static ::spdlog::logger& logger() { \
-        static ::spdlog::logger logger = ::nao::make_logger(#name, ::nao::default_logging_level); \
-        return logger; \
-    } \
-    static_assert(true, "semicolon required")
 
-namespace nao {
-    extern spdlog::logger log;
+nao::binary_istream::binary_istream(const std::filesystem::path& path)
+    : binary_istream{ std::unique_ptr<std::filebuf>{
+        (new std::filebuf())->open(path,std::ios::in | std::ios::binary) } } {
+    if (!_rdbuf)) {
+        logger().error("Failed to open file \"{}\"", path);
+        throw std::runtime_error(std::format("File \"{}\" does not exist", path));
+    }
+}
 
-    inline constexpr spdlog::level::level_enum default_logging_level =
-#ifndef NDEBUG
-        spdlog::level::debug;
-#else
-        spdlog::level::info;
-#endif
 
-    spdlog::logger make_logger(std::string_view name);
-    spdlog::logger make_logger(std::string_view name, spdlog::level::level_enum level);
+nao::binary_istream::binary_istream(binary_istream&& other) noexcept {
+
 }
