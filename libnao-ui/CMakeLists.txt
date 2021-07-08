@@ -2,7 +2,6 @@
 
 add_library(libnao-ui STATIC
 	"include/libnao/libnao_ui.h"              "src/libnao_ui.cpp"
-	"include/libnao/ui/defs.h"                "src/defs.cpp"
 	"include/libnao/ui/window.h"              "src/window.cpp"
 	"include/libnao/ui/message_loop.h"        "src/message_loop.cpp"
 	"include/libnao/ui/main_window.h"         "src/main_window.cpp"

@@ -19,7 +19,7 @@
 
 #include "window.h"
 
-namespace nao {
+namespace nao::ui {
     class layout;
 
     class main_window : public window {

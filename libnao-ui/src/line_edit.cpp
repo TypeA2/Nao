@@ -21,7 +21,7 @@
 #include <CommCtrl.h>
 
 
-nao::line_edit::line_edit(window& parent)
+nao::ui::line_edit::line_edit(window& parent)
     : window{
         {
             .builtin = true,
@@ -44,22 +44,22 @@ nao::line_edit::line_edit(window& parent)
     parent.set_window(*this);
 }
 
-nao::line_edit::line_edit(window& parent, std::string_view text)
+nao::ui::line_edit::line_edit(window& parent, std::string_view text)
     : line_edit{ parent } {
     set_text(text);
 }
 
-void nao::line_edit::set_text(std::string_view text) {
+void nao::ui::line_edit::set_text(std::string_view text) {
     _text = text;
     std::wstring wide = utf8_to_wide(text);
     SendMessageW(_handle, WM_SETTEXT, 0, reinterpret_cast<LPARAM>(wide.c_str()));
 }
 
-std::string_view nao::line_edit::text() const {
+std::string_view nao::ui::line_edit::text() const {
     return _text;
 }
 
-nao::event_result nao::line_edit::on_event(event& e) {
+nao::ui::event_result nao::ui::line_edit::on_event(event& e) {
     const event::native_event& native = e.native();
 
     switch (native.msg) {

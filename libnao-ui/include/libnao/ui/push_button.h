@@ -23,7 +23,7 @@
 #include <libnao/util/win32.h>
 #include <libnao/util/event_handler.h>
 
-namespace nao {
+namespace nao::ui {
     class push_button : public window {
         NAO_LOGGER(push_button);
         win32::gdi_object _font;

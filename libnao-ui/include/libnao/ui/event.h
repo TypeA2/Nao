@@ -17,11 +17,11 @@
 
 #pragma once
 
-#include "defs.h"
+#include <libnao/util/defs.h>
 
 #include <Windows.h>
 
-namespace nao {
+namespace nao::ui {
     enum class event_result {
         /* OK status */
         ok,

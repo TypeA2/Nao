@@ -19,7 +19,7 @@
 
 #include "layout.h"
 
-namespace nao {
+namespace nao::ui {
     enum class layout_direction {
         horizontal,
         vertical,

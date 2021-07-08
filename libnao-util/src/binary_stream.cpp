@@ -16,6 +16,8 @@
  */
 #include "binary_stream.h"
 
+#include "formatters.h"
+
 #include <fstream>
 #include <format>
 
@@ -29,13 +31,23 @@ nao::binary_istream::binary_istream(std::unique_ptr<std::streambuf> rdbuf)
 nao::binary_istream::binary_istream(const std::filesystem::path& path)
     : binary_istream{ std::unique_ptr<std::filebuf>{
         (new std::filebuf())->open(path,std::ios::in | std::ios::binary) } } {
-    if (!_rdbuf)) {
+    if (!_rdbuf) {
         logger().error("Failed to open file \"{}\"", path);
         throw std::runtime_error(std::format("File \"{}\" does not exist", path));
     }
 }
 
 
-nao::binary_istream::binary_istream(binary_istream&& other) noexcept {
+nao::binary_istream::binary_istream(binary_istream&& other) noexcept
+    : std::istream{ static_cast<std::istream&&>(other) }
+    , _rdbuf{ std::move(other._rdbuf) } {
 
+}
+
+nao::binary_istream& nao::binary_istream::operator=(binary_istream&& other) noexcept {
+    std::istream::operator=(static_cast<std::istream&&>(other));
+
+    _rdbuf = std::move(other._rdbuf);
+
+    return *this;
 }

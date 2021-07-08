@@ -17,9 +17,23 @@
 
 #pragma once
 
-namespace nao {
+#include <libnao/ui/event.h>
+
+#include <functional>
+#include <vector>
+
+namespace nao::ui {
     class message_loop final {
         public:
+        /* Event filter function, return true if the event should be discarded. */
+        using event_filter = std::function<bool(event&)>;
+
+        private:
+        std::vector<event_filter> _filters;
+
+        public:
         int run();
+
+        void add_filter(event_filter f);
     };
 }

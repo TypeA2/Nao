@@ -20,7 +20,7 @@
 
 #include <libnao/util/win32.h>
 
-namespace nao {
+namespace nao::ui {
     class line_edit : public window {
         NAO_LOGGER(line_edit);
 

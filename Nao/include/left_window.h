@@ -7,20 +7,20 @@
 
 class nao_presenter;
 
-class left_window : public nao::window {
+class left_window : public nao::ui::window {
     NAO_LOGGER(left_window);
 
     nao_presenter& _presenter;
 
-    nao::vertical_layout _layout;
+    nao::ui::vertical_layout _layout;
 
-    nao::horizontal_layout _controls_layout;
-    nao::push_button _up;
-    nao::push_button _refresh;
-    nao::line_edit _path;
-    nao::push_button _browse;
+    nao::ui::horizontal_layout _controls_layout;
+    nao::ui::push_button _up;
+    nao::ui::push_button _refresh;
+    nao::ui::line_edit _path;
+    nao::ui::push_button _browse;
 
-    nao::push_button _filler2;
+    nao::ui::push_button _filler2;
 
     public:
     explicit left_window(nao_presenter& presenter, window& parent);

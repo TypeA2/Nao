@@ -14,11 +14,30 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with libnao-ui.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include "defs.h"
 
-nao::size nao::size::fit_in(size other) const {
-    return {
-        .w = std::min<long>(w, other.w),
-        .h = std::min<long>(h, other.h),
+#pragma once
+
+#include <limits>
+
+namespace nao {
+    struct position {
+        long x, y;
+    };
+
+    struct size {
+        long w, h;
+
+        static constexpr size max() {
+            return size{
+                 .w = std::numeric_limits<long>::max(),
+                 .h = std::numeric_limits<long>::max(),
+            };
+        }
+
+        [[nodiscard]] size fit_in(size other) const;
+    };
+
+    struct margins {
+        long top, right, bot, left;
     };
 }

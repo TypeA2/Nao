@@ -24,13 +24,13 @@
 
 #include "layout.h"
 
-nao::window::window(const window_descriptor& w)
+nao::ui::window::window(const window_descriptor& w)
     : _min_size{ GetSystemMetrics(SM_CXMINTRACK), GetSystemMetrics(SM_CYMINTRACK) }
     , _max_size{ GetSystemMetrics(SM_CXMAXTRACK), GetSystemMetrics(SM_CYMAXTRACK) } {
     _create_window(w);
 }
 
-nao::window::window(window& w) : window{
+nao::ui::window::window(window& w) : window{
     {
         .builtin = false,
         .cls = "libnao_generic_window",
@@ -43,21 +43,21 @@ nao::window::window(window& w) : window{
     w.set_window(*this);
 }
 
-nao::window::~window() {
+nao::ui::window::~window() {
     DestroyWindow(_handle);
 }
 
 
-nao::window::window(window&& other) noexcept {
+nao::ui::window::window(window&& other) noexcept {
     *this = std::forward<window>(other);
 }
 
-nao::window& nao::window::operator=(window&& other) noexcept {
+nao::ui::window& nao::ui::window::operator=(window&& other) noexcept {
     _handle = std::exchange(other._handle, nullptr);
     return *this;
 }
 
-nao::event_result nao::window::on_event(event& e) {
+nao::ui::event_result nao::ui::window::on_event(event& e) {
     const auto& native = e.native();
 
     _last_msg_result = 0;
@@ -103,7 +103,7 @@ nao::event_result nao::window::on_event(event& e) {
     return event_result::ok;
 }
 
-nao::event_result nao::window::on_resize(resize_event& e) {
+nao::ui::event_result nao::ui::window::on_resize(resize_event& e) {
     if (_child) {
         auto [x, y] = _child->constrain_size(e.new_size());
         SetWindowPos(_child->handle(), nullptr, 0, 0, x, y, 0);
@@ -116,25 +116,25 @@ nao::event_result nao::window::on_resize(resize_event& e) {
     return event_result::ok;
 }
 
-nao::event_result nao::window::send_event(window& win, event& e) {
+nao::ui::event_result nao::ui::window::send_event(window& win, event& e) {
     return win.on_event(e);
 }
 
-HWND nao::window::handle() const {
+HWND nao::ui::window::handle() const {
     return _handle;
 }
 
-nao::window* nao::window::parent() const {
+nao::ui::window* nao::ui::window::parent() const {
     return _parent;
 }
 
-nao::size nao::window::client_size() const {
+nao::size nao::ui::window::client_size() const {
     RECT rect;
     GetClientRect(_handle, &rect);
     return { rect.right - rect.left, rect.bottom - rect.top };
 }
 
-nao::position nao::window::client_pos() const {
+nao::position nao::ui::window::client_pos() const {
     RECT rect;
     GetClientRect(_handle, &rect);
 
@@ -143,7 +143,7 @@ nao::position nao::window::client_pos() const {
     return { rect.left, rect.top };
 }
 
-nao::size nao::window::constrain_size(size s) const {
+nao::size nao::ui::window::constrain_size(size s) const {
     // Also constrain to parent
     return {
         .w = std::max<long>(std::min<long>(s.w, _max_size.w), _min_size.w),
@@ -151,7 +151,7 @@ nao::size nao::window::constrain_size(size s) const {
     };
 }
 
-void nao::window::set_minimum_size(const size& size) {
+void nao::ui::window::set_minimum_size(const size& size) {
     _min_size = size;
 
     if (_min_size.w < 0) {
@@ -176,15 +176,15 @@ void nao::window::set_minimum_size(const size& size) {
     }
 }
 
-void nao::window::set_minimum_size(long w, long h) {
+void nao::ui::window::set_minimum_size(long w, long h) {
     set_minimum_size({ w, h });
 }
 
-nao::size nao::window::minimum_size() const {
+nao::size nao::ui::window::minimum_size() const {
     return _min_size;
 }
 
-void nao::window::set_maximum_size(const size& size) {
+void nao::ui::window::set_maximum_size(const size& size) {
     _max_size = size;
 
     if (_max_size.w < 0) {
@@ -201,50 +201,50 @@ void nao::window::set_maximum_size(const size& size) {
     _min_size.h = std::min<long>(_min_size.h, _max_size.h);
 }
 
-void nao::window::set_maximum_size(long w, long h) {
+void nao::ui::window::set_maximum_size(long w, long h) {
     set_maximum_size({ w, h });
 }
 
 
-nao::size nao::window::maximum_size() const {
+nao::size nao::ui::window::maximum_size() const {
     return _max_size;
 }
 
-void nao::window::set_padding(const margins& padding) {
+void nao::ui::window::set_padding(const margins& padding) {
     _padding = padding;
 }
 
-void nao::window::set_padding(long top, long right, long bot, long left) {
+void nao::ui::window::set_padding(long top, long right, long bot, long left) {
     _padding = { top, right, bot, left };
 }
 
-nao::margins nao::window::padding() const {
+nao::margins nao::ui::window::padding() const {
     return _padding;
 }
 
-void nao::window::set_name(std::string_view name) {
+void nao::ui::window::set_name(std::string_view name) {
     _name = name;
 }
 
-std::string_view nao::window::name() const {
+std::string_view nao::ui::window::name() const {
     return _name;
 }
 
-void nao::window::set_enabled(bool enabled) {
+void nao::ui::window::set_enabled(bool enabled) {
     (void)this;
     EnableWindow(_handle, enabled);
 }
 
-bool nao::window::enabled() const {
+bool nao::ui::window::enabled() const {
     return IsWindowEnabled(_handle);
 }
 
-void nao::window::set_window(window& w) {
+void nao::ui::window::set_window(window& w) {
     w.set_parent(*this);
     _child = &w;
 }
 
-void nao::window::set_parent(window& win) {
+void nao::ui::window::set_parent(window& win) {
     logger().trace("Attaching to {}", fmt::ptr(&win));
 
     _parent = &win;
@@ -254,7 +254,7 @@ void nao::window::set_parent(window& win) {
     SetWindowPos(_handle, nullptr, 0, 0, w, h, 0);
 }
 
-void nao::window::_create_window(const window_descriptor& w) {
+void nao::ui::window::_create_window(const window_descriptor& w) {
     static std::unordered_set<std::wstring> class_registry;
 
     std::wstring cls_wide = utf8_to_wide(w.cls);
@@ -295,7 +295,7 @@ void nao::window::_create_window(const window_descriptor& w) {
     }
 }
 
-LRESULT nao::window::wnd_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
+LRESULT nao::ui::window::wnd_proc_fwd(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
     auto* _this = reinterpret_cast<window*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
 
     // May need to be set

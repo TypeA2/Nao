@@ -93,5 +93,7 @@ namespace nao::game {
 
         public:
         file_handler(std::string_view path, binary_istream stream);
+
+        [[nodiscard]] item_handler_tag tag() const override;
     };
 }

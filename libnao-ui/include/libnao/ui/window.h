@@ -25,8 +25,9 @@
 #include <Windows.h>
 
 #include <libnao/util/logging.h>
+#include <libnao/util/defs.h>
 
-namespace nao {
+namespace nao::ui {
     class layout;
 
     class window {
@@ -54,7 +55,7 @@ namespace nao {
             bool builtin = false;
 
             // UTF-8 classname
-            std::string_view cls;
+            std::string_view cls{};
 
             // All styles applied on creation
             DWORD style = 0;
@@ -63,7 +64,7 @@ namespace nao {
             DWORD ex_style = 0;
 
             // UTF-8 window name
-            std::string_view name;
+            std::string_view name{};
 
             // Starting position
             position pos = { .x = CW_USEDEFAULT, .y = CW_USEDEFAULT };

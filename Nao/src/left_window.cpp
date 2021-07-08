@@ -17,12 +17,12 @@ left_window::left_window(nao_presenter& presenter, window& parent)
     , _browse{ _controls_layout, "Browse" }
     , _filler2{ _layout, "bar" } {
 
-    _controls_layout.set_maximum_size(nao::layout::fill, 23);
+    _controls_layout.set_maximum_size(nao::ui::layout::fill, 23);
 
-    _up.set_maximum_size(23, nao::layout::fill);
-    _refresh.set_maximum_size(23, nao::layout::fill);
+    _up.set_maximum_size(23, nao::ui::layout::fill);
+    _refresh.set_maximum_size(23, nao::ui::layout::fill);
     _path.set_padding(1, 1, 1, 1);
-    _browse.set_maximum_size(73, nao::layout::fill);
+    _browse.set_maximum_size(73, nao::ui::layout::fill);
 
     nao::shared_library shell32{ "shell32.dll" };
 

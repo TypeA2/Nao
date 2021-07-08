@@ -5,6 +5,7 @@ project("Nao")
 set(NAO_VERSION 1.0.0)
 
 add_subdirectory(libnao-util)
+add_subdirectory(libnao-av)
 add_subdirectory(libnao-ui)
 add_subdirectory(libnao-game)
 # add_subdirectory(naofs)

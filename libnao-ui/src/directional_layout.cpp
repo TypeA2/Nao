@@ -18,14 +18,15 @@
 #include "directional_layout.h"
 
 #include <libnao/util/ranges.h>
+#include <libnao/util/formatters.h>
 
-nao::directional_layout::directional_layout(window& parent, layout_direction dir)
+nao::ui::directional_layout::directional_layout(window& parent, layout_direction dir)
     : layout{ parent }
     , _direction{ dir } {
     
 }
 
-void nao::directional_layout::reposition() {
+void nao::ui::directional_layout::reposition() {
     switch (_direction) {
         case layout_direction::horizontal:
             _reposition_horizontal();
@@ -37,7 +38,7 @@ void nao::directional_layout::reposition() {
     }
 }
 
-void nao::directional_layout::_reposition_horizontal() {
+void nao::ui::directional_layout::_reposition_horizontal() {
     int count = static_cast<int>(children.size());
     logger().trace("Repositioning {} children horizontall to fit in {}", count, client_size());
 
@@ -109,7 +110,7 @@ void nao::directional_layout::_reposition_horizontal() {
 
 }
 
-void nao::directional_layout::_reposition_vertical() {
+void nao::ui::directional_layout::_reposition_vertical() {
     // TODO apply horizontal layout algorithm
     int count = static_cast<int>(children.size());
     logger().trace("Repositioning {} children vertically to fit in {}", count, client_size());
@@ -153,12 +154,12 @@ void nao::directional_layout::_reposition_vertical() {
 }
 
 
-nao::horizontal_layout::horizontal_layout(window& parent)
+nao::ui::horizontal_layout::horizontal_layout(window& parent)
     : directional_layout{ parent, layout_direction::horizontal } {
 
 }
 
-nao::vertical_layout::vertical_layout(window& parent)
+nao::ui::vertical_layout::vertical_layout(window& parent)
     : directional_layout{ parent, layout_direction::vertical } {
     
 }

@@ -14,44 +14,13 @@
  *  You should have received a copy of the GNU Lesser General Public License
  *  along with libnao-ui.  If not, see <https://www.gnu.org/licenses/>.
  */
+#include "defs.h"
 
-#include "event.h"
+#include <algorithm>
 
-#include <type_traits>
-
-LRESULT nao::ui::event::native_event::call_default() const {
-    return DefWindowProcW(hwnd, msg, wparam, lparam);
-}
-
-
-nao::ui::event::event(const native_event& native) : _native{ native } {}
-
-
-nao::ui::event::event(event&& other) noexcept {
-    *this = std::forward<event>(other);
-}
-
-
-nao::ui::event& nao::ui::event::operator=(event&& other) noexcept {
-    _native = other._native;
-
-    return *this;
-}
-
-
-nao::ui::event::operator native_event() const {
-    return _native;
-}
-
-
-const nao::ui::event::native_event& nao::ui::event::native() const {
-    return _native;
-}
-
-
-nao::size nao::ui::resize_event::new_size() const {
+nao::size nao::size::fit_in(size other) const {
     return {
-        .w = LOWORD(_native.lparam),
-        .h = HIWORD(_native.lparam)
+        .w = std::min<long>(w, other.w),
+        .h = std::min<long>(h, other.h),
     };
 }

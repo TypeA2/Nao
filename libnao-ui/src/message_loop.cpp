@@ -19,18 +19,33 @@
 
 #include <Windows.h>
 
-namespace nao {
-    int message_loop::run() {
-        (void)this;
+int nao::ui::message_loop::run() {
+    (void)this;
 
-        MSG msg{};
+    MSG msg{};
 
-        while (GetMessageW(&msg, nullptr, 0, 0)) {
-            TranslateMessage(&msg);
-            DispatchMessageW(&msg);
+    while (GetMessageW(&msg, nullptr, 0, 0)) {
+        TranslateMessage(&msg);
+
+        event e { { msg.hwnd, msg.message, msg.wParam, msg.lParam }};
+
+        // Discard event if 1 event filter returns true
+        bool skip = false;
+        for (auto& f : _filters) {
+            if (f(e)) {
+                skip = true;
+                break;
+            }
         }
 
-        return EXIT_SUCCESS;
+        if (!skip) {
+            DispatchMessageW(&msg);
+        }
     }
 
+    return EXIT_SUCCESS;
+}
+
+void nao::ui::message_loop::add_filter(event_filter f) {
+    _filters.emplace_back(std::move(f));
 }

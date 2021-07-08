@@ -1,5 +1,7 @@
 #include "nao_model.h"
 
+#include "nao_presenter.h"
+
 #include <filesystem>
 
 nao_model::nao_model(nao_presenter& presenter) : _presenter{ presenter } {
@@ -8,6 +10,7 @@ nao_model::nao_model(nao_presenter& presenter) : _presenter{ presenter } {
 
 void nao_model::set_path(std::string_view target) {
     _path = _make_path(target);
+    _presenter.path_changed();
 }
 
 std::string nao_model::_make_path(std::string_view source) {

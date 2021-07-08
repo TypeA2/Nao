@@ -17,5 +17,5 @@ target_include_directories(libnao-game PRIVATE
 target_compile_definitions(libnao-game PUBLIC UNICODE _UNICODE NOMINMAX)
 target_compile_options(libnao-game PUBLIC /utf-8)
 
-target_link_libraries(libnao-game PUBLIC libnao-util)
+target_link_libraries(libnao-game PUBLIC libnao-util libnao-av)
 

@@ -23,7 +23,7 @@
 #include <libnao/util/encoding.h>
 
 
-nao::push_button::push_button(window& parent) : window{
+nao::ui::push_button::push_button(window& parent) : window{
     {
         .builtin = true,
         .cls = WC_BUTTONA,
@@ -46,11 +46,11 @@ nao::push_button::push_button(window& parent) : window{
     parent.set_window(*this);
 }
 
-nao::push_button::push_button(window& parent, std::string_view text) : push_button{ parent } {
+nao::ui::push_button::push_button(window& parent, std::string_view text) : push_button{ parent } {
     set_text(text);
 }
 
-void nao::push_button::set_icon(icon icon) {
+void nao::ui::push_button::set_icon(icon icon) {
     // Fix styles
     // If there is no text, show icon only, else show both
     win32::set_style(_handle, BS_ICON, _text.empty());
@@ -60,7 +60,7 @@ void nao::push_button::set_icon(icon icon) {
     SendMessageW(_handle, BM_SETIMAGE, IMAGE_ICON, reinterpret_cast<LPARAM>(_icon.handle()));
 }
 
-void nao::push_button::set_text(std::string_view text) {
+void nao::ui::push_button::set_text(std::string_view text) {
     // Disable icon if only icon is set
     win32::set_style(_handle, BS_ICON, _icon.handle());
 
@@ -70,7 +70,7 @@ void nao::push_button::set_text(std::string_view text) {
     SendMessageW(_handle, WM_SETTEXT, 0, reinterpret_cast<LPARAM>(wide.c_str()));
 }
 
-nao::event_result nao::push_button::on_event(event& e) {
+nao::ui::event_result nao::ui::push_button::on_event(event& e) {
     const auto& native = e.native();
 
     if (native.msg == WM_COMMAND && _handle == reinterpret_cast<HWND>(native.lparam)) {

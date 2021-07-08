@@ -18,7 +18,7 @@
 
 #include <libnao/util/win32.h>
 
-namespace nao {
+namespace nao::ui {
     class icon {
         win32::gdi_object _obj;
 

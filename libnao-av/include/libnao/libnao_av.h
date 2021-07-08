@@ -1,25 +1,21 @@
 /**
- *  This file is part of libnao-ui.
+ *  This file is part of libnao-av.
  *
- *  libnao-ui is free software: you can redistribute it and/or modify
+ *  libnao-av is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Lesser General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
  *
- *  libnao-ui is distributed in the hope that it will be useful,
+ *  libnao-av is distributed in the hope that it will be useful,
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU Lesser General Public License for more details.
  *
  *  You should have received a copy of the GNU Lesser General Public License
- *  along with libnao-ui.  If not, see <https://www.gnu.org/licenses/>.
+ *  along with libnao-av.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include "icon.h"
+#pragma once
 
-nao::ui::icon::icon(win32::gdi_object obj) : _obj { std::move(obj) } {
-    
-}
-
-HICON nao::ui::icon::handle() const {
-    return _obj.handle<HICON>();
+namespace nao::av {
+    [[nodiscard]] bool init();
 }

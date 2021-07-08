@@ -8,6 +8,7 @@ add_library(libnao-util STATIC
 	"include/libnao/util/traits.h"
 	"include/libnao/util/concepts.h"
 	"include/libnao/util/formatters.h" 
+	"include/libnao/util/defs.h"           "src/defs.cpp"
 	"include/libnao/util/win32.h"          "src/win32.cpp"
 	"include/libnao/util/shared_library.h" "src/shared_library.cpp"
 	"include/libnao/util/event_handler.h"

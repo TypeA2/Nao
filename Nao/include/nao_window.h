@@ -9,15 +9,15 @@
 
 class nao_presenter;
 
-class nao_window : public nao::main_window {
+class nao_window : public nao::ui::main_window {
     NAO_LOGGER(nao_window);
 
     nao_presenter& _presenter;
 
-    nao::horizontal_layout _layout;
+    nao::ui::horizontal_layout _layout;
 
     left_window _left;
-    nao::push_button _right;
+    nao::ui::push_button _right;
 
     public:
     explicit nao_window(nao_presenter& presenter);
