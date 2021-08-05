@@ -28,7 +28,7 @@ bool nao_presenter::event_filter(nao::ui::event& e) {
         return true;
     }
 
-    logger().debug("Event {}", native.msg);
+    //logger().debug("Event {}", native.msg);
 
     return false;
 }

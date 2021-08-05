@@ -69,7 +69,6 @@ nao::thread_pool::thread_pool(unsigned n_threads) {
 
 nao::thread_pool::~thread_pool() {
     _cancelled = true;
-
     {
         std::unique_lock lock{ _condition_mutex };
         _condition.notify_all();
