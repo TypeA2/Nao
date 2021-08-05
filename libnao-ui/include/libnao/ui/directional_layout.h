@@ -35,10 +35,6 @@ namespace nao::ui {
 
         protected:
         void reposition() override;
-
-        private:
-        void _reposition_horizontal();
-        void _reposition_vertical();
     };
 
     class horizontal_layout : public directional_layout {
