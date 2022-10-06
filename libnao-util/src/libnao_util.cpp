@@ -50,7 +50,7 @@ int WINAPI wWinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPWSTR lpCmdLine, _
 
     const size_t width = static_cast<size_t>(std::log10(argc)) + 1;
     for (size_t i = 0; std::string_view arg : argv_ptrs) {
-        nao::log.debug(fmt::format("    [{{:0{}}}] = {{}}", width), i++, arg);
+        nao::log.debug("[{1:0{0}}] = {2}", width, i++, arg);
     }
     
     return libnao_main(argc, argv_ptrs.data());
