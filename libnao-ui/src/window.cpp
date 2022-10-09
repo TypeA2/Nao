@@ -22,6 +22,8 @@
 
 #include <libnao/util/encoding.h>
 
+#include <magic_enum.hpp>
+
 #include "layout.h"
 
 nao::ui::window::window(const window_descriptor& w)
@@ -95,6 +97,11 @@ nao::ui::event_result nao::ui::window::on_event(event& e) {
             break;
         }
 
+        case WM_KEYDOWN: {
+            key_event ev { native, static_cast<key_code>(native.wparam) };
+            return on_keydown(ev);
+        }
+
         default:
             _last_msg_result = native.call_default();
     }
@@ -111,6 +118,12 @@ nao::ui::event_result nao::ui::window::on_resize(resize_event& e) {
         return event_result::ok;
     }
 
+    _last_msg_result = e.native().call_default();
+
+    return event_result::ok;
+}
+
+nao::ui::event_result nao::ui::window::on_keydown(key_event& e) {
     _last_msg_result = e.native().call_default();
 
     return event_result::ok;

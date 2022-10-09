@@ -29,4 +29,7 @@ target_link_libraries(libnao-util PUBLIC spdlog::spdlog)
 include("FindIconv")
 target_link_libraries(libnao-util PUBLIC Iconv::Iconv)
 
+find_package(magic_enum CONFIG REQUIRED)
+target_link_libraries(libnao-util PUBLIC magic_enum::magic_enum)
+
 target_link_options(libnao-util PUBLIC /entry:wWinMainCRTStartup)

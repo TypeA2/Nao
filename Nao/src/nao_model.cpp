@@ -9,7 +9,8 @@ nao_model::nao_model(nao_presenter& presenter) : _presenter{ presenter } {
 }
 
 void nao_model::set_path(std::string_view target) {
-    _path = _make_path(target);
+    _path.set(target);
+    //_path = _make_path(target);
     _presenter.path_changed();
 }
 

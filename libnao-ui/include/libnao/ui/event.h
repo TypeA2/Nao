@@ -65,4 +65,37 @@ namespace nao::ui {
 
         [[nodiscard]] size new_size() const;
     };
+
+    enum class key_code {
+        invalid      = 0x00,
+        left_mouse   = 0x01,
+        right_mouse  = 0x02,
+        middle_mouse = 0x04,
+
+        backspace = 0x08,
+        tab       = 0x09,
+        enter     = 0x0D,
+        shift     = 0x10,
+        ctrl      = 0x11,
+        alt       = 0x12,
+        pause     = 0x13,
+        capslock  = 0x14,
+        esc       = 0x1B,
+        space     = 0x20,
+
+
+        key_0 = 0x30, key_1, key_2, key_3, key_4, key_5, key_6, key_7, key_8, key_9,
+        A = 0x41, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z,
+
+        play = 0xFA,
+    };
+
+    class key_event : public event {
+        key_code _code;
+
+        public:
+        explicit key_event(const native_event& native, key_code key);
+
+        [[nodiscard]] key_code key() const;
+    };
 }

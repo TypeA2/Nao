@@ -19,6 +19,7 @@
 #include "window.h"
 
 #include <libnao/util/win32.h>
+#include <libnao/util/event_handler.h>
 
 namespace nao::ui {
     class line_edit : public window {
@@ -34,7 +35,15 @@ namespace nao::ui {
         void set_text(std::string_view text);
         [[nodiscard]] std::string_view text() const;
 
+        event_handler<std::string_view> on_change;
+        event_handler<std::string_view> on_enter;
+
         protected:
         [[nodiscard]] event_result on_event(event& e) override;
+        [[nodiscard]] event_result on_keydown(key_event& e) override;
+
+        private:
+        WNDPROC _old_wnd_proc;
+        static LRESULT _wnd_proc_subclass(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
     };
 }

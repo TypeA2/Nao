@@ -148,10 +148,6 @@ void nao::ui::directional_layout::reposition() {
                 pos_y += height + spacing;
             }
 
-            if (!EndDeferWindowPos(dwp)) {
-                logger().critical("Failed to reposition {} children", count);
-            }
-
             break;
         }
     }

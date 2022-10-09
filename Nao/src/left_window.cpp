@@ -42,7 +42,10 @@ left_window::left_window(nao_presenter& presenter, window& parent)
     assert(res == S_OK);
 
     _browse.set_icon({ browse_icon });
+    _browse.on_click.add(&nao_presenter::browse, _presenter);
 
     _up.on_click.add(&nao_presenter::up, _presenter);
     _refresh.on_click.add(&nao_presenter::refresh, _presenter);
+
+    _path.on_enter.add(static_cast<void(nao_presenter::*)(std::string_view)>(&nao_presenter::path_changed), _presenter);
 }

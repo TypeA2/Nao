@@ -1,5 +1,6 @@
 ﻿#include "nao_presenter.h"
 
+#include <libnao/libnao_util.h>
 #include <libnao/libnao_ui.h>
 #include <libnao/libnao_game.h>
 

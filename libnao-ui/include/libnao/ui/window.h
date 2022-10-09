@@ -33,7 +33,6 @@ namespace nao::ui {
     class window {
         NAO_LOGGER(window);
 
-        LRESULT _last_msg_result{};
         size _min_size{};
         size _max_size{};
         margins _padding{};
@@ -49,6 +48,7 @@ namespace nao::ui {
 
         protected:
         HWND _handle{};
+        LRESULT _last_msg_result{};
 
         struct window_descriptor {
             // Builtin classes aren't registered
@@ -81,6 +81,7 @@ namespace nao::ui {
 
         [[nodiscard]] virtual event_result on_event(event& e);
         [[nodiscard]] virtual event_result on_resize(resize_event& e);
+        [[nodiscard]] virtual event_result on_keydown(key_event& e);
 
         /**
          * Send the given event to the requested instance.

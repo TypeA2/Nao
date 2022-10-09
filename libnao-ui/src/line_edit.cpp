@@ -18,8 +18,9 @@
 
 #include <libnao/util/encoding.h>
 
-#include <CommCtrl.h>
+#include <magic_enum.hpp>
 
+#include <CommCtrl.h>
 
 nao::ui::line_edit::line_edit(window& parent)
     : window{
@@ -30,6 +31,11 @@ nao::ui::line_edit::line_edit(window& parent)
             .ex_style = WS_EX_CLIENTEDGE,
             .parent = &parent,
         }} {
+
+    /* Subclass so we can handle different input types */
+    (void)SetWindowLongPtrW(handle(), GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
+    _old_wnd_proc = reinterpret_cast<WNDPROC>(
+        SetWindowLongPtrW(handle(), GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(_wnd_proc_subclass)));
 
     // Unset font is weird, fix it
     NONCLIENTMETRICS metrics{
@@ -72,7 +78,10 @@ nao::ui::event_result nao::ui::line_edit::on_event(event& e) {
                 GetWindowTextW(_handle, text_buf.data(), len);
 
                 _text = wide_to_utf8(text_buf.data());
-                logger().info("Text changed to: {}", _text);
+                logger().trace("Text changed to: {}", _text);
+
+                on_change.call(_text);
+                return event_result::ok;
             }
             break;
         }
@@ -81,4 +90,42 @@ nao::ui::event_result nao::ui::line_edit::on_event(event& e) {
     }
 
     return window::on_event(e);
+}
+
+nao::ui::event_result nao::ui::line_edit::on_keydown(key_event& e) {
+    switch (e.key()) {
+        case key_code::enter:
+            on_enter.call(_text);
+            return event_result::ok;
+
+        default:
+            return window::on_keydown(e);
+    }
+}
+
+LRESULT nao::ui::line_edit::_wnd_proc_subclass(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
+    auto* _this = reinterpret_cast<line_edit*>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
+
+    if (_this) {
+        switch (msg) {
+            case WM_KEYDOWN: {
+                key_event e { { hwnd, msg, wparam, lparam }, static_cast<key_code>(wparam) };
+                (void)_this->on_keydown(e);
+
+                return _this->_last_msg_result;
+            }
+
+            case WM_CHAR: {
+                if (wparam == VK_RETURN) {
+                    return 0;
+                }
+
+                [[fallthrough]];
+            }
+        }
+
+        return CallWindowProcW(_this->_old_wnd_proc, hwnd, msg, wparam, lparam);
+    }
+
+    throw std::runtime_error { "line_edit was subclassed incorrectly" };
 }

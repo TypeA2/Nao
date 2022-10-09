@@ -55,3 +55,10 @@ nao::size nao::ui::resize_event::new_size() const {
         .h = HIWORD(_native.lparam)
     };
 }
+
+nao::ui::key_event::key_event(const native_event& native, key_code key)
+    : event { native }, _code { key } { }
+
+nao::ui::key_code nao::ui::key_event::key() const {
+    return _code;
+}

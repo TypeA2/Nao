@@ -2,7 +2,7 @@
 
 #include <libnao/util/logging.h>
 
-#include <string>
+#include "path.h"
 
 class nao_presenter;
 
@@ -11,7 +11,7 @@ class nao_model {
     nao_presenter& _presenter;
 
     /* Current raw path */
-    std::string _path;
+    path _path;
 
     public:
     static constexpr char path_prefix[] = R"(\\?\)";

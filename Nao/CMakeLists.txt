@@ -6,6 +6,7 @@ add_executable(Nao WIN32
 	"include/nao_model.h"     "src/nao_model.cpp"
 	"include/nao_window.h"    "src/nao_window.cpp"
 	"include/left_window.h"   "src/left_window.cpp"
+	"include/path.h"          "src/path.cpp"
 )
 
 set_property(TARGET Nao PROPERTY CXX_STANDARD 20)
