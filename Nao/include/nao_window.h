@@ -21,4 +21,9 @@ class nao_window : public nao::ui::main_window {
 
     public:
     explicit nao_window(nao_presenter& presenter);
+
+    void set_path(std::string_view new_path);
+
+    void disable_up();
+    void enable_up();
 };

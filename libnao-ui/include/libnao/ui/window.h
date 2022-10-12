@@ -133,6 +133,10 @@ namespace nao::ui {
         void set_enabled(bool enabled);
         [[nodiscard]] bool enabled() const;
 
+        /* Focus control */
+        void focus();
+        void unfocus();
+
         /**
          * Set the contained window.
          * @note Derived classes should call this on the parent in the constructor to ensure

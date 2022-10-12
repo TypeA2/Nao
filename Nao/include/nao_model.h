@@ -14,12 +14,11 @@ class nao_model {
     path _path;
 
     public:
-    static constexpr char path_prefix[] = R"(\\?\)";
 
     explicit nao_model(nao_presenter& presenter);
 
     void set_path(std::string_view target);
+    [[nodiscard]] const path& path() const;
 
-    private:
-    static std::string _make_path(std::string_view source);
+    void up();
 };

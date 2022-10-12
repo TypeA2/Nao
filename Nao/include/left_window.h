@@ -24,4 +24,8 @@ class left_window : public nao::ui::window {
 
     public:
     explicit left_window(nao_presenter& presenter, window& parent);
+
+    void set_path(std::string_view new_path);
+
+    void set_up_enabled(bool state);
 };

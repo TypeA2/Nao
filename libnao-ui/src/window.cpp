@@ -252,6 +252,16 @@ bool nao::ui::window::enabled() const {
     return IsWindowEnabled(_handle);
 }
 
+void nao::ui::window::focus() {
+    SetFocus(_handle);
+}
+
+void nao::ui::window::unfocus() {
+    if (_handle == GetFocus()) {
+        SetFocus(nullptr);
+    }
+}
+
 void nao::ui::window::set_window(window& w) {
     w.set_parent(*this);
     _child = &w;

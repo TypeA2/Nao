@@ -28,6 +28,20 @@ bool nao_presenter::event_filter(nao::ui::event& e) {
     if (native.msg > TM_FIRST && native.msg < TM_LAST) {
         logger().debug("Got thread message {}",
             magic_enum::enum_name<thread_message>(static_cast<thread_message>(native.msg)));
+
+        switch (native.msg) {
+            case TM_PATH_CHANGED:
+                _window.set_path(_model.path().get(true));
+
+                if (_model.path().top_level()) {
+                    _window.disable_up();
+                } else {
+                    _window.enable_up();
+                }
+
+                break;
+        }
+
         return true;
     }
 
@@ -35,7 +49,9 @@ bool nao_presenter::event_filter(nao::ui::event& e) {
 }
 
 void nao_presenter::up() {
-    logger().debug("Up");
+    _worker.push([&] {
+        _model.up();
+    });
 }
 
 void nao_presenter::refresh() {
@@ -63,7 +79,7 @@ void nao_presenter::path_changed() const {
 
 void nao_presenter::_new_path(std::string path) {
     _worker.push([&, path = std::move(path)] {
-        logger().info("Changing path to {}", path);
+        logger().info("Changing path to \"{}\"", path);
         _model.set_path(path);
     });
 }

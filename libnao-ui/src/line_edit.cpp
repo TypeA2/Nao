@@ -122,9 +122,10 @@ LRESULT nao::ui::line_edit::_wnd_proc_subclass(HWND hwnd, UINT msg, WPARAM wpara
 
                 [[fallthrough]];
             }
-        }
 
-        return CallWindowProcW(_this->_old_wnd_proc, hwnd, msg, wparam, lparam);
+            default:
+                return CallWindowProcW(_this->_old_wnd_proc, hwnd, msg, wparam, lparam);
+        }
     }
 
     throw std::runtime_error { "line_edit was subclassed incorrectly" };

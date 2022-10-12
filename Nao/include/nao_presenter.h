@@ -28,7 +28,7 @@ class nao_presenter {
 
     friend struct magic_enum::customize::enum_range<thread_message>;
 
-    DWORD _main_thread_id;
+    DWORD _main_thread_id {};
 
     public:
     explicit nao_presenter();

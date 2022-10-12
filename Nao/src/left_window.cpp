@@ -46,6 +46,18 @@ left_window::left_window(nao_presenter& presenter, window& parent)
 
     _up.on_click.add(&nao_presenter::up, _presenter);
     _refresh.on_click.add(&nao_presenter::refresh, _presenter);
+    _refresh.set_enabled(false);
 
     _path.on_enter.add(static_cast<void(nao_presenter::*)(std::string_view)>(&nao_presenter::path_changed), _presenter);
+    _path.on_enter.add([this](std::string_view) {
+        _path.unfocus();
+    });
+}
+
+void left_window::set_path(std::string_view new_path) {
+    _path.set_text(new_path);
+}
+
+void left_window::set_up_enabled(bool state) {
+    _up.set_enabled(state);
 }
