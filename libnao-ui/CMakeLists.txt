@@ -11,7 +11,8 @@ add_library(libnao-ui STATIC
 	"include/libnao/ui/icon.h"                "src/icon.cpp"
 	"include/libnao/ui/push_button.h"         "src/push_button.cpp"
 	"include/libnao/ui/line_edit.h"           "src/line_edit.cpp"
-	"include/libnao/ui/file_dialog.h"         "src/file_dialog.cpp")
+	"include/libnao/ui/file_dialog.h"         "src/file_dialog.cpp"
+	"include/libnao/ui/list_view.h"           "src/list_view.cpp")
 
 set_property(TARGET libnao-ui PROPERTY CXX_STANDARD 20)
 set_property(TARGET libnao-ui PROPERTY MSVC_RUNTIME_LIBRARY MultiThreadedDebug)
@@ -26,4 +27,4 @@ target_compile_definitions(libnao-ui PUBLIC UNICODE _UNICODE NOMINMAX)
 target_compile_options(libnao-ui PUBLIC /utf-8)
 
 target_link_libraries(libnao-ui PUBLIC libnao-util)
-target_link_libraries(libnao-ui PRIVATE Comctl32.lib)
+target_link_libraries(libnao-ui PRIVATE Comctl32.lib UxTheme.lib)

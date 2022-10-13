@@ -7,15 +7,15 @@
 #include <libnao/util/shared_library.h>
 
 left_window::left_window(nao_presenter& presenter, window& parent)
-    : window{ parent }
-    , _presenter{ presenter }
-    , _layout{ *this }
-    , _controls_layout{ _layout }
-    , _up{ _controls_layout }
-    , _refresh{ _controls_layout }
-    , _path{ _controls_layout, "foo" }
-    , _browse{ _controls_layout, "Browse" }
-    , _filler2{ _layout, "bar" } {
+    : window { parent }
+    , _presenter { presenter }
+    , _layout { *this }
+    , _controls_layout { _layout }
+    , _up { _controls_layout }
+    , _refresh { _controls_layout }
+    , _path { _controls_layout }
+    , _browse { _controls_layout, "Browse" }
+    , _view { _layout } {
 
     _controls_layout.set_maximum_size(nao::ui::layout::fill, 23);
 
@@ -52,6 +52,8 @@ left_window::left_window(nao_presenter& presenter, window& parent)
     _path.on_enter.add([this](std::string_view) {
         _path.unfocus();
     });
+
+    nao::ui::list_view::item x{ _view, 42 };
 }
 
 void left_window::set_path(std::string_view new_path) {

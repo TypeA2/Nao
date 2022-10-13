@@ -18,20 +18,30 @@
 
 #include <libnao/util/win32.h>
 
+#include <memory>
+
 namespace nao::ui {
+    class icon_backend;
+
+    struct icon_backend_deleter {
+        void operator()(icon_backend* ptr) const;
+    };
+
+    using icon_backend_ptr = std::unique_ptr<icon_backend, icon_backend_deleter>;
+
     class icon {
-        win32::gdi_object _obj;
+        icon_backend_ptr _d;
 
         public:
-        icon() = default;
+        icon();
         explicit(false) icon(win32::gdi_object obj);
         ~icon() = default;
 
-        icon(icon&& other) noexcept = default;
-        icon& operator=(icon&& other) noexcept = default;
+        icon(const icon& other);
+        icon& operator=(const icon& other);
 
-        icon(const icon&) = delete;
-        icon& operator=(const icon&) = delete;
+        icon(icon&& other) noexcept;
+        icon& operator=(icon&& other) noexcept;
 
         [[nodiscard]] HICON handle() const;
     };

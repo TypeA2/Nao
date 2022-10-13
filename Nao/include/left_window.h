@@ -3,6 +3,7 @@
 #include <libnao/ui/window.h>
 #include <libnao/ui/push_button.h>
 #include <libnao/ui/line_edit.h>
+#include <libnao/ui/list_view.h>
 #include <libnao/ui/directional_layout.h>
 
 class nao_presenter;
@@ -20,7 +21,7 @@ class left_window : public nao::ui::window {
     nao::ui::line_edit _path;
     nao::ui::push_button _browse;
 
-    nao::ui::push_button _filler2;
+    nao::ui::list_view _view;
 
     public:
     explicit left_window(nao_presenter& presenter, window& parent);
