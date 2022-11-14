@@ -53,7 +53,13 @@ left_window::left_window(nao_presenter& presenter, window& parent)
         _path.unfocus();
     });
 
-    nao::ui::list_view::item x{ _view, 42 };
+    auto hdr = std::make_unique<nao::ui::list_view::item>();
+    hdr->set_columns(3);
+    hdr->set_text(0, "foo");
+    hdr->set_text(1, "bar");
+    hdr->set_text(2, "baz");
+
+    _view.set_header(std::move(hdr));
 }
 
 void left_window::set_path(std::string_view new_path) {

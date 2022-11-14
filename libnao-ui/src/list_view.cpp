@@ -16,18 +16,24 @@
  */
 #include "list_view.h"
 
+#include <libnao/util/encoding.h>
+
 #include <CommCtrl.h>
 #include <Uxtheme.h>
 
-nao::ui::list_view::item::item(list_view& parent)
-    : _parent{ &parent } {
+void nao::ui::list_view::item::set_parent(list_view* new_parent) {
+    _parent = new_parent;
+}
 
+/*
+nao::ui::list_view::item::item(list_view& parent) {
+    set_parent(&parent);
 }
 
 nao::ui::list_view::item::item(list_view& parent, size_t columns)
-    : _parent{ &parent }, _text { columns }, _icons{columns}, _data(columns) {
-    
-}
+    : _text { columns }, _icons{columns}, _data(columns) {
+    set_parent(&parent);
+}*/
 
 nao::ui::list_view::item::item(const item& other)
     : _parent{ other._parent }, _text{ other._text }, _icons{ other._icons }, _data{ other._data } {
@@ -118,39 +124,62 @@ nao::ui::list_view::list_view(window& parent)
     parent.set_window(*this);
 }
 
-nao::ui::list_view::list_view(window& parent, item header) : list_view{ parent, std::move(header), {} } {
+nao::ui::list_view::list_view(window& parent, item_ptr header) : list_view{ parent, std::move(header), {} } {
     
 }
 
-nao::ui::list_view::list_view(window& parent, item header, std::span<item> items) : list_view{ parent } {
+nao::ui::list_view::list_view(window& parent, item_ptr header, std::span<item_ptr> items) : list_view{ parent } {
     _header = std::move(header);
+    _header_changed();
     
     _items.reserve(items.size());
-    std::ranges::move(items, std::back_inserter(_items));
+    for (item_ptr& new_item : items) {
+        add_item(std::move(new_item));
+    }
 }
 
-void nao::ui::list_view::set_column_count(size_t count) {
-    if (count < _columns) {
-        size_t remove = _columns - count;
-        for (size_t i = 0; i < remove; ++i) {
-            ListView_DeleteColumn(_handle, _columns - i - 1);
-        }
-    } else if (count > _columns) {
-        size_t add = count - _columns;
+void nao::ui::list_view::set_header(item_ptr new_header) {
+    _header = std::move(new_header);
 
-        LVCOLUMNW col;
-        col.mask = LVCF_TEXT | LVCF_FMT | LVCF_WIDTH | LVCF_MINWIDTH;
-        col.cx = this->client_size().w;
-        col.cxMin = col.cx;
-        col.fmt = LVCFMT_LEFT;
-        for (size_t i = 0; i < add; ++i) {
-            col.iOrder = _columns + i;
-        }
+    _header_changed();
+}
+
+void nao::ui::list_view::add_item(item_ptr new_item) {
+    if (std::ranges::find(_items, new_item.get(), &item_ptr::get) == _items.end()) {
+        item_ptr& inserted = _items.emplace_back(std::move(new_item));
+        inserted->set_parent(this);
+    }
+}
+
+bool nao::ui::list_view::has_item(item* needle) const {
+    return (std::ranges::find(_items, needle, &item_ptr::get) != _items.end());
+}
+
+
+void nao::ui::list_view::_header_changed() {
+    size_t columns = _header->columns();
+
+    for (size_t i = 0; i < columns; ++i) {
+        ListView_DeleteColumn(_handle, i);
     }
 
-    _columns = count;
+    LVCOLUMNW col;
+    col.mask = LVCF_TEXT | LVCF_FMT | LVCF_ORDER | LVCF_WIDTH;
+    col.fmt = LVCFMT_LEFT;
+
+    for (size_t i = 0; i < columns; ++i) {
+        col.iOrder = static_cast<int>(columns + i);
+
+        std::wstring wide_col = nao::utf8_to_wide(_header->text(i));
+        col.pszText = wide_col.data();
+
+        col.cx = static_cast<int>(15 + _string_width(wide_col));
+
+        ListView_InsertColumn(_handle, col.iOrder, &col);
+    }
+
 }
 
-size_t nao::ui::list_view::column_count() const {
-    return _columns;
+size_t nao::ui::list_view::_string_width(const std::wstring& string) {
+    return SendMessageW(_handle, LVM_GETSTRINGWIDTHW, 0, reinterpret_cast<LPARAM>(string.c_str()));
 }

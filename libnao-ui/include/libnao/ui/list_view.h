@@ -39,9 +39,16 @@ namespace nao::ui {
             std::vector<icon> _icons;
             std::vector<std::any> _data;
 
+            friend class list_view;
+
+            /* Sets a new parent and adds this to it's items */
+            void set_parent(list_view* new_parent);
+
+            //explicit item(list_view& parent);
+            //item(list_view& parent, size_t columns);
+
             public:
-            explicit item(list_view& parent);
-            item(list_view& parent, size_t columns);
+            item() = default;
 
             item(const item& other);
             item& operator=(const item& other);
@@ -64,19 +71,26 @@ namespace nao::ui {
             [[nodiscard]] std::any& data(size_t i);
         };
 
+        using item_ptr = std::unique_ptr<item>;
+
         private:
 
-        size_t _columns {};
-
-        item _header{ *this };
-        std::vector<item> _items;
+        item_ptr _header;
+        std::vector<item_ptr> _items;
 
         public:
         explicit list_view(window& parent);
-        list_view(window& parent, item header);
-        list_view(window& parent, item header, std::span<item> items);
+        list_view(window& parent, item_ptr header);
+        list_view(window& parent, item_ptr header, std::span<item_ptr> items);
 
-        void set_column_count(size_t count);
-        [[nodiscard]] size_t column_count() const;
+        void set_header(item_ptr new_header);
+        void add_item(item_ptr new_item);
+        
+        [[nodiscard]] bool has_item(item* needle) const;
+
+        private:
+        void _header_changed();
+
+        size_t _string_width(const std::wstring& string);
     };
 }
