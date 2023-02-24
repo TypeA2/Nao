@@ -1,0 +1,11 @@
+{
+    "name": "nao",
+    "version-string": "1.0.0",
+    "dependencies": [
+        "cxxopts",
+        "magic-enum",
+        "fmt",
+        "spdlog",
+        "range-v3"
+    ]
+}
