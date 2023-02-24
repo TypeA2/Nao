@@ -1,0 +1,23 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "cppdbg",
+            "request": "launch",
+            "name": "Default Debug",
+            "program": "${workspaceFolder}/build/debug/naofs",
+            "args": [
+                "-f",
+                "-s",
+                "--source=${workspaceFolder}/testfiles/data004.cpk",
+                "mount"
+            ],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "CMake: build",
+            "postDebugTask": "unmount"
+        }
+    ]
+}
