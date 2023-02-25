@@ -13,7 +13,11 @@ project(NaoFS VERSION 1.0.0)
 
 add_executable(naofs
     "src/main.cpp"
-    "src/naofs.cpp" "include/naofs.hpp"
+    "include/naofs.hpp"             "src/naofs.cpp"
+    "include/archive/archive.hpp"   "src/archive/archive.cpp"
+    "include/archive/cripak.hpp"    "src/archive/cripak.cpp"
+    "include/util/file_stream.hpp"  "src/util/file_stream.cpp"
+    "include/util/mmapped_file.hpp" "src/util/mmapped_file.cpp"
 )
 
 set_target_properties(naofs PROPERTIES
@@ -33,7 +37,7 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(fuse3 REQUIRED IMPORTED_TARGET fuse3)
 
 target_include_directories(naofs PRIVATE "include")
-target_compile_options(naofs PRIVATE "-Wall" "-Wextra" "-pedantic")
+target_compile_options(naofs PRIVATE "-Wall" "-Wextra" "-pedantic" "-Wno-sign-compare")
 
 target_link_libraries(naofs PRIVATE
     # cxxopts::cxxopts

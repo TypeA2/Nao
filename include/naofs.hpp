@@ -12,13 +12,19 @@ namespace fs = std::filesystem;
 
 #include <sys/stat.h>
 
+#include "archive/archive.hpp"
+#include "util/mmapped_file.hpp"
+
 enum class archive_mode {
     all, archive_only
 };
 
 class naofs {
-    archive_mode mode;
-    fs::path path;
+    archive_mode _mode;
+    fs::path _path;
+
+    std::unique_ptr<mmapped_file> _root_file;
+    std::unique_ptr<archive> _root;
 
     public:
     explicit naofs(std::string_view source, archive_mode mode);
