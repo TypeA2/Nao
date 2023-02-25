@@ -20,9 +20,17 @@ cripak_archive::cripak_archive(std::string_view name, file_stream& cripak_fs)
     }
 
     if (fourcc != std::array { 'C', 'P', 'K', ' ' }) {
-        throw archive_error("unexpected magic number: \"{} {} {} {}\"",
+        throw archive_error("unexpected magic number: expected 'CPK ', got \"{} {} {} {}\"",
             fourcc[0], fourcc[1], fourcc[2], fourcc[3]);
     }
 
-    fmt::print(std::cerr, "end\n");
+    if (uint32_t tag = fs.read_u32le(); tag != 0xFF) {
+        throw archive_error("expected tag 0xFF, got {:#x}", tag);
+    }
+
+    [[maybe_unused]] uint64_t utf_size = fs.read_u64le();
+
+    _utf = std::make_unique<utf_table>(fs);
+
+    //fmt::print(std::cerr, "utf size: {}\n", utf_size);
 }

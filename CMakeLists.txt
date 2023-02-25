@@ -18,12 +18,14 @@ add_executable(naofs
     "include/archive/cripak.hpp"    "src/archive/cripak.cpp"
     "include/util/file_stream.hpp"  "src/util/file_stream.cpp"
     "include/util/mmapped_file.hpp" "src/util/mmapped_file.cpp"
+    "include/util/cripak_utf.hpp"   "src/util/cripak_utf.cpp"
+    "include/util/exceptions.hpp"
 )
 
 set_target_properties(naofs PROPERTIES
     CXX_STANDARD 23
     CXX_STANDARD_REQUIRED ON
-    INTERPROCEDURAL_OPTIMIZATION ON
+    # INTERPROCEDURAL_OPTIMIZATION ON
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
 )
 

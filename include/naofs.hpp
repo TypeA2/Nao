@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef NAOFS_H
-#define NAOFS_H
+#ifndef NAOFS_HPP
+#define NAOFS_HPP
 
 #include <string>
 #include <string_view>
@@ -55,4 +55,4 @@ class naofs {
     [[nodiscard]] int readdir(std::string_view path, off_t offset, fill_dir filler);
 };
 
-#endif /* NAOFS_H */
+#endif /* NAOFS_HPP */

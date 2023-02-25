@@ -32,7 +32,8 @@ naofs::naofs(std::string_view source, archive_mode mode)
 }
 
 int naofs::getattr(std::string_view path, struct stat& stbuf) {
-
+    (void) path;
+    (void) stbuf;
     return 0;
 }
 

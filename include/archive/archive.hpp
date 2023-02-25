@@ -1,23 +1,11 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
-#ifndef ARCHIVE_H
-#define ARCHIVE_H
+#ifndef ARCHIVE_HPP
+#define ARCHIVE_HPP
 
 #include <memory>
 
-#include <fmt/format.h>
-
 class file_stream;
-
-class archive_error : public std::runtime_error {
-    public:
-    template <typename... Args>
-    archive_error(fmt::format_string<Args...> fmt, Args&&... args)
-        : std::runtime_error(fmt::format(fmt, std::forward<Args>(args)...)) {
-
-    }
-};
-
 class archive {
     protected:
     file_stream& fs;
@@ -36,4 +24,4 @@ class archive {
     [[nodiscard]] static std::unique_ptr<archive> resolve(std::string_view name, file_stream& fs);
 };
 
-#endif /* ARCHIVE_H */
+#endif /* ARCHIVE_HPP */
