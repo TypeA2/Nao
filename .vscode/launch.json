@@ -12,6 +12,7 @@
             "args": [
                 "-f",
                 "-s",
+                "--loglevel=0",
                 "--source=${workspaceFolder}/testfiles/data004.cpk",
                 "mount"
             ],

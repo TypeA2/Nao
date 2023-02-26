@@ -20,6 +20,7 @@ struct options {
     const char* source;
     int help;
     int archive_only;
+    int loglevel = 2;
 };
 
 static naofs& get_fs() {
@@ -48,8 +49,9 @@ static int show_help(fuse_args& args) {
     fmt::print(std::cerr, "usage: {} [options] <mountpoint>\n\n", args.argv[0]);
     fmt::print(std::cerr,
         "naofs options:\n"
-        "    --source=<path>      Path of a file or directory to use as a data source\n"
-        "    -a, --archive_only   Only show archive contents, perform no other conversions\n"
+        "    --source=<path>     Path of a file or directory to use as a data source\n"
+        "    -a, --archive_only  Only show archive contents, perform no other conversions\n"
+        "    --loglevel=<0-6>    Specify log level, with lower numbers being more verbose\n"
         "\n"
     );
 
@@ -70,6 +72,7 @@ int main(int argc, char** argv) {
         OPT("--help", help),
         OPT("-a", archive_only),
         OPT("--archive_only", archive_only),
+        OPT("--loglevel=%i", loglevel),
         FUSE_OPT_END,
     };
 #undef OPT
@@ -91,6 +94,13 @@ int main(int argc, char** argv) {
     if (options_vals.help) {
         return show_help(args);
     }
+
+    if (options_vals.loglevel < 0 || options_vals.loglevel >= spdlog::level::n_levels) {
+        fmt::print(std::cerr, "Log level out of range: {}\n", options_vals.loglevel);
+        return EXIT_FAILURE;
+    }
+    
+    spdlog::set_level(static_cast<spdlog::level::level_enum>(options_vals.loglevel));
 
     try {
         if (!options_vals.source) {

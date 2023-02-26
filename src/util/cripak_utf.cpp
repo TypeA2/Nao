@@ -41,32 +41,34 @@ utf_table::utf_table(file_stream& fs)
     }
 
     _fields.resize(_header.field_count);
+    _rows.resize(_header.row_count);
 
-    auto read_field = [this](utf_flags flags, utf_value& dest) {
+    auto read_field = [this](utf_flags flags) -> utf_value {
         using enum utf_flags;
-        switch (flags & utf_flags::flag_mask) {
-            case u8:  dest = _fs.read_u8();    break;
-            case s8:  dest = _fs.read_s8();    break;
-            case u16: dest = _fs.read_u16be(); break;
-            case s16: dest = _fs.read_s16be(); break;
-            case u32: dest = _fs.read_u32be(); break;
-            case s32: dest = _fs.read_s32be(); break;
-            case u64: dest = _fs.read_u64be(); break;
-            case s64: dest = _fs.read_u64be(); break;
-            case f32: dest = _fs.read_f32be(); break;
-            case f64: dest = _fs.read_f64be(); break;
+        switch (flags & utf_flags::type_mask) {
+            case u8:  return _fs.read_u8();
+            case s8:  return _fs.read_s8();
+            case u16: return _fs.read_u16be();
+            case s16: return _fs.read_s16be();
+            case u32: return _fs.read_u32be();
+            case s32: return _fs.read_s32be();
+            case u64: return _fs.read_u64be();
+            case s64: return _fs.read_u64be();
+            case f32: return _fs.read_f32be();
+            case f64: return _fs.read_f64be();
             case str: {
+                /* Read offset relative to string table, seek, read, and seek back */
                 uint32_t val_offset = _fs.read_u32be();
                 std::streampos cur = _fs.tell();
 
                 _fs.seek(_header.strings_start + val_offset);
-
-                dest = _fs.read_cstring();
-
+                std::string res =  _fs.read_cstring();
                 _fs.seek(cur);
-                break;
+                
+                return res;
             }
             case dat: {
+                /* Read offset relative to data table, read total size, seek, read, and seek back */
                 uint32_t val_offset = _fs.read_u32be();
                 uint32_t val_size = _fs.read_u32be();
                 std::streampos cur = _fs.tell();
@@ -78,36 +80,85 @@ utf_table::utf_table(file_stream& fs)
                     throw io_error("unexpected EOF while reading data field");
                 }
 
-                dest = data;
-
                 _fs.seek(cur);
-                break;
+                return data;
             }
             default: break;
         }
+
+        return {};
     };
 
     for (field& f : _fields) {
         f.flags = static_cast<utf_flags>(_fs.getb());
 
+        /* If a name is attached to this field, read it from the string table */
         if ((f.flags & utf_flags::named) == utf_flags::named) {
-            f.name_offset = _fs.read_u32be();
+            uint32_t name_offset = _fs.read_u32be();
 
             std::streampos cur = _fs.tell();
 
-            _fs.seek(_header.strings_start + f.name_offset);
-
+            _fs.seek(_header.strings_start + name_offset);
             f.name = _fs.read_cstring();
-
             _fs.seek(cur);
         }
 
+        /* A constant value is stored just like a normal value */
         if ((f.flags & utf_flags::const_val) == utf_flags::const_val) {
-            read_field(f.flags, f.const_value);
+            f.const_value = read_field(f.flags);
         }
     }
 
-    for (field& f :  _fields) {
-        fmt::print(std::cerr, "Field: flags={:x}, name={}, current idx={}\n", int(f.flags), f.name, f.const_value.index());
+    _fs.seek(_header.rows_start);
+
+    // TODO intellisense complains, prefer a span when this is fixed
+    for (std::vector<utf_value>& row : _rows) {
+        row.resize(_header.field_count);
+
+        for (uint16_t i = 0; i < _header.field_count; ++i) {
+            /* Read all fields for every row */
+            field& f = _fields[i];
+
+            /* Copy constant value if applicable */
+            if (!std::holds_alternative<std::monostate>(f.const_value)) {
+                row[i] = f.const_value;
+
+            } else if ((f.flags & utf_flags::row_val) == utf_flags::row_val) {
+                /* Or read the field value for this row */
+                row[i] = read_field(f.flags);
+            }
+        }
     }
+}
+
+uint32_t utf_table::rows() const {
+    return _header.row_count;
+}
+
+bool utf_table::has_field(std::string_view name) const {
+    for (const field& f : _fields) {
+        if (f.name == name) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+uint16_t utf_table::field_index(std::string_view name) const {
+    for (uint16_t i = 0; i < _fields.size(); ++i) {
+        if (_fields[i].name == name) {
+            return i;
+        }
+    }
+
+    throw std::out_of_range("field not present");
+}
+
+const utf_table::utf_value& utf_table::get(uint32_t row, std::string_view name) const {
+    return _rows[row][field_index(name)];
+}
+
+utf_table::utf_value& utf_table::get(uint32_t row, std::string_view name) {
+    return _rows[row][field_index(name)];
 }
