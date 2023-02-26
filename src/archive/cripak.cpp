@@ -31,17 +31,17 @@ cripak_archive::cripak_archive(std::string_view name, file_stream& cripak_fs)
 
     [[maybe_unused]] uint64_t utf_size = fs.read_u64le();
 
-    _utf = std::make_unique<utf_table>(fs);
+    _cpk = std::make_unique<utf_table>(fs);
 
-    if (_utf->rows() != 1) {
+    if (_cpk->rows() != 1) {
         throw archive_error("expected 1 row in CPK @UTF");
     }
 
-    if (!_utf->has_field("TocOffset")) {
+    if (!_cpk->has_field("TocOffset")) {
         throw archive_error("TocOffset is required");
     }
 
-    auto toc_offset = _utf->get<uint64_t>(0, "TocOffset");
+    auto toc_offset = _cpk->get<uint64_t>(0, "TocOffset");
     
     if (toc_offset > 2048) {
         spdlog::trace("Clamping toc_offset from {}", toc_offset);
@@ -52,11 +52,11 @@ cripak_archive::cripak_archive(std::string_view name, file_stream& cripak_fs)
     toc_offset += 16;
 
     uint64_t extra_offset;
-    if (!_utf->has_field("ContentOffset")) {
+    if (!_cpk->has_field("ContentOffset")) {
         spdlog::trace("No ContentOffset");
         extra_offset = toc_offset;
     } else {
-        auto content_offset = _utf->get<uint64_t>(0, "ContentOffset");
+        auto content_offset = _cpk->get<uint64_t>(0, "ContentOffset");
 
         if (content_offset >= toc_offset) {
             extra_offset = toc_offset;
@@ -71,10 +71,76 @@ cripak_archive::cripak_archive(std::string_view name, file_stream& cripak_fs)
     utf_table files(fs);
 
     for (uint32_t i = 0; i < files.rows(); ++i) {
-        spdlog::info("File: {} ({} bytes -> {} bytes)",
-            files.get<std::string>(i, "FileName"),
-            files.get<uint32_t>(i, "FileSize"),
-            files.get<uint32_t>(i, "ExtractSize")
-        );
+        auto dir_name = std::filesystem::path(files.get<std::string>(i, "DirName"));
+
+        cripak_file file {
+            .name         = files.get<std::string>(i, "FileName"),
+            .file_size    = files.get<uint32_t>(i, "FileSize"),
+            .extract_size = files.get<uint32_t>(i, "ExtractSize"),
+            .file_offset  = files.get<uint64_t>(i, "FileOffset"),
+            .id           = files.get<uint32_t>(i, "ID"),
+            .user_string  = files.get<std::string>(i, "UserString"),
+            .crc          = files.get<uint32_t>(i, "CRC"),
+        };
+
+        if (dir_name.empty()) {
+            _root.files.push_back(file);
+        } else {
+            directory* cur = &_root;
+            for (const auto& component : dir_name) {
+                if (!cur->dirs.contains(component)) {
+                    /* Insert component if needed */
+                    cur->dirs[component] = directory{};
+                }
+
+                /* Move down the tree */
+                cur = &cur->dirs[component];
+            }
+
+            cur->files.push_back(file);
+        }
     }
+}
+
+void cripak_archive::contents(fill_func filler) {
+    for (const cripak_file& file : _root.files) {
+        filler(file.name, file_type::file);
+    }
+
+    for (const auto& [dir, _] : _root.dirs) {
+        filler(dir, file_type::dir);
+    }
+}
+
+bool cripak_archive::contains_archive(const std::filesystem::path& path) {
+    for (const auto& [dir, _] : _root.dirs) {
+        if (dir == path) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+archive& cripak_archive::get_archive(const std::filesystem::path& path) {
+    throw std::runtime_error("not yet implemented");
+}
+
+int cripak_archive::stat(const std::filesystem::path& path, struct stat& stbuf) {
+    for (const cripak_file& file : _root.files) {
+        if (file.name == path.filename()) {
+            stbuf.st_mode = 0544 | S_IFREG;
+            stbuf.st_size = file.extract_size;
+            return 0;
+        }
+    }
+
+    for (const auto& [dirname, dir] : _root.dirs) {
+        if (dirname == path.filename()) {
+            stbuf.st_mode = 0755 | S_IFDIR;
+            return 0;
+        }
+    }
+
+    return -ENOENT;
 }

@@ -4,6 +4,11 @@
 #define ARCHIVE_HPP
 
 #include <memory>
+#include <functional>
+#include <string_view>
+#include <filesystem>
+
+#include <sys/stat.h>
 
 class file_stream;
 class archive {
@@ -13,6 +18,48 @@ class archive {
     explicit archive(file_stream& fs);
     public:
     virtual ~archive() = default;
+
+    enum file_type {
+        file, dir,
+    };
+
+    /**
+     * Function called for every top-level element in this archive, with the name and type as parameters
+     */
+    using fill_func = std::function<void(std::string_view, file_type)>;
+
+    /**
+     * @brief Calls `filler` for every top-level element of this archive
+     * 
+     * @param filler 
+     */
+    virtual void contents(fill_func filler) = 0;
+
+    /**
+     * @brief Query whether the archive contains a specific sub-archive
+     * 
+     * @param path 
+     * @return true 
+     * @return false 
+     */
+    [[nodiscard]] virtual bool contains_archive(const std::filesystem::path& path) = 0;
+
+    /**
+     * @brief Retrieve archive instance for a specific sub-archive
+     * 
+     * @param path 
+     * @return archive& 
+     */
+    [[nodiscard]] virtual archive& get_archive(const std::filesystem::path& path) = 0;
+
+    /**
+     * @brief Retrieve a top-level file's attributes
+     * 
+     * @param path 
+     * @param stbuf 
+     * @return * int 
+     */
+    [[nodiscard]] virtual int stat(const std::filesystem::path& path, struct stat& stbuf) = 0;
 
     /**
      * @brief Based on all information required, return an appropriate archive instance for the input file

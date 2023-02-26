@@ -28,8 +28,8 @@ static naofs& get_fs() {
 }
 
 static int naofs_getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi) {
-    (void) path;
     (void) fi;
+    spdlog::info("getattr '{}'", path);
 
     std::memset(stbuf, 0, sizeof(*stbuf));
     return get_fs().getattr(path, *stbuf);
@@ -39,6 +39,8 @@ static int naofs_readdir(const char* path, void* buf, fuse_fill_dir_t filler,
     off_t offset, fuse_file_info* fi, fuse_readdir_flags flags) {
     (void) fi;
     (void) flags;
+
+    spdlog::info("readdir {}", path);
 
     return get_fs().readdir(path, offset, [&](std::string name, struct stat* stbuf, off_t offset) -> bool {
         return filler(buf, name.c_str(), stbuf, offset, fuse_fill_dir_flags{}) == 0;

@@ -6,9 +6,8 @@
 #include <string>
 #include <string_view>
 #include <functional>
-
 #include <filesystem>
-namespace fs = std::filesystem;
+#include <expected>
 
 #include <sys/stat.h>
 
@@ -21,7 +20,8 @@ enum class archive_mode {
 
 class naofs {
     archive_mode _mode;
-    fs::path _path;
+    std::filesystem::path _path;
+    struct stat _stbuf;
 
     std::unique_ptr<mmapped_file> _root_file;
     std::unique_ptr<archive> _root;
@@ -36,11 +36,13 @@ class naofs {
      * @param stbuf 
      * @return int Error code or 0
      */
-    [[nodiscard]] int getattr(std::string_view path, struct stat& stbuf);
+    [[nodiscard]] int getattr(const std::filesystem::path& path, struct stat& stbuf);
 
     /**
      * Arguments: path, statbuf, index in file list
      * Return value: whether to continue filling the buffer
+     * 
+     * Offset and return value are unused if the passed offset is always 0
      */
     using fill_dir = std::function<bool(std::string, struct stat*, off_t)>;
 
@@ -52,7 +54,10 @@ class naofs {
      * @param filler Function to call for every element
      * @return int Error code or 0
      */
-    [[nodiscard]] int readdir(std::string_view path, off_t offset, fill_dir filler);
+    [[nodiscard]] int readdir(const std::filesystem::path& path, off_t offset, fill_dir filler);
+
+    private:
+    std::expected<std::reference_wrapper<archive>, int> get_subarchive(const std::filesystem::path& path) const;
 };
 
 #endif /* NAOFS_HPP */

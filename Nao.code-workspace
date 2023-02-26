@@ -73,7 +73,13 @@
 			"thread": "cpp",
 			"cinttypes": "cpp",
 			"typeinfo": "cpp",
-			"variant": "cpp"
+			"variant": "cpp",
+			"set": "cpp",
+			"complex": "cpp",
+			"list": "cpp",
+			"typeindex": "cpp",
+			"filesystem": "cpp",
+			"expected": "cpp"
 		}
 	}
 }

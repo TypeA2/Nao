@@ -14,5 +14,5 @@ std::unique_ptr<archive> archive::resolve(std::string_view name, file_stream& fs
         return std::make_unique<cripak_archive>(name, fs);
     }
 
-    throw std::runtime_error(fmt::format("Unknown file {}", name));
+    return nullptr;
 }

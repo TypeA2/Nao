@@ -5,14 +5,15 @@
 #include <fcntl.h>
 
 #include <fmt/format.h>
+#include <spdlog/spdlog.h>
 
 naofs::naofs(std::string_view source, archive_mode mode)
-    : _mode { mode }, _path { fs::canonical(source) } {
-    if (!fs::exists(_path)) {
+    : _mode { mode }, _path { std::filesystem::canonical(source) } {
+    if (!std::filesystem::exists(_path)) {
         throw std::runtime_error(fmt::format("\"{}\" does not exist!", source));
     }
 
-    if (!fs::is_regular_file(_path)) {
+    if (!std::filesystem::is_regular_file(_path)) {
         throw std::runtime_error(fmt::format("Source must be a regular file (for now)"));
     }
 
@@ -27,22 +28,80 @@ naofs::naofs(std::string_view source, archive_mode mode)
         throw std::system_error(errno, std::generic_category(), "open");
     }
 
+    if (int res = fstat(fd.fd, &_stbuf); res != 0) {
+        throw std::system_error(res, std::generic_category(), "fstat");
+    }
+
     _root_file = std::make_unique<mmapped_file>(fd.fd);
     _root = archive::resolve(std::string_view(_path.c_str()), *_root_file);
+
+    if (!_root) {
+        throw std::runtime_error(fmt::format("Unknown file {}", _path.c_str()));
+    }
 }
 
-int naofs::getattr(std::string_view path, struct stat& stbuf) {
-    (void) path;
-    (void) stbuf;
+int naofs::getattr(const std::filesystem::path& path, struct stat& stbuf) {
+    if (path == "/") {
+        /* Root, read-only directory */
+        stbuf.st_mode = 0755 | S_IFDIR;
+
+        /* Copy other relevant fields from root file */
+        stbuf.st_atim = _stbuf.st_atim;
+        stbuf.st_mtim = _stbuf.st_mtim;
+        stbuf.st_ctim = _stbuf.st_ctim;
+    } else {
+
+        /* Querry corresponding archive */
+        auto expected = get_subarchive(path.parent_path());
+        if (!expected) {
+            return expected.error();
+        }
+
+        archive& cur = expected.value();
+
+        return cur.stat(path, stbuf);
+    }
+
     return 0;
 }
 
-int naofs::readdir(std::string_view path, off_t offset, fill_dir filler) {
+int naofs::readdir(const std::filesystem::path& path, off_t offset, fill_dir filler) {
     (void) offset;
-    (void) path;
+    auto expected = get_subarchive(path.parent_path());
+    if (!expected) {
+        return expected.error();
+    }
+
+    archive& cur = expected.value();
+    
+    /* These always exist */
     filler(".", nullptr, 0);
     filler("..", nullptr, 0);
-    filler("hello", nullptr, 0);
+
+    cur.contents([&](std::string_view name, archive::file_type type) {
+        struct stat st;
+        st.st_mode = (type == archive::file_type::dir) ? S_IFDIR : S_IFREG;
+
+        filler(std::string(name), &st, 0);
+    });
 
     return 0;
+}
+
+std::expected<std::reference_wrapper<archive>, int> naofs::get_subarchive(const std::filesystem::path& path) const {
+    archive* cur = _root.get();
+
+    if (path == "/") {
+        return *cur;
+    }
+
+    for (const auto& component : path) {
+        if (!cur->contains_archive(component)) {
+            return std::unexpected(-ENOENT);
+        }
+
+        cur = &cur->get_archive(component);
+    }
+
+    return *cur;
 }
