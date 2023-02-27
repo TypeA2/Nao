@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <variant>
+#include <span>
 
 #include <magic_enum.hpp>
 
@@ -88,7 +89,7 @@ class utf_table {
      * 
      * @return std::span<field> 
      */
-    [[nodiscard]] std::span<field> fields();
+    [[nodiscard]] std::span<const field> fields() const;
 
     /**
      * @brief Query whether thist able has a specific field, by name

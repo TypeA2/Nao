@@ -13,6 +13,8 @@
 
 class cripak_archive : public archive {
     std::unique_ptr<utf_table> _cpk;
+
+    uint64_t _content_offset;
     
     struct cripak_file {
         std::string name;
@@ -30,9 +32,17 @@ class cripak_archive : public archive {
         std::string local_dir;
     };
 
-    struct directory {
+    struct directory : archive {
         std::vector<cripak_file> files;
         std::map<std::string, directory> dirs;
+
+        using archive::archive;
+
+        void contents(fill_func filler) override;
+
+        [[nodiscard]] bool contains_archive(std::string_view name) override;
+        [[nodiscard]] archive& get_archive(std::string_view name) override;
+        [[nodiscard]] int stat(std::string_view name, struct stat& stbuf) override;
     };
 
     directory _root;
@@ -42,9 +52,18 @@ class cripak_archive : public archive {
 
     void contents(fill_func filler) override;
 
-    [[nodiscard]] bool contains_archive(const std::filesystem::path& path) override;
-    [[nodiscard]] archive& get_archive(const std::filesystem::path& path) override;
-    [[nodiscard]] int stat(const std::filesystem::path& path, struct stat& stbuf) override;
+    [[nodiscard]] bool contains_archive(std::string_view name) override;
+    [[nodiscard]] archive& get_archive(std::string_view name) override;
+    [[nodiscard]] int stat(std::string_view name, struct stat& stbuf) override;
+
+    private:
+    /**
+     * @brief Convert a CPK-format 64-bit timestamp to a conventional Unix second-based timestamp
+     * 
+     * @param cpk_datetime 
+     * @return uint64_t 
+     */
+    [[nodiscard]] static uint64_t convert_datetime(uint64_t cpk_datetime);
 };
 
 #endif /* CRIPAK_HPP */

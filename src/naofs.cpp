@@ -45,16 +45,16 @@ int naofs::getattr(const std::filesystem::path& path, struct stat& stbuf) {
     stbuf.st_uid  = _stbuf.st_uid;
     stbuf.st_gid  = _stbuf.st_gid;
 
+    /* Default values */
+    stbuf.st_atim = _stbuf.st_atim;
+    stbuf.st_mtim = _stbuf.st_mtim;
+    stbuf.st_ctim = _stbuf.st_ctim;
+
     if (path == "/") {
         /* Root, read-only directory */
         stbuf.st_mode = 0755 | S_IFDIR;
 
-        /* Copy other relevant fields from root file */
-        stbuf.st_atim = _stbuf.st_atim;
-        stbuf.st_mtim = _stbuf.st_mtim;
-        stbuf.st_ctim = _stbuf.st_ctim;
     } else {
-
         /* Querry corresponding archive */
         auto expected = get_subarchive(path.parent_path());
         if (!expected) {
@@ -63,7 +63,7 @@ int naofs::getattr(const std::filesystem::path& path, struct stat& stbuf) {
 
         archive& cur = expected.value();
 
-        return cur.stat(path, stbuf);
+        return cur.stat(path.filename().c_str(), stbuf);
     }
 
     return 0;
@@ -71,7 +71,7 @@ int naofs::getattr(const std::filesystem::path& path, struct stat& stbuf) {
 
 int naofs::readdir(const std::filesystem::path& path, off_t offset, fill_dir filler) {
     (void) offset;
-    auto expected = get_subarchive(path.parent_path());
+    auto expected = get_subarchive(path);
     if (!expected) {
         return expected.error();
     }
@@ -99,12 +99,12 @@ std::expected<std::reference_wrapper<archive>, int> naofs::get_subarchive(const 
         return *cur;
     }
 
-    for (const auto& component : path) {
-        if (!cur->contains_archive(component)) {
+    for (const auto& component : path.lexically_relative("/")) {
+        if (!cur->contains_archive(component.c_str())) {
             return std::unexpected(-ENOENT);
         }
 
-        cur = &cur->get_archive(component);
+        cur = &cur->get_archive(component.c_str());
     }
 
     return *cur;

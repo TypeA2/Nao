@@ -3,15 +3,67 @@
 #include "archive/cripak.hpp"
 
 #include <array>
-#include <iostream>
+#include <concepts>
+#include <ctime>
 
-#include <fmt/ostream.h>
 #include <spdlog/spdlog.h>
+#include <magic_enum.hpp>
 
 #include "util/file_stream.hpp"
 
+void cripak_archive::directory::contents(fill_func filler) {
+    for (const cripak_file& file : files) {
+        filler(file.name, file_type::file);
+    }
+
+    for (const auto& [dir, _] : dirs) {
+        filler(dir, file_type::dir);
+    }
+}
+
+bool cripak_archive::directory::contains_archive(std::string_view name) {
+    for (const auto& [dir, _] : dirs) {
+        if (dir == name) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+archive& cripak_archive::directory::get_archive(std::string_view name) {
+    for (auto& [dir, target] : dirs) {
+        if (dir == name) {
+            return target;
+        }
+    }
+
+    throw archive_error("sub-archive \"{}\" not found", name);
+}
+
+int cripak_archive::directory::stat(std::string_view name, struct stat& stbuf) {
+    for (const cripak_file& file : files) {
+        if (file.name == name) {
+            stbuf.st_mode = 0444 | S_IFREG;
+            stbuf.st_size = file.extract_size;
+            stbuf.st_mtime = file.update_datetime;
+
+            return 0;
+        }
+    }
+
+    for (const auto& [dirname, dir] : dirs) {
+        if (dirname == name) {
+            stbuf.st_mode = 0755 | S_IFDIR;
+            return 0;
+        }
+    }
+
+    return -ENOENT;
+}
+
 cripak_archive::cripak_archive(std::string_view name, file_stream& cripak_fs)
-    : archive(cripak_fs) {
+    : archive(cripak_fs), _root{ fs } {
 
     spdlog::info("Opening .cpk: {}", name);
 
@@ -58,25 +110,30 @@ cripak_archive::cripak_archive(std::string_view name, file_stream& cripak_fs)
     toc_offset  += 16;
     etoc_offset += 16;
 
-
-    uint64_t extra_offset;
     if (!_cpk->has_field("ContentOffset")) {
         spdlog::trace("No ContentOffset");
-        extra_offset = toc_offset;
+        _content_offset = toc_offset;
     } else {
         auto content_offset = _cpk->get<uint64_t>(0, "ContentOffset");
 
         if (content_offset >= toc_offset) {
-            extra_offset = toc_offset;
+            _content_offset = toc_offset;
 
         } else {
             spdlog::trace("Used ContentOffset");
-            extra_offset = content_offset;
+            _content_offset = content_offset;
         }
     }
     
     fs.seek(toc_offset);
     utf_table files(fs);
+
+    fs.seek(etoc_offset);
+    utf_table etoc(fs);
+
+    if (etoc.row_count() != (files.row_count() + 1)) {
+        throw archive_error("expected {} Etoc rows, got {}", files.row_count() + 1, etoc.row_count());
+    }
 
     for (uint32_t i = 0; i < files.row_count(); ++i) {
         auto dir_name = std::filesystem::path(files.get<std::string>(i, "DirName"));
@@ -89,7 +146,15 @@ cripak_archive::cripak_archive(std::string_view name, file_stream& cripak_fs)
             .id           = files.get<uint32_t>(i, "ID"),
             .user_string  = files.get<std::string>(i, "UserString"),
             .crc          = files.get<uint32_t>(i, "CRC"),
+
+            /* Etoc */
+            .update_datetime = convert_datetime(etoc.get<uint64_t>(i, "UpdateDateTime")),
+            .local_dir       = etoc.get<std::string>(i, "LocalDir"),
         };
+
+        if (file.file_size != file.extract_size) {
+            spdlog::trace("compressed file: {} ({} -> {})", file.name, file.file_size, file.extract_size);
+        }
 
         if (dir_name.empty()) {
             _root.files.push_back(file);
@@ -98,61 +163,47 @@ cripak_archive::cripak_archive(std::string_view name, file_stream& cripak_fs)
             for (const auto& component : dir_name) {
                 if (!cur->dirs.contains(component)) {
                     /* Insert component if needed */
-                    cur->dirs[component] = directory{};
+                    cur->dirs.emplace(component, fs);
                 }
 
                 /* Move down the tree */
-                cur = &cur->dirs[component];
+                cur = &cur->dirs.at(component);
             }
 
             cur->files.push_back(file);
         }
     }
-
-    fs.seek(etoc_offset);
-    // utf_table etoc(fs);
-    // etoc.row_count();
 }
 
 void cripak_archive::contents(fill_func filler) {
-    for (const cripak_file& file : _root.files) {
-        filler(file.name, file_type::file);
-    }
-
-    for (const auto& [dir, _] : _root.dirs) {
-        filler(dir, file_type::dir);
-    }
+    _root.contents(std::move(filler));
 }
 
-bool cripak_archive::contains_archive(const std::filesystem::path& path) {
-    for (const auto& [dir, _] : _root.dirs) {
-        if (dir == path) {
-            return true;
-        }
-    }
-
-    return false;
+bool cripak_archive::contains_archive(std::string_view name) {
+    return _root.contains_archive(name);
 }
 
-archive& cripak_archive::get_archive(const std::filesystem::path& path) {
-    throw std::runtime_error("not yet implemented");
+archive& cripak_archive::get_archive(std::string_view name) {
+    return _root.get_archive(name);
 }
 
-int cripak_archive::stat(const std::filesystem::path& path, struct stat& stbuf) {
-    for (const cripak_file& file : _root.files) {
-        if (file.name == path.filename()) {
-            stbuf.st_mode = 0544 | S_IFREG;
-            stbuf.st_size = file.extract_size;
-            return 0;
-        }
-    }
+int cripak_archive::stat(std::string_view name, struct stat& stbuf) {
+    return _root.stat(name, stbuf);
+}
 
-    for (const auto& [dirname, dir] : _root.dirs) {
-        if (dirname == path.filename()) {
-            stbuf.st_mode = 0755 | S_IFDIR;
-            return 0;
-        }
-    }
+uint64_t cripak_archive::convert_datetime(uint64_t cpk_datetime) {
+    /* https://github.com/blueskythlikesclouds/SonicAudioTools/blob/master/Source/SonicAudioLib/Archives/CriCpkArchive.cs#L670 */
 
-    return -ENOENT;
+    std::tm tm;
+    tm.tm_year = ((cpk_datetime >> 48) & 0xFFFF) - 1900; /* 1900-based */
+    tm.tm_mon  = ((cpk_datetime >> 40) & 0xFF) - 1;      /* 0-based */
+    tm.tm_mday =  (cpk_datetime >> 32) & 0xFF;
+    tm.tm_hour =  (cpk_datetime >> 24) & 0xFF;
+    tm.tm_min  =  (cpk_datetime >> 16) & 0xFF;
+    tm.tm_sec  =  (cpk_datetime >>  8) & 0xFF;
+    tm.tm_isdst = 0;
+    tm.tm_wday  = 0;
+    tm.tm_yday  = 0;
+
+    return std::mktime(&tm);
 }

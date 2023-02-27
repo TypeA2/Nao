@@ -135,7 +135,7 @@ uint32_t utf_table::row_count() const {
     return _header.row_count;
 }
 
-std::span<utf_table::field> utf_table::fields() {
+std::span<const utf_table::field> utf_table::fields() const {
     return { _fields.begin(), _fields.end() };
 }
 

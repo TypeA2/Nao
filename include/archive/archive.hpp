@@ -15,8 +15,8 @@ class archive {
     protected:
     file_stream& fs;
 
-    explicit archive(file_stream& fs);
     public:
+    explicit archive(file_stream& fs);
     virtual ~archive() = default;
 
     enum file_type {
@@ -38,28 +38,28 @@ class archive {
     /**
      * @brief Query whether the archive contains a specific sub-archive
      * 
-     * @param path 
+     * @param name 
      * @return true 
      * @return false 
      */
-    [[nodiscard]] virtual bool contains_archive(const std::filesystem::path& path) = 0;
+    [[nodiscard]] virtual bool contains_archive(std::string_view name) = 0;
 
     /**
      * @brief Retrieve archive instance for a specific sub-archive
      * 
-     * @param path 
+     * @param name 
      * @return archive& 
      */
-    [[nodiscard]] virtual archive& get_archive(const std::filesystem::path& path) = 0;
+    [[nodiscard]] virtual archive& get_archive(std::string_view name) = 0;
 
     /**
      * @brief Retrieve a top-level file's attributes
      * 
-     * @param path 
+     * @param name 
      * @param stbuf 
      * @return * int 
      */
-    [[nodiscard]] virtual int stat(const std::filesystem::path& path, struct stat& stbuf) = 0;
+    [[nodiscard]] virtual int stat(std::string_view name, struct stat& stbuf) = 0;
 
     /**
      * @brief Based on all information required, return an appropriate archive instance for the input file
