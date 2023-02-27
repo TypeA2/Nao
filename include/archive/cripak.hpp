@@ -25,6 +25,9 @@ class cripak_archive : public archive {
 
         std::string user_string;
         uint32_t crc;
+
+        uint64_t update_datetime;
+        std::string local_dir;
     };
 
     struct directory {

@@ -33,13 +33,17 @@ cripak_archive::cripak_archive(std::string_view name, file_stream& cripak_fs)
 
     _cpk = std::make_unique<utf_table>(fs);
 
-    if (_cpk->rows() != 1) {
+    if (_cpk->row_count() != 1) {
         throw archive_error("expected 1 row in CPK @UTF");
     }
 
     if (!_cpk->has_field("TocOffset")) {
         throw archive_error("TocOffset is required");
     }
+
+    if (!_cpk->has_field("EtocOffset")) {
+        throw archive_error("EtocOffset is required");
+    } 
 
     auto toc_offset = _cpk->get<uint64_t>(0, "TocOffset");
     
@@ -48,8 +52,12 @@ cripak_archive::cripak_archive(std::string_view name, file_stream& cripak_fs)
         toc_offset = 2048;
     }
 
+    auto etoc_offset = _cpk->get<uint64_t>(0, "EtocOffset");
+
     /* First 16 bytes of the archive are not counted */
-    toc_offset += 16;
+    toc_offset  += 16;
+    etoc_offset += 16;
+
 
     uint64_t extra_offset;
     if (!_cpk->has_field("ContentOffset")) {
@@ -70,7 +78,7 @@ cripak_archive::cripak_archive(std::string_view name, file_stream& cripak_fs)
     fs.seek(toc_offset);
     utf_table files(fs);
 
-    for (uint32_t i = 0; i < files.rows(); ++i) {
+    for (uint32_t i = 0; i < files.row_count(); ++i) {
         auto dir_name = std::filesystem::path(files.get<std::string>(i, "DirName"));
 
         cripak_file file {
@@ -100,6 +108,10 @@ cripak_archive::cripak_archive(std::string_view name, file_stream& cripak_fs)
             cur->files.push_back(file);
         }
     }
+
+    fs.seek(etoc_offset);
+    // utf_table etoc(fs);
+    // etoc.row_count();
 }
 
 void cripak_archive::contents(fill_func filler) {

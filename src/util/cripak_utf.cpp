@@ -131,8 +131,12 @@ utf_table::utf_table(file_stream& fs)
     }
 }
 
-uint32_t utf_table::rows() const {
+uint32_t utf_table::row_count() const {
     return _header.row_count;
+}
+
+std::span<utf_table::field> utf_table::fields() {
+    return { _fields.begin(), _fields.end() };
 }
 
 bool utf_table::has_field(std::string_view name) const {

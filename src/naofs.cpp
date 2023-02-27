@@ -41,6 +41,10 @@ naofs::naofs(std::string_view source, archive_mode mode)
 }
 
 int naofs::getattr(const std::filesystem::path& path, struct stat& stbuf) {
+    /* These always match the file's owner */
+    stbuf.st_uid  = _stbuf.st_uid;
+    stbuf.st_gid  = _stbuf.st_gid;
+
     if (path == "/") {
         /* Root, read-only directory */
         stbuf.st_mode = 0755 | S_IFDIR;

@@ -81,7 +81,14 @@ class utf_table {
      * 
      * @return uint32_t 
      */
-    [[nodiscard]] uint32_t rows() const;
+    [[nodiscard]] uint32_t row_count() const;
+
+    /**
+     * @brief Retrieve all fields belonging to this table
+     * 
+     * @return std::span<field> 
+     */
+    [[nodiscard]] std::span<field> fields();
 
     /**
      * @brief Query whether thist able has a specific field, by name
