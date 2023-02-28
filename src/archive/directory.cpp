@@ -16,13 +16,13 @@ directory_archive::directory_archive(const std::filesystem::path& path)
 }
 
 void directory_archive::contents(fill_func filler) {
-    for (auto& entry : std::filesystem::directory_iterator()) {
+    for (auto& entry : std::filesystem::directory_iterator(_path)) {
         filler(entry.path().filename().c_str(), entry.is_directory() ? file_type::dir : file_type::file);
     }
 }
 
 bool directory_archive::contains_archive(std::string_view name) {
-    return archive::resolve(name);
+    return archive::resolve(_path / name);
 }
 
 archive& directory_archive::get_archive(std::string_view name) {
@@ -49,7 +49,6 @@ archive& directory_archive::get_archive(std::string_view name) {
 }
 
 int directory_archive::stat(std::string_view name, struct stat& stbuf) {
-    spdlog::debug("{}", name);
     auto temp_path = _path / name;
     return ::stat(temp_path.c_str(), &stbuf);
 }

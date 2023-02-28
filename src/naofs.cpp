@@ -7,10 +7,10 @@
 #include <fmt/format.h>
 #include <spdlog/spdlog.h>
 
-naofs::naofs(std::string_view source, archive_mode mode)
+naofs::naofs(const std::filesystem::path& source, archive_mode mode)
     : _mode { mode }, _path { std::filesystem::canonical(source) } {
     if (!std::filesystem::exists(_path)) {
-        throw std::runtime_error(fmt::format("\"{}\" does not exist!", source));
+        throw std::runtime_error(fmt::format("\"{}\" does not exist!", source.string()));
     }
 
     if (int res = stat(_path.c_str(), &_stbuf); res != 0) {
@@ -31,6 +31,8 @@ naofs::naofs(std::string_view source, archive_mode mode)
 }
 
 int naofs::getattr(const std::filesystem::path& path, struct stat& stbuf) {
+    spdlog::trace("getattr \"{}\"", path.string());
+
     /* These always match the file's owner */
     stbuf.st_uid  = _stbuf.st_uid;
     stbuf.st_gid  = _stbuf.st_gid;
@@ -53,7 +55,7 @@ int naofs::getattr(const std::filesystem::path& path, struct stat& stbuf) {
 
         archive& cur = expected.value();
 
-        return cur.stat(path.filename().c_str(), stbuf);
+        return cur.stat(path.filename().string(), stbuf);
     }
 
     return 0;
@@ -61,13 +63,15 @@ int naofs::getattr(const std::filesystem::path& path, struct stat& stbuf) {
 
 int naofs::readdir(const std::filesystem::path& path, off_t offset, fill_dir filler) {
     (void) offset;
+    spdlog::trace("readdir \"{}\"", path.string());
+
     auto expected = get_subarchive(path);
     if (!expected) {
         return expected.error();
     }
 
     archive& cur = expected.value();
-    
+
     /* These always exist */
     filler(".", nullptr, 0);
     filler("..", nullptr, 0);
@@ -90,11 +94,11 @@ std::expected<std::reference_wrapper<archive>, int> naofs::get_subarchive(const 
     }
 
     for (const auto& component : path.lexically_relative("/")) {
-        if (!cur->contains_archive(component.c_str())) {
+        if (!cur->contains_archive(component.string())) {
             return std::unexpected(-ENOENT);
         }
 
-        cur = &cur->get_archive(component.c_str());
+        cur = &cur->get_archive(component.string());
     }
 
     return *cur;

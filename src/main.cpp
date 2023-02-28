@@ -29,8 +29,7 @@ static naofs& get_fs() {
 
 static int naofs_getattr(const char* path, struct stat* stbuf, struct fuse_file_info* fi) {
     (void) fi;
-    spdlog::trace("getattr \"{}\"", path);
-
+    
     std::memset(stbuf, 0, sizeof(*stbuf));
     return get_fs().getattr(path, *stbuf);
 }
@@ -39,8 +38,6 @@ static int naofs_readdir(const char* path, void* buf, fuse_fill_dir_t filler,
     off_t offset, fuse_file_info* fi, fuse_readdir_flags flags) {
     (void) fi;
     (void) flags;
-
-    spdlog::trace("readdir \"{}\"", path);
 
     return get_fs().readdir(path, offset, [&](std::string name, struct stat* stbuf, off_t offset) -> bool {
         return filler(buf, name.c_str(), stbuf, offset, fuse_fill_dir_flags{}) == 0;
@@ -109,8 +106,17 @@ int main(int argc, char** argv) {
             throw std::runtime_error("--source is required");
         }
 
+        std::filesystem::path source = std::filesystem::canonical(options_vals.source);
+        std::filesystem::path mount  = std::filesystem::canonical(args.argv[args.argc - 1]);
+
+        auto mismatch = std::mismatch(mount.begin(), mount.end(), source.begin());
+
+        if (mismatch.second == source.end()) {
+            throw std::runtime_error("mount point cannot be a subpath of source path");
+        }
+
         archive_mode mode = options_vals.archive_only ? archive_mode::archive_only : archive_mode::all;
-        naofs fs(options_vals.source, mode);
+        naofs fs(source, mode);
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"

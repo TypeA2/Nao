@@ -13,7 +13,7 @@
                 "-f",
                 "-s",
                 "--loglevel=0",
-                "--source=${workspaceFolder}",
+                "--source=/mnt/c/Program Files (x86)/Steam/steamapps/common/NieRAutomata",
                 "mount"
             ],
             "cwd": "${workspaceFolder}",

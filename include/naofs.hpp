@@ -26,7 +26,7 @@ class naofs {
     std::unique_ptr<archive> _root;
 
     public:
-    explicit naofs(std::string_view source, archive_mode mode);
+    explicit naofs(const std::filesystem::path& source, archive_mode mode);
 
     /**
      * @brief Get file attributes for a specific path
