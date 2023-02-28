@@ -11,7 +11,7 @@
 
 #include "util/cripak_utf.hpp"
 
-class cripak_archive : public archive {
+class cripak_archive : public file_archive {
     std::unique_ptr<utf_table> _cpk;
 
     uint64_t _content_offset;
@@ -36,8 +36,6 @@ class cripak_archive : public archive {
         std::vector<cripak_file> files;
         std::map<std::string, directory> dirs;
 
-        using archive::archive;
-
         void contents(fill_func filler) override;
 
         [[nodiscard]] bool contains_archive(std::string_view name) override;
@@ -48,7 +46,7 @@ class cripak_archive : public archive {
     directory _root;
 
     public:
-    explicit cripak_archive(std::string_view name, file_stream& cripak_fs);
+    explicit cripak_archive(std::string_view name, std::unique_ptr<file_stream> cripak_fs);
 
     void contents(fill_func filler) override;
 

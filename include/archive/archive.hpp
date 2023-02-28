@@ -12,11 +12,7 @@
 
 class file_stream;
 class archive {
-    protected:
-    file_stream& fs;
-
     public:
-    explicit archive(file_stream& fs);
     virtual ~archive() = default;
 
     enum file_type {
@@ -62,13 +58,34 @@ class archive {
     [[nodiscard]] virtual int stat(std::string_view name, struct stat& stbuf) = 0;
 
     /**
-     * @brief Based on all information required, return an appropriate archive instance for the input file
+     * @brief 
      * 
      * @param name 
      * @param fs 
      * @return std::unique_ptr<archive> 
      */
-    [[nodiscard]] static std::unique_ptr<archive> resolve(std::string_view name, file_stream& fs);
+
+    /**
+     * @brief Check whether a path represents a valid archive, and optionally createes an `archive` instance for it
+     * 
+     * @param path 
+     * @param fs 
+     * @param archive 
+     * @return true 
+     * @return false 
+     */
+    [[nodiscard]] static bool resolve(const std::filesystem::path& path,
+        std::unique_ptr<file_stream> fs = nullptr, std::unique_ptr<archive>* archive = nullptr);
+};
+
+class file_archive : public archive {
+    std::unique_ptr<file_stream> _fs;
+
+    protected:
+    file_stream& fs;
+
+    public:
+    explicit file_archive(std::unique_ptr<file_stream> fs);
 };
 
 #endif /* ARCHIVE_HPP */

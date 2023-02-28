@@ -23,7 +23,6 @@ class naofs {
     std::filesystem::path _path;
     struct stat _stbuf;
 
-    std::unique_ptr<mmapped_file> _root_file;
     std::unique_ptr<archive> _root;
 
     public:

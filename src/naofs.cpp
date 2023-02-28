@@ -13,31 +13,21 @@ naofs::naofs(std::string_view source, archive_mode mode)
         throw std::runtime_error(fmt::format("\"{}\" does not exist!", source));
     }
 
-    if (!std::filesystem::is_regular_file(_path)) {
-        throw std::runtime_error(fmt::format("Source must be a regular file (for now)"));
-    }
-
-    struct fd_raii {
-        int fd;
-        ~fd_raii() {
-            close(fd);
-        }
-    } fd { open(_path.c_str(), O_RDONLY) };
-
-    if (fd.fd == -1) {
-        throw std::system_error(errno, std::generic_category(), "open");
-    }
-
-    if (int res = fstat(fd.fd, &_stbuf); res != 0) {
+    if (int res = stat(_path.c_str(), &_stbuf); res != 0) {
         throw std::system_error(res, std::generic_category(), "fstat");
     }
 
-    _root_file = std::make_unique<mmapped_file>(fd.fd);
-    _root = archive::resolve(std::string_view(_path.c_str()), *_root_file);
-
-    if (!_root) {
-        throw std::runtime_error(fmt::format("Unknown file {}", _path.c_str()));
+    if (is_directory(_path)) {
+        if (!archive::resolve(_path, nullptr, &_root)) {
+            throw std::runtime_error(fmt::format("Unknown directory \"{}\"", _path.c_str()));
+        }
+    } else {
+        if (!archive::resolve(_path, std::make_unique<mmapped_file>(_path), &_root)) {
+            throw std::runtime_error(fmt::format("Unknown file \"{}\"", _path.c_str()));
+        }
     }
+
+    
 }
 
 int naofs::getattr(const std::filesystem::path& path, struct stat& stbuf) {

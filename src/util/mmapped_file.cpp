@@ -10,6 +10,7 @@
 #include <sys/mman.h>
 
 #include <unistd.h>
+#include <fcntl.h>
 
 #include <fmt/ostream.h>
 
@@ -21,6 +22,30 @@ mmapped_file::mmapped_file(int fd) {
     
     _size = st.st_size;
     _addr = static_cast<std::byte*>(mmap(nullptr, _size, PROT_READ, MAP_PRIVATE, fd, 0));
+    if (_addr == MAP_FAILED) {
+        throw std::system_error(errno, std::generic_category(), "mmap");
+    }
+}
+
+mmapped_file::mmapped_file(const std::filesystem::path& path) {
+    struct fd_raii {
+        int fd;
+        ~fd_raii() {
+            close(fd);
+        }
+    } fd { open(path.c_str(), O_RDONLY) };
+
+    if (fd.fd == -1) {
+        throw std::system_error(errno, std::generic_category(), "open");
+    }
+
+    struct stat st;
+    if (fstat(fd.fd, &st) != 0) {
+        throw std::system_error(errno, std::generic_category(), "fstat");
+    }
+    
+    _size = st.st_size;
+    _addr = static_cast<std::byte*>(mmap(nullptr, _size, PROT_READ, MAP_PRIVATE, fd.fd, 0));
     if (_addr == MAP_FAILED) {
         throw std::system_error(errno, std::generic_category(), "mmap");
     }

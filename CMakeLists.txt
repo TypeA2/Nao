@@ -16,6 +16,7 @@ add_executable(naofs
     "include/naofs.hpp"             "src/naofs.cpp"
     "include/archive/archive.hpp"   "src/archive/archive.cpp"
     "include/archive/cripak.hpp"    "src/archive/cripak.cpp"
+    "include/archive/directory.hpp" "src/archive/directory.cpp"
     "include/util/file_stream.hpp"  "src/util/file_stream.cpp"
     "include/util/mmapped_file.hpp" "src/util/mmapped_file.cpp"
     "include/util/cripak_utf.hpp"   "src/util/cripak_utf.cpp"

@@ -62,8 +62,8 @@ int cripak_archive::directory::stat(std::string_view name, struct stat& stbuf) {
     return -ENOENT;
 }
 
-cripak_archive::cripak_archive(std::string_view name, file_stream& cripak_fs)
-    : archive(cripak_fs), _root{ fs } {
+cripak_archive::cripak_archive(std::string_view name, std::unique_ptr<file_stream> cripak_fs)
+    : file_archive(std::move(cripak_fs)) {
 
     spdlog::info("Opening .cpk: {}", name);
 
@@ -163,7 +163,7 @@ cripak_archive::cripak_archive(std::string_view name, file_stream& cripak_fs)
             for (const auto& component : dir_name) {
                 if (!cur->dirs.contains(component)) {
                     /* Insert component if needed */
-                    cur->dirs.emplace(component, fs);
+                    cur->dirs.emplace(component, directory{});
                 }
 
                 /* Move down the tree */

@@ -5,12 +5,16 @@
 
 #include "util/file_stream.hpp"
 
+#include <filesystem>
+
 class mmapped_file : public file_stream {
     std::streamsize _size;
     std::byte* _addr;
 
     public:
     explicit mmapped_file(int fd);
+    explicit mmapped_file(const std::filesystem::path& path);
+
     ~mmapped_file() override;
 
     [[nodiscard]] std::streamsize size() const override;
