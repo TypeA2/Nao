@@ -86,6 +86,36 @@ int naofs::readdir(const std::filesystem::path& path, off_t offset, fill_dir fil
     return 0;
 }
 
+int naofs::open(const std::filesystem::path& path, int flags) {
+    spdlog::trace("open \"{}\"", path.string());
+
+    if ((flags & O_ACCMODE) != O_RDONLY) {
+        return -EROFS;
+    }
+
+    auto expected = get_subarchive(path.parent_path());
+    if (!expected) {
+        return expected.error();
+    }
+
+    archive& cur = expected.value();
+
+    return cur.open(path.filename().string(), flags);
+}
+
+int naofs::read(const std::filesystem::path& path, std::span<std::byte> buf, off_t offset) {
+    spdlog::trace("read \"{}\"", path.string());
+
+    auto expected = get_subarchive(path.parent_path());
+    if (!expected) {
+        return expected.error();
+    }
+
+    archive& cur = expected.value();
+
+    return cur.read(path.filename().string(), buf, offset);
+}
+
 std::expected<std::reference_wrapper<archive>, int> naofs::get_subarchive(const std::filesystem::path& path) const {
     archive* cur = _root.get();
 

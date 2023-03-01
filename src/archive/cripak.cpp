@@ -5,6 +5,7 @@
 #include <array>
 #include <concepts>
 #include <ctime>
+#include <algorithm>
 
 #include <spdlog/spdlog.h>
 #include <magic_enum.hpp>
@@ -60,6 +61,31 @@ int cripak_archive::directory::stat(std::string_view name, struct stat& stbuf) {
     }
 
     return -ENOENT;
+}
+
+int cripak_archive::directory::open(std::string_view name, int flags) {
+    /* File must exist and be an actual file  */
+    auto file_it = std::find_if(files.begin(), files.end(), [name](const cripak_file& file) {
+        return file.name == name;
+    });
+
+    if (file_it == files.end()) {
+        return -ENOENT;
+    }
+
+    cripak_file& file = *file_it;
+
+    if (file.extract_size != file.file_size) {
+        spdlog::error("Compressed files not supported (yet)");
+        return -EACCES;
+    }
+
+    return -ENODATA;
+}
+
+
+int cripak_archive::directory::read(std::string_view name, std::span<std::byte> buf, off_t offset) {
+    return -EIO;
 }
 
 cripak_archive::cripak_archive(std::string_view name, std::unique_ptr<file_stream> cripak_fs)
@@ -157,7 +183,7 @@ cripak_archive::cripak_archive(std::string_view name, std::unique_ptr<file_strea
         }
 
         if (dir_name.empty()) {
-            _root.files.push_back(file);
+            _root.files.emplace_back(std::move(file));
         } else {
             directory* cur = &_root;
             for (const auto& component : dir_name) {
@@ -170,7 +196,7 @@ cripak_archive::cripak_archive(std::string_view name, std::unique_ptr<file_strea
                 cur = &cur->dirs.at(component);
             }
 
-            cur->files.push_back(file);
+            cur->files.emplace_back(std::move(file));
         }
     }
 }
@@ -189,6 +215,14 @@ archive& cripak_archive::get_archive(std::string_view name) {
 
 int cripak_archive::stat(std::string_view name, struct stat& stbuf) {
     return _root.stat(name, stbuf);
+}
+
+int cripak_archive::open(std::string_view name, int flags) {
+    return _root.open(name, flags);
+}
+
+int cripak_archive::read(std::string_view name, std::span<std::byte> buf, off_t offset) {
+    return _root.read(name, buf, offset);
 }
 
 uint64_t cripak_archive::convert_datetime(uint64_t cpk_datetime) {

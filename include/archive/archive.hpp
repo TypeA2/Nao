@@ -7,6 +7,7 @@
 #include <functional>
 #include <string_view>
 #include <filesystem>
+#include <span>
 
 #include <sys/stat.h>
 
@@ -53,17 +54,28 @@ class archive {
      * 
      * @param name 
      * @param stbuf 
-     * @return * int 
+     * @return int 
      */
     [[nodiscard]] virtual int stat(std::string_view name, struct stat& stbuf) = 0;
 
     /**
-     * @brief 
+     * @brief Request opening a file with specific access flags
      * 
      * @param name 
-     * @param fs 
-     * @return std::unique_ptr<archive> 
+     * @param flags 
+     * @return int 
      */
+    [[nodiscard]] virtual int open(std::string_view name, int flags) = 0;
+
+    /**
+     * @brief Read at most `buf.size()` bytes into `buf` from `offset` and return the number of bytes read
+     * 
+     * @param name 
+     * @param buf 
+     * @param offset 
+     * @return int 
+     */
+    [[nodiscard]] virtual int read(std::string_view name, std::span<std::byte> buf, off_t offset) = 0;
 
     /**
      * @brief Check whether a path represents a valid archive, and optionally createes an `archive` instance for it

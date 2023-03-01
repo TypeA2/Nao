@@ -44,6 +44,15 @@ static int naofs_readdir(const char* path, void* buf, fuse_fill_dir_t filler,
     });
 }
 
+static int naofs_open(const char* path, fuse_file_info* fi) {
+    return get_fs().open(path, fi->flags);
+}
+
+static int naofs_read(const char* path, char* buf, size_t size, off_t offset, fuse_file_info* fi) {
+    (void) fi;
+    return get_fs().read(path, std::span { reinterpret_cast<std::byte*>(buf), size }, offset);
+}
+
 static int show_help(fuse_args& args) {
     fmt::print(std::cerr, "usage: {} [options] <mountpoint>\n\n", args.argv[0]);
     fmt::print(std::cerr,
@@ -123,6 +132,8 @@ int main(int argc, char** argv) {
 
         static const fuse_operations operations {
             .getattr = naofs_getattr,
+            .open    = naofs_open,
+            .read    = naofs_read,
             .readdir = naofs_readdir,
         };
 

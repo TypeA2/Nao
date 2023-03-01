@@ -79,7 +79,8 @@
 			"list": "cpp",
 			"typeindex": "cpp",
 			"filesystem": "cpp",
-			"expected": "cpp"
+			"expected": "cpp",
+			"ranges": "cpp"
 		}
 	}
 }

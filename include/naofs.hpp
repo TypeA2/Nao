@@ -55,6 +55,25 @@ class naofs {
      */
     [[nodiscard]] int readdir(const std::filesystem::path& path, off_t offset, fill_dir filler);
 
+    /**
+     * @brief Attempt to open a file
+     * 
+     * @param name 
+     * @param flags 
+     * @return int 
+     */
+    [[nodiscard]] int open(const std::filesystem::path& path, int flags);
+
+    /**
+     * @brief Read data from a file
+     * 
+     * @param path 
+     * @param buf 
+     * @param offset 
+     * @return int 
+     */
+    [[nodiscard]] int read(const std::filesystem::path& path, std::span<std::byte> buf, off_t offset);
+
     private:
     std::expected<std::reference_wrapper<archive>, int> get_subarchive(const std::filesystem::path& path) const;
 };

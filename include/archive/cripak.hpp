@@ -10,6 +10,7 @@
 #include <map>
 
 #include "util/cripak_utf.hpp"
+#include "util/file_stream.hpp"
 
 class cripak_archive : public file_archive {
     std::unique_ptr<utf_table> _cpk;
@@ -30,6 +31,8 @@ class cripak_archive : public file_archive {
 
         uint64_t update_datetime;
         std::string local_dir;
+
+        std::unique_ptr<file_stream> stream = nullptr;
     };
 
     struct directory : archive {
@@ -41,6 +44,8 @@ class cripak_archive : public file_archive {
         [[nodiscard]] bool contains_archive(std::string_view name) override;
         [[nodiscard]] archive& get_archive(std::string_view name) override;
         [[nodiscard]] int stat(std::string_view name, struct stat& stbuf) override;
+        [[nodiscard]] int open(std::string_view name, int flags) override;
+        [[nodiscard]] int read(std::string_view name, std::span<std::byte> buf, off_t offset) override;
     };
 
     directory _root;
@@ -53,6 +58,8 @@ class cripak_archive : public file_archive {
     [[nodiscard]] bool contains_archive(std::string_view name) override;
     [[nodiscard]] archive& get_archive(std::string_view name) override;
     [[nodiscard]] int stat(std::string_view name, struct stat& stbuf) override;
+    [[nodiscard]] int open(std::string_view name, int flags) override;
+    [[nodiscard]] int read(std::string_view name, std::span<std::byte> buf, off_t offset) override;
 
     private:
     /**
