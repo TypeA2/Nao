@@ -9,6 +9,11 @@
 #include "util/file_stream.hpp"
 #include "util/exceptions.hpp"
 
+bool utf_table::field::has_value() const {
+    return static_cast<bool>(flags & utf_flags::const_val)
+        || static_cast<bool>(flags & utf_flags::row_val);
+}
+
 utf_table::utf_table(file_stream& fs)
     : _fs { fs }
     , _start { fs.tell() } {
@@ -157,6 +162,10 @@ uint16_t utf_table::field_index(std::string_view name) const {
     }
 
     throw std::out_of_range("field not present");
+}
+
+const utf_table::field& utf_table::get_field(std::string_view name) const {
+    return _fields[field_index(name)];
 }
 
 const utf_table::utf_value& utf_table::get(uint32_t row, std::string_view name) const {

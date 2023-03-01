@@ -1,9 +1,12 @@
 #include "archive/directory.hpp"
 
+#include <fcntl.h>
+
 #include <spdlog/spdlog.h>
 
 #include "util/exceptions.hpp"
 #include "util/mmapped_file.hpp"
+#include "util/fstream_file.hpp"
 
 directory_archive::directory_archive(const std::filesystem::path& path)
     : _path { std::filesystem::canonical(path) } {
@@ -17,7 +20,11 @@ directory_archive::directory_archive(const std::filesystem::path& path)
 
 void directory_archive::contents(fill_func filler) {
     for (auto& entry : std::filesystem::directory_iterator(_path)) {
-        filler(entry.path().filename().string(), entry.is_directory() ? file_type::dir : file_type::file);
+        const auto& path = entry.path();
+
+        /* Disk directories are resolved too */
+        filler(path.filename().string(),
+            archive::resolve(path, nullptr, nullptr) ? file_type::dir : file_type::file);
     }
 }
 
@@ -40,6 +47,7 @@ archive& directory_archive::get_archive(std::string_view name) {
 
         throw archive_error("error creating archive for directory");
     } else {
+        /* Open archives as mmapped files */
         if (archive::resolve(new_path, std::make_unique<mmapped_file>(new_path), &_archives[name_str])) {
             return *_archives[name_str];
         }
@@ -50,10 +58,25 @@ archive& directory_archive::get_archive(std::string_view name) {
 
 int directory_archive::stat(std::string_view name, struct stat& stbuf) {
     auto temp_path = _path / name;
-    return ::stat(temp_path.c_str(), &stbuf);
+
+    int res = ::stat(temp_path.c_str(), &stbuf);
+    if (res != 0) {
+        return res;
+    }
+
+    if (archive::resolve(temp_path, nullptr, nullptr)) {
+        /* Treat all archives as directories, so overwrite file type field */
+        stbuf.st_mode = (stbuf.st_mode & ~S_IFMT) | S_IFDIR;
+    }
+    
+    return 0;
 }
 
 int directory_archive::open(std::string_view name, int flags) {
+    if ((flags & O_ACCMODE) != O_RDONLY) {
+        return -EROFS;
+    }
+
     std::string name_str { name };
 
     /* Sanity check */
@@ -66,8 +89,10 @@ int directory_archive::open(std::string_view name, int flags) {
         return 0;
     }
 
-    /* Else open the file and store the handle */
-    _files[name_str] = std::make_unique<mmapped_file>(_path / name);
+    /* Else open the file and store the handle
+     * Perform reading of normal files as fstream file
+     */
+    _files[name_str] = std::make_unique<fstream_file>(_path / name);
     if (!_files.at(name_str)) {
         return -EIO;
     }
@@ -82,6 +107,7 @@ int directory_archive::read(std::string_view name, std::span<std::byte> buf, off
         return -EBADF;
     }
 
+    /* Read from open file */
     file_stream& fs = *_files[name_str];
 
     fs.seek(offset);

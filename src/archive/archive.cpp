@@ -19,8 +19,8 @@ bool archive::resolve(const std::filesystem::path& path, std::unique_ptr<file_st
         return true;
     }
 
-    /* Non-directory archive requires a file stream */
-    if (!fs) {
+    /* Non-directory archive actually being opened requires file stream */
+    if (archive && !fs) {
         return false;
     }
 

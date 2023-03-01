@@ -26,7 +26,7 @@ class cripak_archive : public file_archive {
         uint64_t file_offset;
         uint32_t id;
 
-        std::string user_string;
+        std::string user_string = "";
         uint32_t crc;
 
         uint64_t update_datetime;

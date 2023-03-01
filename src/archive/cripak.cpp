@@ -170,13 +170,16 @@ cripak_archive::cripak_archive(std::string_view name, std::unique_ptr<file_strea
             .extract_size = files.get<uint32_t>(i, "ExtractSize"),
             .file_offset  = files.get<uint64_t>(i, "FileOffset"),
             .id           = files.get<uint32_t>(i, "ID"),
-            .user_string  = files.get<std::string>(i, "UserString"),
             .crc          = files.get<uint32_t>(i, "CRC"),
 
             /* Etoc */
             .update_datetime = convert_datetime(etoc.get<uint64_t>(i, "UpdateDateTime")),
             .local_dir       = etoc.get<std::string>(i, "LocalDir"),
         };
+
+        if (files.get_field("UserString").has_value()) {
+            file.user_string = files.get<std::string>(i, "UserString");
+        }
 
         if (file.file_size != file.extract_size) {
             spdlog::trace("compressed file: {} ({} -> {})", file.name, file.file_size, file.extract_size);

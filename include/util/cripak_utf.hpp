@@ -65,6 +65,8 @@ class utf_table {
         utf_flags flags;
         std::string name;
         utf_value const_value;
+
+        [[nodiscard]] bool has_value() const;
     };
 
     private:
@@ -107,6 +109,14 @@ class utf_table {
      * @return uint16_t 
      */
     [[nodiscard]] uint16_t field_index(std::string_view name) const;
+
+    /**
+     * @brief Retrieve a field by it's name
+     * 
+     * @param name 
+     * @return const field& 
+     */
+    [[nodiscard]] const field& get_field(std::string_view name) const;
 
     /**
      * @brief Retrieve a value by row and field
