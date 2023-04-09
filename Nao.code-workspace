@@ -80,7 +80,8 @@
 			"typeindex": "cpp",
 			"filesystem": "cpp",
 			"expected": "cpp",
-			"ranges": "cpp"
+			"ranges": "cpp",
+			"source_location": "cpp"
 		}
 	}
 }

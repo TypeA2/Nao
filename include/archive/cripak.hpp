@@ -24,6 +24,7 @@ class cripak_archive : public file_archive {
         uint32_t extract_size;
 
         uint64_t file_offset;
+        uint64_t absolute_offset = 0;
         uint32_t id;
 
         std::string user_string = "";

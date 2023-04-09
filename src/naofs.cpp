@@ -104,7 +104,8 @@ int naofs::open(const std::filesystem::path& path, int flags) {
 }
 
 int naofs::read(const std::filesystem::path& path, std::span<std::byte> buf, off_t offset) {
-    spdlog::trace("read \"{}\"", path.string());
+    // This one is a bit spammy
+    // spdlog::trace("read \"{}\"", path.string());
 
     auto expected = get_subarchive(path.parent_path());
     if (!expected) {

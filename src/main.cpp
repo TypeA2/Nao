@@ -94,10 +94,12 @@ int main(int argc, char** argv) {
 
     struct fuse_args_raii {
         fuse_args& args;
+        options& opts;
         ~fuse_args_raii() {
             fuse_opt_free_args(&args);
+            free((char*)opts.source);
         }
-    } raii { args };
+    } raii { args, options_vals };
 
     if (options_vals.help) {
         return show_help(args);

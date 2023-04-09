@@ -7,10 +7,13 @@
 #include <ctime>
 #include <algorithm>
 
+#include <sys/stat.h>
+
 #include <spdlog/spdlog.h>
 #include <magic_enum.hpp>
 
 #include "util/file_stream.hpp"
+#include "util/partial_file.hpp"
 
 void cripak_archive::directory::contents(fill_func filler) {
     for (const cripak_file& file : files) {
@@ -64,6 +67,8 @@ int cripak_archive::directory::stat(std::string_view name, struct stat& stbuf) {
 }
 
 int cripak_archive::directory::open(std::string_view name, int flags) {
+    (void) flags;
+
     /* File must exist and be an actual file  */
     auto file_it = std::find_if(files.begin(), files.end(), [name](const cripak_file& file) {
         return file.name == name;
@@ -80,12 +85,30 @@ int cripak_archive::directory::open(std::string_view name, int flags) {
         return -EACCES;
     }
 
-    return -ENODATA;
+    spdlog::debug("CRC of {}: {:x}", name, file.crc);
+
+    return 0;
 }
 
 
 int cripak_archive::directory::read(std::string_view name, std::span<std::byte> buf, off_t offset) {
-    return -EIO;
+    auto file_it = std::find_if(files.begin(), files.end(), [name](const cripak_file& file) {
+        return file.name == name;
+    });
+
+    if (file_it == files.end()) {
+        return -ENOENT;
+    }
+
+    cripak_file& file = *file_it;
+
+    /* Let file stream handle range checks */
+    if (!file.stream) {
+        return -EIO;
+    }
+
+    file.stream->seek(offset);
+    return file.stream->read(buf);
 }
 
 cripak_archive::cripak_archive(std::string_view name, std::unique_ptr<file_stream> cripak_fs)
@@ -132,10 +155,6 @@ cripak_archive::cripak_archive(std::string_view name, std::unique_ptr<file_strea
 
     auto etoc_offset = _cpk->get<uint64_t>(0, "EtocOffset");
 
-    /* First 16 bytes of the archive are not counted */
-    toc_offset  += 16;
-    etoc_offset += 16;
-
     if (!_cpk->has_field("ContentOffset")) {
         spdlog::trace("No ContentOffset");
         _content_offset = toc_offset;
@@ -151,10 +170,11 @@ cripak_archive::cripak_archive(std::string_view name, std::unique_ptr<file_strea
         }
     }
     
-    fs.seek(toc_offset);
+    /* Add 16 bytes to skip CPK header */
+    fs.seek(toc_offset + 16);
     utf_table files(fs);
 
-    fs.seek(etoc_offset);
+    fs.seek(etoc_offset + 16);
     utf_table etoc(fs);
 
     if (etoc.row_count() != (files.row_count() + 1)) {
@@ -177,12 +197,16 @@ cripak_archive::cripak_archive(std::string_view name, std::unique_ptr<file_strea
             .local_dir       = etoc.get<std::string>(i, "LocalDir"),
         };
 
+        file.absolute_offset = file.file_offset + _content_offset;
+
         if (files.get_field("UserString").has_value()) {
             file.user_string = files.get<std::string>(i, "UserString");
         }
 
         if (file.file_size != file.extract_size) {
             spdlog::trace("compressed file: {} ({} -> {})", file.name, file.file_size, file.extract_size);
+        } else {
+            file.stream = std::make_unique<partial_file>(fs, file.absolute_offset, file.file_size);
         }
 
         if (dir_name.empty()) {

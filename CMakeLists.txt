@@ -20,6 +20,7 @@ add_executable(naofs
     "include/util/file_stream.hpp"  "src/util/file_stream.cpp"
     "include/util/mmapped_file.hpp" "src/util/mmapped_file.cpp"
     "include/util/fstream_file.hpp" "src/util/fstream_file.cpp"
+    "include/util/partial_file.hpp" "src/util/partial_file.cpp"
     "include/util/cripak_utf.hpp"   "src/util/cripak_utf.cpp"
     "include/util/exceptions.hpp"
 )
