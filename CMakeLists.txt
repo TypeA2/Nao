@@ -17,6 +17,7 @@ add_executable(naofs
     "include/archive/archive.hpp"   "src/archive/archive.cpp"
     "include/archive/cripak.hpp"    "src/archive/cripak.cpp"
     "include/archive/directory.hpp" "src/archive/directory.cpp"
+    "include/archive/cridat.hpp"    "src/archive/cridat.cpp"
     "include/util/file_stream.hpp"  "src/util/file_stream.cpp"
     "include/util/mmapped_file.hpp" "src/util/mmapped_file.cpp"
     "include/util/fstream_file.hpp" "src/util/fstream_file.cpp"

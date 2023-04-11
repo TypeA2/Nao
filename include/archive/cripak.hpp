@@ -34,6 +34,7 @@ class cripak_archive : public file_archive {
         std::string local_dir;
 
         std::unique_ptr<file_stream> stream = nullptr;
+        std::unique_ptr<::archive> archive = nullptr;
     };
 
     struct directory : archive {

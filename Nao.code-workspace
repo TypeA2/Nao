@@ -81,7 +81,11 @@
 			"filesystem": "cpp",
 			"expected": "cpp",
 			"ranges": "cpp",
-			"source_location": "cpp"
+			"source_location": "cpp",
+			"cassert": "cpp",
+			"cerrno": "cpp",
+			"cfloat": "cpp",
+			"climits": "cpp"
 		}
 	}
 }

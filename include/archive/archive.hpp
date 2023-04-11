@@ -8,6 +8,7 @@
 #include <string_view>
 #include <filesystem>
 #include <span>
+#include <optional>
 
 #include <sys/stat.h>
 
@@ -78,16 +79,31 @@ class archive {
     [[nodiscard]] virtual int read(std::string_view name, std::span<std::byte> buf, off_t offset) = 0;
 
     /**
-     * @brief Check whether a path represents a valid archive, and optionally createes an `archive` instance for it
+     * @brief Check whether a path represents a parseable archive
      * 
      * @param path 
      * @param fs 
-     * @param archive 
      * @return true 
      * @return false 
      */
-    [[nodiscard]] static bool resolve(const std::filesystem::path& path,
-        std::unique_ptr<file_stream> fs = nullptr, std::unique_ptr<archive>* archive = nullptr);
+    [[nodiscard]] static bool is_archive(const std::filesystem::path& path, file_stream* fs);
+
+    /**
+     * @brief Get the archive for the given path, or throw an exception
+     * 
+     * @param path 
+     * @param fs 
+     * @return std::unique_ptr<archive> 
+     */
+    [[nodiscard]] static std::unique_ptr<archive> get_archive(const std::filesystem::path& path, std::unique_ptr<file_stream> fs);
+
+    private:
+    /**
+     * @brief Internal 2-for-1 helper for is_archive and get_archive
+     * 
+     */
+    using resolve_type = std::pair<bool, std::unique_ptr<archive>>;
+    [[nodiscard]] static resolve_type resolve_internal(const std::filesystem::path& path, file_stream* fs, bool make_archive);
 };
 
 class file_archive : public archive {

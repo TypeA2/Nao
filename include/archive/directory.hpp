@@ -10,7 +10,7 @@ class directory_archive : public archive {
     std::filesystem::path _path;
 
     std::map<std::string, std::unique_ptr<archive>> _archives;
-    std::map<std::string, std::unique_ptr<file_stream>> _files;
+    std::map<std::string , std::unique_ptr<file_stream>> _files;
 
     public:
     explicit directory_archive(const std::filesystem::path& path);

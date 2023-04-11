@@ -17,7 +17,7 @@
 
 void cripak_archive::directory::contents(fill_func filler) {
     for (const cripak_file& file : files) {
-        filler(file.name, file_type::file);
+        filler(file.name, file.archive ? file_type::dir : file_type::file);
     }
 
     for (const auto& [dir, _] : dirs) {
@@ -26,6 +26,12 @@ void cripak_archive::directory::contents(fill_func filler) {
 }
 
 bool cripak_archive::directory::contains_archive(std::string_view name) {
+    for (const cripak_file& file : files) {
+        if ((file.name == name) && file.archive) {
+            return true;
+        }
+    }
+
     for (const auto& [dir, _] : dirs) {
         if (dir == name) {
             return true;
@@ -36,6 +42,12 @@ bool cripak_archive::directory::contains_archive(std::string_view name) {
 }
 
 archive& cripak_archive::directory::get_archive(std::string_view name) {
+    for (const cripak_file& file : files) {
+        if ((file.name == name) && file.archive) {
+            return *file.archive;
+        }
+    }
+
     for (auto& [dir, target] : dirs) {
         if (dir == name) {
             return target;
@@ -48,9 +60,13 @@ archive& cripak_archive::directory::get_archive(std::string_view name) {
 int cripak_archive::directory::stat(std::string_view name, struct stat& stbuf) {
     for (const cripak_file& file : files) {
         if (file.name == name) {
-            stbuf.st_mode = 0444 | S_IFREG;
-            stbuf.st_size = file.extract_size;
-            stbuf.st_mtime = file.update_datetime;
+            if (file.archive) {
+                stbuf.st_mode = 0755 | S_IFDIR;
+            } else {
+                stbuf.st_mode = 0444 | S_IFREG;
+                stbuf.st_size = file.extract_size;
+                stbuf.st_mtime = file.update_datetime;
+            }
 
             return 0;
         }
@@ -85,7 +101,10 @@ int cripak_archive::directory::open(std::string_view name, int flags) {
         return -EACCES;
     }
 
-    spdlog::debug("CRC of {}: {:x}", name, file.crc);
+    /* Well duh */
+    if (!file.stream) {
+        return -EISDIR;
+    }
 
     return 0;
 }
@@ -207,6 +226,12 @@ cripak_archive::cripak_archive(std::string_view name, std::unique_ptr<file_strea
             spdlog::trace("compressed file: {} ({} -> {})", file.name, file.file_size, file.extract_size);
         } else {
             file.stream = std::make_unique<partial_file>(fs, file.absolute_offset, file.file_size);
+
+            /* Sub-archive takes over ownership */
+            if (archive::is_archive(file.name, file.stream.get())) {
+                file.archive = archive::get_archive(name, std::move(file.stream));
+                file.stream = nullptr;
+            }
         }
 
         if (dir_name.empty()) {

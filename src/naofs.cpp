@@ -18,13 +18,19 @@ naofs::naofs(const std::filesystem::path& source, archive_mode mode)
     }
 
     if (is_directory(_path)) {
-        if (!archive::resolve(_path, nullptr, &_root)) {
+        if (!archive::is_archive(_path, nullptr)) {
             throw std::runtime_error(fmt::format("Unknown directory \"{}\"", _path.c_str()));
         }
+
+        _root = archive::get_archive(_path, nullptr);
     } else {
-        if (!archive::resolve(_path, std::make_unique<mmapped_file>(_path), &_root)) {
+        auto file = std::make_unique<mmapped_file>(_path);
+
+        if (!archive::is_archive(_path, file.get())) {
             throw std::runtime_error(fmt::format("Unknown file \"{}\"", _path.c_str()));
         }
+
+        _root = archive::get_archive(_path, std::move(file));
     }
 
     
