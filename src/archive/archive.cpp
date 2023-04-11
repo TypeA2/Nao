@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 
 #include "archive/archive.hpp"
-#include "archive/cripak.hpp"
 #include "archive/directory.hpp"
+#include "archive/cripak.hpp"
+#include "archive/cridat.hpp"
 
 #include "util/file_stream.hpp"
 
@@ -52,7 +53,10 @@ archive::resolve_type archive::resolve_internal(const std::filesystem::path& pat
             make_archive ? std::make_unique<cripak_archive>(filename_string, std::move(fptr)) : nullptr
         };
     } else if (extension == ".dat" || extension == ".dtt") {
-
+        return { 
+            true,
+            make_archive ? std::make_unique<cridat_archive>(filename_string, std::move(fptr)) : nullptr
+        };
     }
 
     return { false, nullptr };

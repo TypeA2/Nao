@@ -251,6 +251,15 @@ class file_stream {
      * @return std::string 
      */
     [[nodiscard]] virtual std::string read_cstring(char term = '\0'); 
+
+    /**
+     * @brief Read a null- (or `term`-)terminated string of at most `n` bytes (excluding terminator)
+     * 
+     * @param n 
+     * @param term 
+     * @return std::string 
+     */
+    [[nodiscard]] virtual std::string read_ncstring(size_t n, char term = '\0');
 };
 
 #endif /* FILE_STREAM_HPP */

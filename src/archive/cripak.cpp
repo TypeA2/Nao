@@ -60,25 +60,27 @@ archive& cripak_archive::directory::get_archive(std::string_view name) {
 int cripak_archive::directory::stat(std::string_view name, struct stat& stbuf) {
     for (const cripak_file& file : files) {
         if (file.name == name) {
+            /* Set mode based on archive-ness */
             if (file.archive) {
                 stbuf.st_mode = 0755 | S_IFDIR;
             } else {
                 stbuf.st_mode = 0444 | S_IFREG;
-                stbuf.st_size = file.extract_size;
-                stbuf.st_mtime = file.update_datetime;
             }
 
+            stbuf.st_size = file.extract_size;
+            stbuf.st_mtime = file.update_datetime;
+
             return 0;
         }
     }
 
-    for (const auto& [dirname, dir] : dirs) {
-        if (dirname == name) {
-            stbuf.st_mode = 0755 | S_IFDIR;
-            return 0;
-        }
-    }
+    std::string name_str { name };
+    auto it = dirs.find(name_str);
 
+    if (it != dirs.end()) {
+        stbuf.st_mode = 0755 | S_IFDIR;
+        return 0;
+    }
     return -ENOENT;
 }
 
@@ -108,7 +110,6 @@ int cripak_archive::directory::open(std::string_view name, int flags) {
 
     return 0;
 }
-
 
 int cripak_archive::directory::read(std::string_view name, std::span<std::byte> buf, off_t offset) {
     auto file_it = std::find_if(files.begin(), files.end(), [name](const cripak_file& file) {
@@ -229,7 +230,7 @@ cripak_archive::cripak_archive(std::string_view name, std::unique_ptr<file_strea
 
             /* Sub-archive takes over ownership */
             if (archive::is_archive(file.name, file.stream.get())) {
-                file.archive = archive::get_archive(name, std::move(file.stream));
+                file.archive = archive::get_archive(file.name, std::move(file.stream));
                 file.stream = nullptr;
             }
         }

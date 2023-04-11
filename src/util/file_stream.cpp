@@ -88,11 +88,17 @@ double file_stream::read_f64be() {
 }
 
 std::string file_stream::read_cstring(char term) {
+    return read_ncstring(size_t(-1), term);
+}
+
+std::string file_stream::read_ncstring(size_t n, char term) {
     std::string res;
+    size_t i = 0;
 
     char ch;
-    while ((ch = getc()) != term) {
+    while ((i < n) && ((ch = getc()) != term)) {
         res.push_back(ch);
+        ++i;
     }
 
     return res;
